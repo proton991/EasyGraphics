@@ -14,7 +14,7 @@ endfunction()
 
 set(APPS
   CreateInstance
-  select_physical_device
+  CreateDevice
 )
 
 

@@ -16,4 +16,7 @@ int main(int argc, char* argv[]) {
   vkh::PhysicalDeviceSelector pdSelector{vkhInstance};
   vkh::PhysicalDevice pd = pdSelector.RequirePresent(false).Select();
   pd.DisplayInfo();
+  vkh::DeviceBuilder deviceBuilder(pd);
+  vkh::Device device = deviceBuilder.Build();
+  device.DisplayInfo();
 }

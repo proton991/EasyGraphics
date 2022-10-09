@@ -48,42 +48,6 @@ inline auto GetVector(F&& f, Ts&&... ts) -> std::vector<T> {
   return results;
 }
 
-template <class THandle, class TValue>
-inline void GetEnumerateVector(THandle handle, VkResult(enumerate)(THandle, uint32_t*, TValue*),
-                               std::vector<TValue>& vector) {
-  uint32_t count = 0;
-  VkCheck(enumerate(handle, &count, nullptr), "enumerate");
-
-  vector.resize(count);
-  VkCheck(enumerate(handle, &count, vector.data()), "enumerate");
-}
-
-template <class THandle1, class THandle2, class TValue>
-inline std::vector<TValue> GetEnumerateVector(THandle1 handle1, THandle2 handle2, VkResult(enumerate) (THandle1, THandle2, uint32_t*, TValue*))
-{
-  std::vector<TValue> initial;
-  GetEnumerateVector(handle1, handle2, enumerate, initial);
-  return initial;
-}
-
-template <class THandle, class TValue>
-inline std::vector<TValue> GetEnumerateVector(THandle handle, void(enumerate) (THandle, uint32_t*, TValue*))
-{
-  std::vector<TValue> initial;
-  GetEnumerateVector(handle, enumerate, initial);
-  return initial;
-}
-
-template <class TValue>
-inline void GetEnumerateVector(VkResult(enumerate)(uint32_t*, TValue*),
-                               std::vector<TValue>& vector) {
-  uint32_t count = 0;
-  VkCheck(enumerate(&count, nullptr), "enumerate");
-
-  vector.resize(count);
-  VkCheck(enumerate(&count, vector.data()), "enumerate");
-}
-
 inline void Log(const std::string_view& msg) {
   std::cout << msg << "\n";
 }
