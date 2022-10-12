@@ -25,7 +25,6 @@ public:
   template <typename T>
   void LoadFunc(T& func_dest, const char* func_name);
 
-
 private:
   VulkanLibrary();
   PFN_vkGetInstanceProcAddr fp_vkGetInstanceProcAddr = VK_NULL_HANDLE;

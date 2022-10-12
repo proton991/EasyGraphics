@@ -1,6 +1,7 @@
 #include "vk_device.hpp"
-#include "vk_functions.hpp"
+#include <memory>
 #include <string>
+#include "vk_functions.hpp"
 namespace vkh {
 uint32_t PhysicalDevice::GetQFIndex(const std::string& name, const VkQueueFlags requiredBits,
                                     const VkQueueFlags excludedBits) const {
@@ -168,6 +169,8 @@ PhysicalDeviceSelectorRef PhysicalDeviceSelector::PreferGPUType(PreferredDeviceT
   return *this;
 }
 
+Device::Device(const Instance& instance) : instance(instance) {}
+
 uint32_t Device::GetQueueIndex(QueueType type) const {
   uint32_t index = QUEUE_INDEX_MAX_VALUE;
   std::string name;
@@ -203,19 +206,24 @@ VkQueue Device::GetQueue(QueueType type) const {
   return queue;
 }
 
+//void Device::SetupDebugUtil() {
+//  debugUtil.SetDevice(vkDevice);
+//}
+
 void Device::DisplayInfo() const {
   Log("\n=========================================");
   Log("Displaying Device Queue Info: ");
   Log("Queue Family Size: " + std::to_string(queueFamilies.size()));
   auto graphicsQueueIndex = GetQueueIndex(QueueType::graphics);
   auto transferQueueIndex = GetQueueIndex(QueueType::transfer);
-  auto computeQueueIndex = GetQueueIndex(QueueType::compute);
+  auto computeQueueIndex  = GetQueueIndex(QueueType::compute);
   std::cout << "Graphics Queue: " << graphicsQueueIndex << "\n";
   std::cout << "Transfer Queue: " << transferQueueIndex << "\n";
   std::cout << "Compute Queue: " << computeQueueIndex << "\n";
 }
 
-DeviceBuilder::DeviceBuilder(PhysicalDevice pd) : physicalDevice(pd) {}
+DeviceBuilder::DeviceBuilder(PhysicalDevice pd, const Instance& instance)
+    : physicalDevice(pd), instance(instance) {}
 
 Device DeviceBuilder::Build() const {
   std::vector<CustomQueueDescription> queueDescriptions;
@@ -225,10 +233,10 @@ Device DeviceBuilder::Build() const {
   std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
   for (auto& description : queueDescriptions) {
     VkDeviceQueueCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    createInfo.queueFamilyIndex = description.index;
-    createInfo.queueCount = description.count;
-    createInfo.pQueuePriorities = description.priorities.data();
+    createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    createInfo.queueFamilyIndex        = description.index;
+    createInfo.queueCount              = description.count;
+    createInfo.pQueuePriorities        = description.priorities.data();
     queueCreateInfos.push_back(createInfo);
   }
   std::vector<const char*> extensions;
@@ -239,20 +247,25 @@ Device DeviceBuilder::Build() const {
     extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
   }
   VkDeviceCreateInfo deviceCreateInfo = {};
-//  deviceCreateInfo.pEnabledFeatures = &physicalDevice.features;
-  deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-  deviceCreateInfo.flags = deviceInfo.flags;
-  deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
-  deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+  //  deviceCreateInfo.pEnabledFeatures = &physicalDevice.features;
+  deviceCreateInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+  deviceCreateInfo.flags                   = deviceInfo.flags;
+  deviceCreateInfo.pQueueCreateInfos       = queueCreateInfos.data();
+  deviceCreateInfo.queueCreateInfoCount    = static_cast<uint32_t>(queueCreateInfos.size());
   deviceCreateInfo.ppEnabledExtensionNames = extensions.data();
-  Device device;
-  VulkanFunction::GetInstance().fp_vkCreateDevice(physicalDevice.physicalDevice, &deviceCreateInfo, nullptr, &device.vkDevice);
-  device.physicalDevice = physicalDevice;
-  device.surface = physicalDevice.surface;
-  device.queueFamilies = physicalDevice.queueFamilies;
+  Device device{instance};
+  VulkanFunction::GetInstance().fp_vkCreateDevice(physicalDevice.physicalDevice, &deviceCreateInfo,
+                                                  nullptr, &device.vkDevice);
+  device.physicalDevice         = physicalDevice;
+  device.surface                = physicalDevice.surface;
+  device.queueFamilies          = physicalDevice.queueFamilies;
   device.fp_vkGetDeviceProcAddr = VulkanFunction::GetInstance().fp_vkGetDeviceProcAddr;
-  VulkanFunction::GetInstance().GetDeviceProcAddr(device.vkDevice, device.internalTable.fp_vkGetDeviceQueue, "vkGetDeviceQueue");
-  VulkanFunction::GetInstance().GetDeviceProcAddr(device.vkDevice, device.internalTable.fp_vkDestroyDevice, "vkDestroyDevice");
+
+  VulkanFunction::GetInstance().GetDeviceProcAddr(
+      device.vkDevice, device.internalTable.fp_vkGetDeviceQueue, "vkGetDeviceQueue");
+  VulkanFunction::GetInstance().GetDeviceProcAddr(
+      device.vkDevice, device.internalTable.fp_vkDestroyDevice, "vkDestroyDevice");
+  //  device.SetupDebugUtil();
   return device;
 }
 }  // namespace vkh

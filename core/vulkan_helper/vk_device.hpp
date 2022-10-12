@@ -2,7 +2,10 @@
 #define __VK_DEVICE_H__
 
 #include <cassert>
+#include "vk_debug.hpp"
+#include "vk_dispatch.hpp"
 #include "vk_instance.hpp"
+
 namespace vkh {
 // Sentinel value, used in implementation only
 const uint32_t QUEUE_INDEX_MAX_VALUE = 65536;
@@ -88,11 +91,18 @@ struct CustomQueueDescription {
 
 class Device {
 public:
+  explicit Device(const Instance& instance);
+
   operator VkDevice() const { return vkDevice; }
 
   uint32_t GetQueueIndex(QueueType type) const;
 
   VkQueue GetQueue(QueueType type) const;
+
+  // Return a loaded dispatch table
+  DispatchTable MakeDispatchTable() const { return {vkDevice, fp_vkGetDeviceProcAddr}; };
+
+  //  void SetupDebugUtil();
 
   void DisplayInfo() const;
 
@@ -102,17 +112,21 @@ public:
   VkSurfaceKHR surface                           = VK_NULL_HANDLE;
   VkAllocationCallbacks* allocation_callbacks    = VK_NULL_HANDLE;
   PFN_vkGetDeviceProcAddr fp_vkGetDeviceProcAddr = nullptr;
+  DispatchTable dispatchTable;
 
 private:
+  const Instance& instance;
   struct {
     PFN_vkGetDeviceQueue fp_vkGetDeviceQueue = nullptr;
     PFN_vkDestroyDevice fp_vkDestroyDevice   = nullptr;
   } internalTable;
+  //  debug::DebugUtil debugUtil;
   friend class DeviceBuilder;
+  friend void DestroyDevice(Device device);
 };
 class DeviceBuilder {
 public:
-  explicit DeviceBuilder(PhysicalDevice physicalDevice);
+  explicit DeviceBuilder(PhysicalDevice physicalDevice, const Instance& instance);
 
   Device Build() const;
 
@@ -124,6 +138,7 @@ public:
 
 private:
   PhysicalDevice physicalDevice;
+  const Instance& instance;
   struct DeviceInfo {
     std::vector<VkBaseOutStructure*> pNextChain;
     VkDeviceCreateFlags flags                  = static_cast<VkDeviceCreateFlags>(0);

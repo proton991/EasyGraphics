@@ -8,6 +8,68 @@
 
 namespace vkh {
 
+inline VkBool32 VKAPI_CALL VulkanDebugCallback(
+    const VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    const VkDebugUtilsMessageTypeFlagsEXT messageType,
+    const VkDebugUtilsMessengerCallbackDataEXT* const pCallbackData, void* const pUserData) {
+  (void)pUserData;
+
+  const auto attributes = Console::SetColorBySeverity(static_cast<Severity>(messageSeverity));
+
+  switch (messageSeverity) {
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+      std::cerr << "VERBOSE: ";
+      break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+      std::cerr << "INFO: ";
+      break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+      std::cerr << "WARNING: ";
+      break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+      std::cerr << "ERROR: ";
+      break;
+    default:;
+      std::cerr << "UNKNOWN: ";
+  }
+
+  switch (messageType) {
+    case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT:
+      std::cerr << "GENERAL: ";
+      break;
+    case VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT:
+      std::cerr << "VALIDATION: ";
+      break;
+    case VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT:
+      std::cerr << "PERFORMANCE: ";
+      break;
+    default:
+      std::cerr << "UNKNOWN: ";
+  }
+
+  std::cerr << pCallbackData->pMessage;
+
+  if (pCallbackData->objectCount > 0 &&
+      messageSeverity > VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
+    std::cerr << "\n\n  Objects (" << pCallbackData->objectCount << "):\n";
+
+    for (uint32_t i = 0; i != pCallbackData->objectCount; ++i) {
+      const auto object = pCallbackData->pObjects[i];
+      std::cerr << "  - Object[" << i << "]: "
+                << "Type: " << ObjectTypeToString(object.objectType) << ", "
+                << "Handle: " << reinterpret_cast<void*>(object.objectHandle) << ", "
+                << "Name: '" << (object.pObjectName ? object.pObjectName : "") << "'"
+                << "\n";
+    }
+  }
+
+  std::cerr << std::endl;
+
+  Console::SetColorByAttributes(attributes);
+
+  return VK_FALSE;
+}
+
 // forward declaration
 struct Instance;
 class InstanceBuilder;
@@ -31,6 +93,17 @@ public:
 private:
   VkInstanceCreateInfo instanceInfo{};
   VkApplicationInfo appInfo{};
+  struct {
+    // debug callback - use the default so it is not nullptr
+    PFN_vkDebugUtilsMessengerCallbackEXT debugCallback = VulkanDebugCallback;
+    VkDebugUtilsMessageSeverityFlagsEXT debugMessageSeverity =
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
+    VkDebugUtilsMessageTypeFlagsEXT debugMessageType =
+        VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    void* debugUserDataPointer = nullptr;
+  } dumInfo;
   bool enableValidation;
   bool headless;
   // VkInstanceCreateInfo
@@ -47,6 +120,7 @@ struct Instance {
 
   std::vector<const char*> enabledExtensions;
   std::vector<const char*> enabledLayers;
+  bool enableValidation;
 
   // A conversion function which allows this Instance to be used
   // in places where VkInstance would have been used.
@@ -58,8 +132,6 @@ private:
 
   friend class InstanceBuilder;
 };
-
-void DestroyInstance(Instance instance);
 
 }  // namespace vkh
 

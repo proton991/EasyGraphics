@@ -1,4 +1,3 @@
-#include <iostream>
 #include "sys_info.hpp"
 #include "vk_functions.hpp"
 #include "vk_tools.hpp"
@@ -10,8 +9,10 @@ SystemInfo::SystemInfo() {
     throw std::runtime_error("Vulkan in not available!");
   }
   // Get instance extensions and layers
-  availableExtensions = GetVector<VkExtensionProperties>(VulkanFunction::GetInstance().fp_vkEnumerateInstanceExtensionProperties, nullptr);
-  availableLayers = GetVector<VkLayerProperties>(VulkanFunction::GetInstance().fp_vkEnumerateInstanceLayerProperties);
+  availableExtensions = GetVector<VkExtensionProperties>(
+      VulkanFunction::GetInstance().fp_vkEnumerateInstanceExtensionProperties, nullptr);
+  availableLayers = GetVector<VkLayerProperties>(
+      VulkanFunction::GetInstance().fp_vkEnumerateInstanceLayerProperties);
 
   // Check for validation layer and debug extensions
   for (const auto& layer : availableLayers) {
@@ -26,7 +27,9 @@ SystemInfo::SystemInfo() {
   }
 
   for (const auto& layer : availableLayers) {
-    std::vector<VkExtensionProperties> layerExtensions = GetVector<VkExtensionProperties>(VulkanFunction::GetInstance().fp_vkEnumerateInstanceExtensionProperties, layer.layerName);;
+    std::vector<VkExtensionProperties> layerExtensions = GetVector<VkExtensionProperties>(
+        VulkanFunction::GetInstance().fp_vkEnumerateInstanceExtensionProperties, layer.layerName);
+    ;
     availableExtensions.insert(availableExtensions.end(), layerExtensions.begin(),
                                layerExtensions.end());
     for (const auto& ext : layerExtensions) {

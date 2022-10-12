@@ -1,4 +1,6 @@
 #include "vk_instance.hpp"
+#include <cassert>
+#include "vk_debug.hpp"
 #include <stdexcept>
 #include "vk_functions.hpp"
 
@@ -47,6 +49,25 @@ Instance InstanceBuilder::Build() {
   if (!allLayersSupported) {
     throw std::runtime_error("Required layer not supported!");
   }
+
+  // must be placed outside the if block to ensure that it is not destroyed before vkCreateInstance call
+  VkDebugUtilsMessengerCreateInfoEXT messengerCreateInfo = {};
+  std::vector<VkBaseOutStructure*> pNextChain;
+  if (enableValidation) {
+    messengerCreateInfo.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    messengerCreateInfo.pNext           = nullptr;
+    messengerCreateInfo.pfnUserCallback = dumInfo.debugCallback;
+    messengerCreateInfo.messageType     = dumInfo.debugMessageType;
+    messengerCreateInfo.messageSeverity = dumInfo.debugMessageSeverity;
+    messengerCreateInfo.pUserData       = dumInfo.debugUserDataPointer;
+    pNextChain.push_back(reinterpret_cast<VkBaseOutStructure*>(&messengerCreateInfo));
+  }
+  SetPNextChain(instanceInfo, pNextChain);
+#if !defined(NDEBUG)
+  for (auto& node : pNextChain) {
+    assert(node->sType != VK_STRUCTURE_TYPE_APPLICATION_INFO);
+  }
+#endif
   Instance instance;
   instance.enabledExtensions.insert(instance.enabledExtensions.end(), extensions.begin(),
                                     extensions.end());
@@ -58,15 +79,20 @@ Instance InstanceBuilder::Build() {
   instanceInfo.ppEnabledExtensionNames = extensions.data();
   instanceInfo.enabledLayerCount       = static_cast<uint32_t>(layers.size());
   instanceInfo.ppEnabledLayerNames     = layers.data();
-
   VkCheck(
       VulkanFunction::GetInstance().fp_vkCreateInstance(&instanceInfo, nullptr, &instance.instance),
       "Create instance");
   VulkanFunction::GetInstance().InitInstanceFuncs(instance.instance);
 
+  VkCheck(debug::CreateDebugUtilsMessenger(instance.instance, dumInfo.debugCallback,
+                                           dumInfo.debugMessageSeverity, dumInfo.debugMessageType,
+                                           dumInfo.debugUserDataPointer, &instance.debugMessenger,
+                                           instance.allocationCallbacks),
+          "Create debug utils messenger");
   instance.apiVersion               = appInfo.apiVersion;
   instance.fp_vkGetInstanceProcAddr = VulkanFunction::GetInstance().fp_vkGetInstanceProcAddr;
   instance.fp_vkGetDeviceProcAddr   = VulkanFunction::GetInstance().fp_vkGetDeviceProcAddr;
+  instance.enableValidation         = enableValidation;
   return instance;
 }
 
