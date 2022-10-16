@@ -169,8 +169,6 @@ PhysicalDeviceSelectorRef PhysicalDeviceSelector::PreferGPUType(PreferredDeviceT
   return *this;
 }
 
-Device::Device(const Instance& instance) : instance(instance) {}
-
 uint32_t Device::GetQueueIndex(QueueType type) const {
   uint32_t index = QUEUE_INDEX_MAX_VALUE;
   std::string name;
@@ -222,8 +220,8 @@ void Device::DisplayInfo() const {
   std::cout << "Compute Queue: " << computeQueueIndex << "\n";
 }
 
-DeviceBuilder::DeviceBuilder(PhysicalDevice pd, const Instance& instance)
-    : physicalDevice(pd), instance(instance) {}
+DeviceBuilder::DeviceBuilder(PhysicalDevice pd)
+    : physicalDevice(pd){}
 
 Device DeviceBuilder::Build() const {
   std::vector<CustomQueueDescription> queueDescriptions;
@@ -252,8 +250,9 @@ Device DeviceBuilder::Build() const {
   deviceCreateInfo.flags                   = deviceInfo.flags;
   deviceCreateInfo.pQueueCreateInfos       = queueCreateInfos.data();
   deviceCreateInfo.queueCreateInfoCount    = static_cast<uint32_t>(queueCreateInfos.size());
+  deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
   deviceCreateInfo.ppEnabledExtensionNames = extensions.data();
-  Device device{instance};
+  Device device;
   VulkanFunction::GetInstance().fp_vkCreateDevice(physicalDevice.physicalDevice, &deviceCreateInfo,
                                                   nullptr, &device.vkDevice);
   device.physicalDevice         = physicalDevice;

@@ -91,8 +91,6 @@ struct CustomQueueDescription {
 
 class Device {
 public:
-  explicit Device(const Instance& instance);
-
   operator VkDevice() const { return vkDevice; }
 
   uint32_t GetQueueIndex(QueueType type) const;
@@ -110,12 +108,11 @@ public:
   std::vector<VkQueueFamilyProperties> queueFamilies;
   VkDevice vkDevice                              = VK_NULL_HANDLE;
   VkSurfaceKHR surface                           = VK_NULL_HANDLE;
-  VkAllocationCallbacks* allocation_callbacks    = VK_NULL_HANDLE;
+  VkAllocationCallbacks* allocationCallbacks    = VK_NULL_HANDLE;
   PFN_vkGetDeviceProcAddr fp_vkGetDeviceProcAddr = nullptr;
   DispatchTable dispatchTable;
 
 private:
-  const Instance& instance;
   struct {
     PFN_vkGetDeviceQueue fp_vkGetDeviceQueue = nullptr;
     PFN_vkDestroyDevice fp_vkDestroyDevice   = nullptr;
@@ -126,7 +123,7 @@ private:
 };
 class DeviceBuilder {
 public:
-  explicit DeviceBuilder(PhysicalDevice physicalDevice, const Instance& instance);
+  explicit DeviceBuilder(PhysicalDevice physicalDevice);
 
   Device Build() const;
 
@@ -138,7 +135,6 @@ public:
 
 private:
   PhysicalDevice physicalDevice;
-  const Instance& instance;
   struct DeviceInfo {
     std::vector<VkBaseOutStructure*> pNextChain;
     VkDeviceCreateFlags flags                  = static_cast<VkDeviceCreateFlags>(0);

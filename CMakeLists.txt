@@ -34,7 +34,7 @@ endif ()
 ############################################################
 #                    Add Sub Directories                   #
 ############################################################
-#add_subdirectory(third_party)
+add_subdirectory(third_party)
 add_subdirectory(core)
 #add_subdirectory(src)
 add_subdirectory(app)

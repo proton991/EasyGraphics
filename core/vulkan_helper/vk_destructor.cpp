@@ -12,7 +12,7 @@ void DestroyInstance(Instance instance) {
 }
 
 void DestroyDevice(Device device) {
-  device.internalTable.fp_vkDestroyDevice(device.vkDevice, device.allocation_callbacks);
+  device.internalTable.fp_vkDestroyDevice(device.vkDevice, device.allocationCallbacks);
 }
 
 void DestroyDebugUtilsMessenger(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,

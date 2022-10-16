@@ -113,7 +113,7 @@ private:
 
 struct Instance {
   VkInstance instance                                = VK_NULL_HANDLE;
-  VkDebugUtilsMessengerEXT debugMessenger            = VK_NULL_HANDLE;
+  VkDebugUtilsMessengerEXT debugUtilsMessenger       = VK_NULL_HANDLE;
   VkAllocationCallbacks* allocationCallbacks         = VK_NULL_HANDLE;
   PFN_vkGetInstanceProcAddr fp_vkGetInstanceProcAddr = nullptr;
   PFN_vkGetDeviceProcAddr fp_vkGetDeviceProcAddr     = nullptr;

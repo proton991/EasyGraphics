@@ -86,7 +86,7 @@ Instance InstanceBuilder::Build() {
 
   VkCheck(debug::CreateDebugUtilsMessenger(instance.instance, dumInfo.debugCallback,
                                            dumInfo.debugMessageSeverity, dumInfo.debugMessageType,
-                                           dumInfo.debugUserDataPointer, &instance.debugMessenger,
+                                           dumInfo.debugUserDataPointer, &instance.debugUtilsMessenger,
                                            instance.allocationCallbacks),
           "Create debug utils messenger");
   instance.apiVersion               = appInfo.apiVersion;
