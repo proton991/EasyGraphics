@@ -26,7 +26,9 @@ uint32_t PhysicalDevice::GetPresentQFIndex(VkSurfaceKHR surface) const {
       VkCheck(VulkanFunction::GetInstance().fp_vkGetPhysicalDeviceSurfaceSupportKHR(
                   physicalDevice, i, surface, &presentSupport),
               "Get present support");
-      return queueFamilies[i].queueCount > 0 && presentSupport;
+      if (presentSupport) {
+        return i;
+      }
     }
   }
   return QUEUE_INDEX_MAX_VALUE;
