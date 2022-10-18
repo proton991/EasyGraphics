@@ -6,7 +6,7 @@
 #include <vector>
 #include "vulkan_helper/vk_device.hpp"
 #include "vulkan_helper/vk_dispatch.hpp"
-namespace egv {
+namespace ege {
 class EGEngine {
 public:
   void Init();

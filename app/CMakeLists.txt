@@ -16,6 +16,7 @@ set(APPS
   CreateInstance
   CreateDevice
   CreateSwapchain
+#  FirstTriangle
 )
 
 

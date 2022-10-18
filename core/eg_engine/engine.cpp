@@ -1,4 +1,4 @@
-#include "CreateSwapchain.hpp"
+#include "engine.hpp"
 #include <SDL2/SDL_vulkan.h>
 #include <string>
 #include "vulkan_helper/core.hpp"
@@ -53,9 +53,14 @@ void EGEngine::InitSwapchain() {
                                     .Build();
   m_swapchain            = vkhSwapchain.swapchain;
   m_swapchainImageFormat = vkhSwapchain.imageFormat;
-//  m_swapchainImages      = vkhSwapchain.GetImages();
-//  m_swapchainImageViews  = vkhSwapchain.GetImageViews();
+  //  m_swapchainImages      = vkhSwapchain.GetImages();
+  //  m_swapchainImageViews  = vkhSwapchain.GetImageViews();
 }
+
+void EGEngine::InitCommands() {
+
+}
+
 void EGEngine::DisplayInfo() {
   std::cout << "\n=========================================\n";
   std::cout << "Displaying Physical Device Info \n";
@@ -84,4 +89,4 @@ void EGEngine::Destroy() {
     SDL_DestroyWindow(m_window);
   }
 }
-}  // namespace egv
+}  // namespace ege
