@@ -57,7 +57,7 @@ foreach (GLSL ${GLSL_SOURCE_FILES})
   message(STATUS ${GLSL})
   add_custom_command(
     OUTPUT ${SPIRV}
-    COMMAND ${GLSL_VALIDATOR} --target-env spirv1.6 -V ${GLSL} -o ${SPIRV}
+    COMMAND ${GLSL_VALIDATOR} --target-env spirv1.3 -V ${GLSL} -o ${SPIRV}
     DEPENDS ${GLSL})
   list(APPEND SPIRV_BINARY_FILES ${SPIRV})
 endforeach (GLSL)

@@ -54,7 +54,7 @@ private:
   void InitPipelines();
 
   // load spir-v shader file
-  void LoadShaderModule(const char* shaderPath, VkShaderModule* outShaderModule);
+  bool LoadShaderModule(const char* shaderPath, VkShaderModule* outShaderModule);
 
   void Draw();
 
@@ -86,8 +86,8 @@ private:
     VkQueue transfer;
   } m_queueFamilies;
 
-  VkCommandPool m_commandPool;
-  VkCommandBuffer m_commandBuffer;
+  VkCommandPool m_cmdPool;
+  VkCommandBuffer m_cmdBuffer;
 
   VkRenderPass m_renderPass;
 

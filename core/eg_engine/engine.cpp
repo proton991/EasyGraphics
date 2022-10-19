@@ -1,15 +1,33 @@
 #include "engine.hpp"
 #include <SDL2/SDL_vulkan.h>
+#include <fstream>
 #include <string>
 #include "vulkan_helper/core.hpp"
+#include "vulkan_helper/vk_init.hpp"
 
 namespace ege {
 void EGEngine::Init() {
+  // We initialize SDL and create a window with it.
+  SDL_Init(SDL_INIT_VIDEO);
+
   auto windowFlags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN);
-  m_window         = SDL_CreateWindow("EGEngine", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                                      m_windowExtent.width, m_windowExtent.height, windowFlags);
+
+  m_window = SDL_CreateWindow("EGEngine", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+                              m_windowExtent.width, m_windowExtent.height, windowFlags);
   InitVulkan();
+
   InitSwapchain();
+
+  InitDefaultRenderPass();
+
+  InitFramebuffers();
+
+  InitCommands();
+
+  InitSyncStructures();
+
+  InitPipelines();
+
   m_initialized = true;
 }
 void EGEngine::InitVulkan() {
@@ -17,7 +35,7 @@ void EGEngine::InitVulkan() {
   vkh::Instance vkhInstance = vkh::InstanceBuilder()
                                   .EnableValidationLayers(true)
                                   .SetAppName("First App")
-                                  .SetApiVersion(1, 3, 0)
+                                  .SetApiVersion(1, 1, 0)
                                   .Build();
   m_instance            = vkhInstance.instance;
   m_debugUtilsMessenger = vkhInstance.debugUtilsMessenger;
@@ -46,19 +64,320 @@ void EGEngine::InitVulkan() {
                                                        "vkDestroyDevice");
 }
 void EGEngine::InitSwapchain() {
-  vkh::SwapchainBuilder swapchainBuilder{m_chosenGPU, m_device, m_surface, m_queueFamilyIndices.graphics, m_queueFamilyIndices.present};
+  vkh::SwapchainBuilder swapchainBuilder{m_chosenGPU, m_device, m_surface,
+                                         m_queueFamilyIndices.graphics,
+                                         m_queueFamilyIndices.present};
   vkh::Swapchain vkhSwapchain = swapchainBuilder.UseDefaultFormat()
                                     .SetDesiredPresentMode(VK_PRESENT_MODE_FIFO_KHR)
                                     .SetExtent(m_windowExtent.width, m_windowExtent.height)
                                     .Build();
   m_swapchain            = vkhSwapchain.swapchain;
   m_swapchainImageFormat = vkhSwapchain.imageFormat;
-  //  m_swapchainImages      = vkhSwapchain.GetImages();
-  //  m_swapchainImageViews  = vkhSwapchain.GetImageViews();
+  m_swapchainImages      = vkhSwapchain.GetImages();
+  m_swapchainImageViews  = vkhSwapchain.GetImageViews();
+
+  m_mainDestructionQueue.PushFunction([=]() {
+    m_dispatchTable.fp_vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+  });
+}
+
+void EGEngine::InitDefaultRenderPass() {
+  VkAttachmentDescription colorAttachment{};
+  colorAttachment.format         = m_swapchainImageFormat;
+  colorAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
+  colorAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  colorAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
+  colorAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+  colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+  colorAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+  colorAttachment.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+  VkAttachmentReference colorAttachmentReference{};
+  colorAttachmentReference.attachment = 0;
+  colorAttachmentReference.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+  VkSubpassDescription subpass{};
+  subpass.pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS;
+  subpass.colorAttachmentCount = 1;
+  subpass.pColorAttachments    = &colorAttachmentReference;
+
+  //1 dependency, which is from "outside" into the subpass. And we can read or write color
+  VkSubpassDependency dependency{};
+  dependency.srcSubpass    = VK_SUBPASS_EXTERNAL;
+  dependency.dstSubpass    = 0;
+  dependency.srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  dependency.srcAccessMask = 0;
+  dependency.dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+  VkRenderPassCreateInfo renderPassInfo{};
+  renderPassInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+  renderPassInfo.attachmentCount = 1;
+  renderPassInfo.pAttachments    = &colorAttachment;
+  renderPassInfo.subpassCount    = 1;
+  renderPassInfo.pSubpasses      = &subpass;
+  renderPassInfo.dependencyCount = 1;
+  renderPassInfo.pDependencies   = &dependency;
+
+  vkh::VkCheck(
+      m_dispatchTable.fp_vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass),
+      "Create render pass");
+
+  m_mainDestructionQueue.PushFunction([=]() {
+    m_dispatchTable.fp_vkDestroyRenderPass(m_device, m_renderPass, nullptr);
+  });
+}
+
+void EGEngine::InitFramebuffers() {
+  VkFramebufferCreateInfo fbInfo = vkh::init::FramebufferCreateInfo(m_renderPass, m_windowExtent);
+
+  const uint32_t imageCount = m_swapchainImages.size();
+  m_framebuffers            = std::vector<VkFramebuffer>(imageCount);
+
+  for (auto i = 0; i < imageCount; ++i) {
+    fbInfo.pAttachments = &m_swapchainImageViews[i];
+    vkh::VkCheck(
+        m_dispatchTable.fp_vkCreateFramebuffer(m_device, &fbInfo, nullptr, &m_framebuffers[i]),
+        "Create frame buffer");
+    m_mainDestructionQueue.PushFunction([=] {
+      m_dispatchTable.fp_vkDestroyFramebuffer(m_device, m_framebuffers[i], nullptr);
+      m_dispatchTable.fp_vkDestroyImageView(m_device, m_swapchainImageViews[i], nullptr);
+    });
+  }
 }
 
 void EGEngine::InitCommands() {
+  VkCommandPoolCreateInfo cmdPoolInfo = vkh::init::CommandPoolCreateInfo(
+      m_queueFamilyIndices.graphics, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+  vkh::VkCheck(
+      m_dispatchTable.fp_vkCreateCommandPool(m_device, &cmdPoolInfo, nullptr, &m_cmdPool),
+      "Create command pool");
 
+  VkCommandBufferAllocateInfo cmdBufferInfo =
+      vkh::init::CommandBufferAllocateInfo(m_cmdPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+  vkh::VkCheck(
+      m_dispatchTable.fp_vkAllocateCommandBuffers(m_device, &cmdBufferInfo, &m_cmdBuffer),
+      "Allocate command buffer");
+
+  m_mainDestructionQueue.PushFunction([=] {
+    m_dispatchTable.fp_vkDestroyCommandPool(m_device, m_cmdPool, nullptr);
+  });
+}
+
+void EGEngine::InitSyncStructures() {
+  VkFenceCreateInfo fenceInfo = vkh::init::FenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
+  vkh::VkCheck(m_dispatchTable.fp_vkCreateFence(m_device, &fenceInfo, nullptr, &m_renderFence),
+               "Create render fence");
+
+  m_mainDestructionQueue.PushFunction([=] {
+    m_dispatchTable.fp_vkDestroyFence(m_device, m_renderFence, nullptr);
+  });
+  VkSemaphoreCreateInfo semaphoreInfo = vkh::init::SemaphoreCreateInfo(0);
+  vkh::VkCheck(
+      m_dispatchTable.fp_vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_presentSemaphore),
+      "Create present semaphore");
+  vkh::VkCheck(
+      m_dispatchTable.fp_vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderSemaphore),
+      "Create render semaphore");
+
+  m_mainDestructionQueue.PushFunction([=] {
+    m_dispatchTable.fp_vkDestroySemaphore(m_device, m_presentSemaphore, nullptr);
+    m_dispatchTable.fp_vkDestroySemaphore(m_device, m_renderSemaphore, nullptr);
+  });
+}
+
+void EGEngine::InitPipelines() {
+  VkShaderModule triangleFragShader;
+  if (!LoadShaderModule("../shaders/spv/colored_triangle.frag.spv", &triangleFragShader)) {
+    vkh::Log("Error when building triangle fragment shader module!");
+  } else {
+    vkh::Log("Triangle fragment shader successfully loaded!");
+  }
+  VkShaderModule triangleVertexShader;
+  if (!LoadShaderModule("../shaders/spv/colored_triangle.vert.spv", &triangleVertexShader)) {
+    vkh::Log("Error when building the triangle vertex shader module!");
+  } else {
+    vkh::Log("Triangle vertex shader successfully loaded!");
+  }
+
+  //  //compile colored triangle modules
+  //  VkShaderModule redTriangleFragShader;
+  //  if (!LoadShaderModule("../shaders/triangle.frag.spv", &redTriangleFragShader)) {
+  //    vkh::Log("Error when building the red triangle fragment shader module!");
+  //  } else {
+  //    vkh::Log("Red Triangle fragment shader successfully loaded!");
+  //  }
+  //
+  //  VkShaderModule redTriangleVertShader;
+  //  if (!LoadShaderModule("../shaders/triangle.vert.spv", &redTriangleVertShader)) {
+  //    vkh::Log("RError when building the red triangle vertex shader module!");
+  //  } else {
+  //    vkh::Log("Red Triangle vertex shader successfully loaded!");
+  //  }
+  // default zero values
+  VkPipelineLayoutCreateInfo pipelineLayoutInfo = vkh::init::PipelineLayoutCreateInfo();
+  vkh::VkCheck(m_dispatchTable.fp_vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr,
+                                                         &m_pipelineLayout),
+               "Create pipeline layout");
+
+  vkh::PipelineBuilder pipelineBuilder{m_dispatchTable.fp_vkCreateGraphicsPipelines};
+  pipelineBuilder.m_shaderStages.push_back(
+      vkh::init::PipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, triangleVertexShader));
+
+  pipelineBuilder.m_shaderStages.push_back(
+      vkh::init::PipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, triangleFragShader));
+  // read vertex data from vertex buffers
+  pipelineBuilder.m_vertexInputInfo = vkh::init::VertexInputStateCreateInfo();
+  pipelineBuilder.m_inputAssembly =
+      vkh::init::PipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+
+  //build viewport and scissor from the swapchain extents
+  pipelineBuilder.m_viewport.x        = 0.0f;
+  pipelineBuilder.m_viewport.y        = 0.0f;
+  pipelineBuilder.m_viewport.width    = (float)m_windowExtent.width;
+  pipelineBuilder.m_viewport.height   = (float)m_windowExtent.height;
+  pipelineBuilder.m_viewport.minDepth = 0.0f;
+  pipelineBuilder.m_viewport.maxDepth = 1.0f;
+  pipelineBuilder.m_scissor.offset    = {0, 0};
+  pipelineBuilder.m_scissor.extent    = m_windowExtent;
+
+  pipelineBuilder.m_rasterizer = vkh::init::RasterizationStateCreateInfo(VK_POLYGON_MODE_FILL);
+
+  pipelineBuilder.m_multisampling = vkh::init::MultisampleStateCreateInfo();
+
+  pipelineBuilder.m_colorBlendAttachment = vkh::init::ColorBlendAttachmentState();
+
+  pipelineBuilder.m_pipelineLayout = m_pipelineLayout;
+
+  m_trianglePipeline = pipelineBuilder.Build(m_device, m_renderPass);
+
+  m_dispatchTable.fp_vkDestroyShaderModule(m_device, triangleFragShader, nullptr);
+  m_dispatchTable.fp_vkDestroyShaderModule(m_device, triangleVertexShader, nullptr);
+
+  m_mainDestructionQueue.PushFunction([=]() {
+    m_dispatchTable.fp_vkDestroyPipeline(m_device, m_trianglePipeline, nullptr);
+
+    m_dispatchTable.fp_vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
+  });
+}
+
+bool EGEngine::LoadShaderModule(const char* shaderPath, VkShaderModule* outShaderModule) {
+  std::ifstream file(shaderPath, std::ios::ate | std::ios::binary);
+  if (!file.is_open()) {
+    return false;
+  }
+  size_t fileSize = static_cast<size_t>(file.tellg());
+  //spirv expects the buffer to be on uint32, so make sure to reserve a int vector big enough for the entire file
+  std::vector<uint32_t> buffer(fileSize / sizeof(uint32_t));
+  file.seekg(0);
+  file.read((char*)buffer.data(), fileSize);
+  file.close();
+
+  VkShaderModuleCreateInfo shaderModuleInfo = {};
+
+  shaderModuleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+  shaderModuleInfo.pNext = nullptr;
+  // codeSize has to be in bytes
+  shaderModuleInfo.codeSize = buffer.size() * sizeof(uint32_t);
+  shaderModuleInfo.pCode    = buffer.data();
+  VkShaderModule shaderModule;
+  vkh::VkCheck(
+      m_dispatchTable.fp_vkCreateShaderModule(m_device, &shaderModuleInfo, nullptr, &shaderModule),
+      "Create shader module");
+  *outShaderModule = shaderModule;
+  return true;
+}
+
+void EGEngine::Draw() {
+  if (SDL_GetWindowFlags(m_window) & SDL_WINDOW_MINIMIZED) {
+    return;
+  }
+  auto timeOut = std::numeric_limits<uint64_t>::max();
+  vkh::VkCheck(m_dispatchTable.fp_vkWaitForFences(m_device, 1, &m_renderFence, true, timeOut),
+               "Wait for fences");
+  vkh::VkCheck(m_dispatchTable.fp_vkResetFences(m_device, 1, &m_renderFence), "Reset fences");
+  vkh::VkCheck(m_dispatchTable.fp_vkResetCommandBuffer(m_cmdBuffer, 0), "Reset command buffer");
+
+  uint32_t swapchainImageIndex;
+  vkh::VkCheck(
+      m_dispatchTable.fp_vkAcquireNextImageKHR(m_device, m_swapchain, timeOut, m_presentSemaphore,
+                                               nullptr, &swapchainImageIndex),
+      "Acquire image index");
+
+  VkCommandBufferBeginInfo cmdBeginInfo =
+      vkh::init::CommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+  vkh::VkCheck(m_dispatchTable.fp_vkBeginCommandBuffer(m_cmdBuffer, &cmdBeginInfo),
+               "begin command buffer");
+
+  VkClearValue clearValue;
+  float flash      = abs(sin(m_frameNumber / 120.f));
+  clearValue.color = {{0.0f, flash, 0.0f, 1.0f}};
+
+  VkRenderPassBeginInfo rpInfo = vkh::init::RenderpassBeginInfo(
+      m_renderPass, m_windowExtent, m_framebuffers[swapchainImageIndex]);
+
+  rpInfo.clearValueCount = 1;
+  rpInfo.pClearValues    = &clearValue;
+
+  m_dispatchTable.fp_vkCmdBeginRenderPass(m_cmdBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+  m_dispatchTable.fp_vkCmdBindPipeline(m_cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                       m_trianglePipeline);
+
+  m_dispatchTable.fp_vkCmdDraw(m_cmdBuffer, 3, 1, 0, 0);
+
+  m_dispatchTable.fp_vkCmdEndRenderPass(m_cmdBuffer);
+
+  vkh::VkCheck(m_dispatchTable.fp_vkEndCommandBuffer(m_cmdBuffer), "end command buffer");
+
+  VkSubmitInfo submitInfo        = vkh::init::SubmitInfo(&m_cmdBuffer);
+  VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+  submitInfo.pWaitDstStageMask = &waitStage;
+
+  submitInfo.waitSemaphoreCount = 1;
+  submitInfo.pWaitSemaphores    = &m_presentSemaphore;
+
+  submitInfo.signalSemaphoreCount = 1;
+  submitInfo.pSignalSemaphores    = &m_renderSemaphore;
+
+  //submit command buffer to the queue and execute it.
+  vkh::VkCheck(
+      m_dispatchTable.fp_vkQueueSubmit(m_queueFamilies.graphics, 1, &submitInfo, m_renderFence),
+      "submit to graphics queue");
+
+  VkPresentInfoKHR presentInfo = vkh::init::PresentInfo();
+
+  presentInfo.swapchainCount = 1;
+  presentInfo.pSwapchains    = &m_swapchain;
+
+  presentInfo.waitSemaphoreCount = 1;
+  presentInfo.pWaitSemaphores    = &m_renderSemaphore;
+
+  presentInfo.pImageIndices = &swapchainImageIndex;
+
+  vkh::VkCheck(m_dispatchTable.fp_vkQueuePresentKHR(m_queueFamilies.graphics, &presentInfo),
+               "queue present");
+
+  m_frameNumber++;
+}
+
+void EGEngine::Run() {
+  SDL_Event e;
+  bool bQuit = false;
+
+  //main loop
+  while (!bQuit) {
+    //Handle events on queue
+    while (SDL_PollEvent(&e) != 0) {
+      //close the window when user alt-f4s or clicks the X button
+      if (e.type == SDL_QUIT) {
+        bQuit = true;
+      }
+    }
+    Draw();
+  }
 }
 
 void EGEngine::DisplayInfo() {
@@ -81,11 +400,17 @@ void EGEngine::DisplayInfo() {
 void EGEngine::Destroy() {
   if (m_initialized) {
     m_dispatchTable.fp_vkDeviceWaitIdle(m_device);
-    m_dispatchTable.fp_vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+
+    m_mainDestructionQueue.Flush();
+
     vkh::VulkanFunction::GetInstance().fp_vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+
     fp_vkDestroyDevice(m_device, nullptr);
+
     vkh::DestroyDebugUtilsMessenger(m_instance, m_debugUtilsMessenger, nullptr);
+
     vkh::VulkanFunction::GetInstance().fp_vkDestroyInstance(m_instance, nullptr);
+
     SDL_DestroyWindow(m_window);
   }
 }

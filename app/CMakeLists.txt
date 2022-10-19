@@ -9,14 +9,15 @@ function(buildApp APP_NAME)
     SET(MAIN_CPP ${APP_FOLDER}/main.cpp)
   ENDIF ()
   add_executable(${APP_NAME} ${APP_SOURCE})
-  target_link_libraries(${APP_NAME} vulkan_helper sdl2)
+  add_dependencies(${APP_NAME} Shaders)
+  target_link_libraries(${APP_NAME} vulkan_helper sdl2 eg_engine)
 endfunction()
 
 set(APPS
   CreateInstance
   CreateDevice
   CreateSwapchain
-#  FirstTriangle
+  FirstTriangle
 )
 
 
