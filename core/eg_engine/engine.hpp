@@ -2,6 +2,7 @@
 #define ENGINE_HPP
 #include <SDL2/SDL.h>
 #include <vulkan/vulkan.h>
+#include <vk_mem_alloc.h>
 #include <deque>
 #include <functional>
 #include <memory>
@@ -9,6 +10,7 @@
 #include "vulkan_helper/vk_device.hpp"
 #include "vulkan_helper/vk_dispatch.hpp"
 #include "vulkan_helper/vk_pipeline.hpp"
+#include "mesh.hpp"
 
 namespace ege {
 struct DestructionQueue {
@@ -41,6 +43,8 @@ public:
 private:
   void InitVulkan();
 
+  void InitVMA();
+
   void InitSwapchain();
 
   void InitDefaultRenderPass();
@@ -55,6 +59,10 @@ private:
 
   // load spir-v shader file
   bool LoadShaderModule(const char* shaderPath, VkShaderModule* outShaderModule);
+
+  void LoadMeshes();
+
+  void UploadMesh(Mesh& mesh);
 
   void Draw();
 
@@ -101,6 +109,9 @@ private:
 
   VkPipelineLayout m_pipelineLayout;
 
+  VkPipeline m_meshPipeline;
+  Mesh m_triangleMesh;
+
   VkPipeline m_trianglePipeline;
   VkPipeline m_redTrianglePipeline;
 
@@ -108,6 +119,8 @@ private:
 
   PFN_vkDestroyDevice fp_vkDestroyDevice = nullptr;
   vkh::DispatchTable m_dispatchTable;
+
+  VmaAllocator m_allocator;
 };
 }  // namespace ege
 

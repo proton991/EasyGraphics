@@ -4,6 +4,11 @@
 #include <string>
 #include "vulkan_helper/core.hpp"
 #include "vulkan_helper/vk_init.hpp"
+#define VMA_IMPLEMENTATION
+#define VMA_STATIC_VULKAN_FUNCTIONS 0
+#define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
+#include <vk_mem_alloc.h>
+
 
 namespace ege {
 void EGEngine::Init() {
@@ -16,6 +21,8 @@ void EGEngine::Init() {
                               m_windowExtent.width, m_windowExtent.height, windowFlags);
   InitVulkan();
 
+  InitVMA();
+
   InitSwapchain();
 
   InitDefaultRenderPass();
@@ -27,6 +34,8 @@ void EGEngine::Init() {
   InitSyncStructures();
 
   InitPipelines();
+
+  LoadMeshes();
 
   m_initialized = true;
 }
@@ -63,6 +72,20 @@ void EGEngine::InitVulkan() {
   vkh::VulkanFunction::GetInstance().GetDeviceProcAddr(m_device, fp_vkDestroyDevice,
                                                        "vkDestroyDevice");
 }
+
+void EGEngine::InitVMA() {
+  VmaAllocatorCreateInfo allocatorInfo{};
+  allocatorInfo.physicalDevice = m_chosenGPU;
+  allocatorInfo.device         = m_device;
+  allocatorInfo.instance       = m_instance;
+  // let VMA fetch vulkan function pointers dynamically
+  VmaVulkanFunctions vmaVulkanFunctions{};
+  vmaVulkanFunctions.vkGetInstanceProcAddr = vkh::VulkanFunction::GetInstance().fp_vkGetInstanceProcAddr;
+  vmaVulkanFunctions.vkGetDeviceProcAddr = vkh::VulkanFunction::GetInstance().fp_vkGetDeviceProcAddr;
+  allocatorInfo.pVulkanFunctions = &vmaVulkanFunctions;
+  vkh::VkCheck(vmaCreateAllocator(&allocatorInfo, &m_allocator), "initialize vma");
+}
+
 void EGEngine::InitSwapchain() {
   vkh::SwapchainBuilder swapchainBuilder{m_chosenGPU, m_device, m_surface,
                                          m_queueFamilyIndices.graphics,
@@ -149,15 +172,13 @@ void EGEngine::InitFramebuffers() {
 void EGEngine::InitCommands() {
   VkCommandPoolCreateInfo cmdPoolInfo = vkh::init::CommandPoolCreateInfo(
       m_queueFamilyIndices.graphics, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-  vkh::VkCheck(
-      m_dispatchTable.fp_vkCreateCommandPool(m_device, &cmdPoolInfo, nullptr, &m_cmdPool),
-      "Create command pool");
+  vkh::VkCheck(m_dispatchTable.fp_vkCreateCommandPool(m_device, &cmdPoolInfo, nullptr, &m_cmdPool),
+               "Create command pool");
 
   VkCommandBufferAllocateInfo cmdBufferInfo =
       vkh::init::CommandBufferAllocateInfo(m_cmdPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-  vkh::VkCheck(
-      m_dispatchTable.fp_vkAllocateCommandBuffers(m_device, &cmdBufferInfo, &m_cmdBuffer),
-      "Allocate command buffer");
+  vkh::VkCheck(m_dispatchTable.fp_vkAllocateCommandBuffers(m_device, &cmdBufferInfo, &m_cmdBuffer),
+               "Allocate command buffer");
 
   m_mainDestructionQueue.PushFunction([=] {
     m_dispatchTable.fp_vkDestroyCommandPool(m_device, m_cmdPool, nullptr);
@@ -251,11 +272,41 @@ void EGEngine::InitPipelines() {
 
   m_trianglePipeline = pipelineBuilder.Build(m_device, m_renderPass);
 
-  m_dispatchTable.fp_vkDestroyShaderModule(m_device, triangleFragShader, nullptr);
+
+  VertexInputDescription vertexInputDescription = Vertex::GetVertexDescription();
+  pipelineBuilder.m_vertexInputInfo.pVertexAttributeDescriptions =
+      vertexInputDescription.attributes.data();
+  pipelineBuilder.m_vertexInputInfo.vertexAttributeDescriptionCount =
+      vertexInputDescription.attributes.size();
+  pipelineBuilder.m_vertexInputInfo.pVertexBindingDescriptions =
+      vertexInputDescription.bindings.data();
+  pipelineBuilder.m_vertexInputInfo.vertexBindingDescriptionCount =
+      vertexInputDescription.bindings.size();
+
+  pipelineBuilder.m_shaderStages.clear();
+
+  VkShaderModule meshVertShader;
+  if (!LoadShaderModule("../shaders/spv/tri_mesh.vert.spv", &meshVertShader)) {
+    vkh::Log("Error when building tri_mesh vertex shader module!");
+  } else {
+    vkh::Log("tri_mesh vertex shader successfully loaded!");
+  }
+  pipelineBuilder.m_shaderStages.push_back(
+      vkh::init::PipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, meshVertShader));
+
+  pipelineBuilder.m_shaderStages.push_back(
+      vkh::init::PipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, triangleFragShader));
+
+  m_meshPipeline = pipelineBuilder.Build(m_device, m_renderPass);
+
+  // delete shaders
+  m_dispatchTable.fp_vkDestroyShaderModule(m_device, meshVertShader, nullptr);
   m_dispatchTable.fp_vkDestroyShaderModule(m_device, triangleVertexShader, nullptr);
+  m_dispatchTable.fp_vkDestroyShaderModule(m_device, triangleFragShader, nullptr);
 
   m_mainDestructionQueue.PushFunction([=]() {
     m_dispatchTable.fp_vkDestroyPipeline(m_device, m_trianglePipeline, nullptr);
+    m_dispatchTable.fp_vkDestroyPipeline(m_device, m_meshPipeline, nullptr);
 
     m_dispatchTable.fp_vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
   });
@@ -286,6 +337,55 @@ bool EGEngine::LoadShaderModule(const char* shaderPath, VkShaderModule* outShade
       "Create shader module");
   *outShaderModule = shaderModule;
   return true;
+}
+
+void EGEngine::LoadMeshes() {
+  //make the array 3 vertices long
+  m_triangleMesh.m_vertices.resize(3);
+
+  //vertex positions
+  m_triangleMesh.m_vertices[0].position = {1.f, 1.f, 0.0f};
+  m_triangleMesh.m_vertices[1].position = {-1.f, 1.f, 0.0f};
+  m_triangleMesh.m_vertices[2].position = {0.f, -1.f, 0.0f};
+
+  //vertex colors, all green
+  m_triangleMesh.m_vertices[0].color = {0.f, 1.f, 0.0f};  //pure green
+  m_triangleMesh.m_vertices[1].color = {0.f, 1.f, 0.0f};  //pure green
+  m_triangleMesh.m_vertices[2].color = {0.f, 1.f, 0.0f};  //pure green
+
+  //we don't care about the vertex normals
+
+  UploadMesh(m_triangleMesh);
+}
+
+void EGEngine::UploadMesh(Mesh& mesh) {
+  // allocate vertex buffer
+  VkBufferCreateInfo bufferInfo{};
+  bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+  bufferInfo.pNext = nullptr;
+  // size in bytes
+  bufferInfo.size  = mesh.m_vertices.size() * sizeof(Vertex);
+  bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+
+  VmaAllocationCreateInfo vmaAllocationInfo{};
+  vmaAllocationInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+
+  vkh::VkCheck(
+      vmaCreateBuffer(m_allocator, &bufferInfo, &vmaAllocationInfo, &mesh.m_vertexBuffer.m_buffer,
+                      &mesh.m_vertexBuffer.m_allocation, nullptr),
+      "vma create buffer");
+
+  m_mainDestructionQueue.PushFunction([=]() {
+    vmaDestroyBuffer(m_allocator, mesh.m_vertexBuffer.m_buffer, mesh.m_vertexBuffer.m_allocation);
+  });
+
+  void* data;
+  // copy vertex data
+  vmaMapMemory(m_allocator, mesh.m_vertexBuffer.m_allocation, &data);
+
+  memcpy(data, mesh.m_vertices.data(), mesh.m_vertices.size() * sizeof(Vertex));
+
+  vmaUnmapMemory(m_allocator, mesh.m_vertexBuffer.m_allocation);
 }
 
 void EGEngine::Draw() {
@@ -323,9 +423,14 @@ void EGEngine::Draw() {
   m_dispatchTable.fp_vkCmdBeginRenderPass(m_cmdBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
   m_dispatchTable.fp_vkCmdBindPipeline(m_cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                       m_trianglePipeline);
+                                       m_meshPipeline);
 
-  m_dispatchTable.fp_vkCmdDraw(m_cmdBuffer, 3, 1, 0, 0);
+  VkDeviceSize offset = 0;
+  m_dispatchTable.fp_vkCmdBindVertexBuffers(m_cmdBuffer, 0, 1,
+                                            &m_triangleMesh.m_vertexBuffer.m_buffer, &offset);
+
+  m_dispatchTable.fp_vkCmdDraw(m_cmdBuffer, m_triangleMesh.m_vertices.size(), 1, 0, 0);
+  //  m_dispatchTable.fp_vkCmdDraw(m_cmdBuffer, 3, 1, 0, 0);
 
   m_dispatchTable.fp_vkCmdEndRenderPass(m_cmdBuffer);
 
@@ -402,6 +507,8 @@ void EGEngine::Destroy() {
     m_dispatchTable.fp_vkDeviceWaitIdle(m_device);
 
     m_mainDestructionQueue.Flush();
+
+    vmaDestroyAllocator(m_allocator);
 
     vkh::VulkanFunction::GetInstance().fp_vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 

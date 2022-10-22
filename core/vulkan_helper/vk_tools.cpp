@@ -13,7 +13,8 @@ namespace vkh {
 
 void VkCheck(const VkResult result, const char* const operation) {
   if (result != VK_SUCCESS) {
-    throw std::runtime_error(std::string("failed to ") + operation + " (" + ToString(result) + ")");
+    std::cerr << std::string("failed to ") + operation + " (" + ToString(result) + ")" << std::endl;
+    abort();
   }
 }
 

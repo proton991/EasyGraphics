@@ -157,11 +157,11 @@ SwapchainBuilder::SwapchainBuilder(const Device& device, const VkSurfaceKHR surf
 SwapchainBuilder::SwapchainBuilder(const VkPhysicalDevice physicalDevice, const VkDevice device,
                                    const VkSurfaceKHR surface, uint32_t graphicsQueueIndex,
                                    uint32_t presentQueueIndex) {
-  info.physicalDevice = physicalDevice;
-  info.device = device;
-  info.surface = surface;
+  info.physicalDevice     = physicalDevice;
+  info.device             = device;
+  info.surface            = surface;
   info.graphicsQueueIndex = graphicsQueueIndex;
-  info.presentQueueIndex = graphicsQueueIndex;
+  info.presentQueueIndex  = graphicsQueueIndex;
 
   if (graphicsQueueIndex == QUEUE_INDEX_MAX_VALUE || presentQueueIndex == QUEUE_INDEX_MAX_VALUE) {
     throw std::runtime_error("Graphics or present queue index not provided when build swapchain");
@@ -200,8 +200,8 @@ Swapchain SwapchainBuilder::Build() {
   if (info.preTransform == static_cast<VkSurfaceTransformFlagBitsKHR>(0))
     preTransform = swapchainSupport.capabilities.currentTransform;
 
-  VkSwapchainCreateInfoKHR swapchainCreateInfo = {};
-  swapchainCreateInfo.sType                    = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+  VkSwapchainCreateInfoKHR swapchainCreateInfo{};
+  swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
   SetPNextChain(swapchainCreateInfo, info.pNextChain);
 #if !defined(NDEBUG)
   for (auto& node : info.pNextChain) {
