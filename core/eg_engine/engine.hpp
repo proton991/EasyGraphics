@@ -112,6 +112,7 @@ private:
 
   VkPipeline m_meshPipeline;
   Mesh m_triangleMesh;
+  Mesh m_monkeyMesh;
 
   DestructionQueue m_mainDestructionQueue;
 

@@ -24,6 +24,8 @@ struct Mesh {
   std::vector<Vertex> m_vertices;
 
   AllocatedBuffer m_vertexBuffer;
+
+  bool LoadFromObj(const char* filename);
 };
 }  // namespace ege
 #endif  //MESH_HPP

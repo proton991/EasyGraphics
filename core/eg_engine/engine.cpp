@@ -334,6 +334,8 @@ void EGEngine::LoadMeshes() {
   //we don't care about the vertex normals
 
   UploadMesh(m_triangleMesh);
+  m_monkeyMesh.LoadFromObj("../assets/monkey_smooth.obj");
+  UploadMesh(m_monkeyMesh);
 }
 
 void EGEngine::UploadMesh(Mesh& mesh) {
@@ -405,11 +407,11 @@ void EGEngine::Draw() {
 
   VkDeviceSize offset = 0;
   m_dispatchTable.fp_vkCmdBindVertexBuffers(m_cmdBuffer, 0, 1,
-                                            &m_triangleMesh.m_vertexBuffer.m_buffer, &offset);
+                                            &m_monkeyMesh.m_vertexBuffer.m_buffer, &offset);
 
   glm::vec3 camPos     = {0.f, 0.f, -2.f};
   glm::mat4 view       = glm::translate(glm::mat4(1.f), camPos);
-  float aspect = m_windowExtent.width / m_windowExtent.height;
+  float aspect = 4.0f / 3.0f;
   glm::mat4 projection = glm::perspective(glm::radians(90.f), aspect, 0.1f, 200.0f);
   projection[1][1] *= -1;
   glm::mat4 model =
@@ -422,7 +424,8 @@ void EGEngine::Draw() {
                                         VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants),
                                         &constants);
 
-  m_dispatchTable.fp_vkCmdDraw(m_cmdBuffer, m_triangleMesh.m_vertices.size(), 1, 0, 0);
+//  m_dispatchTable.fp_vkCmdDraw(m_cmdBuffer, m_triangleMesh.m_vertices.size(), 1, 0, 0);
+  m_dispatchTable.fp_vkCmdDraw(m_cmdBuffer, m_monkeyMesh.m_vertices.size(), 1, 0, 0);
   //  m_dispatchTable.fp_vkCmdDraw(m_cmdBuffer, 3, 1, 0, 0);
 
   m_dispatchTable.fp_vkCmdEndRenderPass(m_cmdBuffer);
