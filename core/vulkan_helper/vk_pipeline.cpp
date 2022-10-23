@@ -42,11 +42,12 @@ VkPipeline PipelineBuilder::Build(VkDevice device, VkRenderPass pass) {
   pipelineInfo.renderPass          = pass;
   pipelineInfo.subpass             = 0;
   pipelineInfo.basePipelineHandle  = VK_NULL_HANDLE;
+  pipelineInfo.pDepthStencilState  = &m_depthStencil;
 
   //its easy to error out on create graphics pipeline, so we handle it a bit better than the common VK_CHECK case
   VkPipeline newPipeline;
-  if (fp_vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &newPipeline) !=
-      VK_SUCCESS) {
+  if (fp_vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
+                                   &newPipeline) != VK_SUCCESS) {
     vkh::Log("Failed to create pipeline!");
     return VK_NULL_HANDLE;  // failed to create graphics pipeline
   } else {

@@ -104,6 +104,28 @@ void EGEngine::InitSwapchain() {
   m_mainDestructionQueue.PushFunction([=]() {
     m_dispatchTable.fp_vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
   });
+  VkExtent3D depthImageExtent      = {m_windowExtent.width, m_windowExtent.height, 1};
+  VkImageCreateInfo depthImageInfo = vkh::init::ImageCreateInfo(
+      m_depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, depthImageExtent);
+
+  VmaAllocationCreateInfo depthImageAllocInfo{};
+  depthImageAllocInfo.usage         = VMA_MEMORY_USAGE_GPU_ONLY;
+  depthImageAllocInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+  vmaCreateImage(m_allocator, &depthImageInfo, &depthImageAllocInfo, &m_depthImage.m_image,
+                 &m_depthImage.m_allocation, nullptr);
+
+  VkImageViewCreateInfo depthImgViewInfo = vkh::init::ImageViewCreateInfo(
+      m_depthFormat, m_depthImage.m_image, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+  vkh::VkCheck(
+      m_dispatchTable.fp_vkCreateImageView(m_device, &depthImgViewInfo, nullptr, &m_depthImageView),
+      "create depth image view");
+
+  m_mainDestructionQueue.PushFunction([=] {
+    m_dispatchTable.fp_vkDestroyImageView(m_device, m_depthImageView, nullptr);
+    vmaDestroyImage(m_allocator, m_depthImage.m_image, m_depthImage.m_allocation);
+  });
 }
 
 void EGEngine::InitDefaultRenderPass() {
@@ -121,10 +143,29 @@ void EGEngine::InitDefaultRenderPass() {
   colorAttachmentReference.attachment = 0;
   colorAttachmentReference.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+  VkAttachmentDescription depthAttachment = {};
+  // Depth attachment
+  depthAttachment.flags          = 0;
+  depthAttachment.format         = m_depthFormat;
+  depthAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
+  depthAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  depthAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
+  depthAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+  depthAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+  depthAttachment.finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+  VkAttachmentReference depthAttachmentRef = {};
+  depthAttachmentRef.attachment            = 1;
+  depthAttachmentRef.layout                = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
   VkSubpassDescription subpass{};
-  subpass.pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS;
-  subpass.colorAttachmentCount = 1;
-  subpass.pColorAttachments    = &colorAttachmentReference;
+  subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
+  subpass.colorAttachmentCount    = 1;
+  subpass.pColorAttachments       = &colorAttachmentReference;
+  subpass.pDepthStencilAttachment = &depthAttachmentRef;
+
+  VkAttachmentDescription attachments[2] = {colorAttachment, depthAttachment};
 
   //1 dependency, which is from "outside" into the subpass. And we can read or write color
   VkSubpassDependency dependency{};
@@ -135,14 +176,26 @@ void EGEngine::InitDefaultRenderPass() {
   dependency.dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
   dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
+  VkSubpassDependency depthDependency = {};
+  depthDependency.srcSubpass          = VK_SUBPASS_EXTERNAL;
+  depthDependency.dstSubpass          = 0;
+  depthDependency.srcStageMask =
+      VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+  depthDependency.srcAccessMask = 0;
+  depthDependency.dstStageMask =
+      VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+  depthDependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+  VkSubpassDependency dependencies[2] = {dependency, depthDependency};
+
   VkRenderPassCreateInfo renderPassInfo{};
   renderPassInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-  renderPassInfo.attachmentCount = 1;
-  renderPassInfo.pAttachments    = &colorAttachment;
+  renderPassInfo.attachmentCount = 2;
+  renderPassInfo.pAttachments    = &attachments[0];
   renderPassInfo.subpassCount    = 1;
   renderPassInfo.pSubpasses      = &subpass;
-  renderPassInfo.dependencyCount = 1;
-  renderPassInfo.pDependencies   = &dependency;
+  renderPassInfo.dependencyCount = 2;
+  renderPassInfo.pDependencies   = &dependencies[0];
 
   vkh::VkCheck(
       m_dispatchTable.fp_vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass),
@@ -160,7 +213,13 @@ void EGEngine::InitFramebuffers() {
   m_framebuffers            = std::vector<VkFramebuffer>(imageCount);
 
   for (auto i = 0; i < imageCount; ++i) {
-    fbInfo.pAttachments = &m_swapchainImageViews[i];
+    VkImageView attachments[2];
+    attachments[0] = m_swapchainImageViews[i];
+    attachments[1] = m_depthImageView;
+
+    fbInfo.attachmentCount = 2;
+    fbInfo.pAttachments    = &attachments[0];
+
     vkh::VkCheck(
         m_dispatchTable.fp_vkCreateFramebuffer(m_device, &fbInfo, nullptr, &m_framebuffers[i]),
         "Create frame buffer");
@@ -239,6 +298,8 @@ void EGEngine::InitPipelines() {
   pipelineBuilder.m_viewport.maxDepth = 1.0f;
   pipelineBuilder.m_scissor.offset    = {0, 0};
   pipelineBuilder.m_scissor.extent    = m_windowExtent;
+
+  pipelineBuilder.m_depthStencil = vkh::init::DepthStencilStateCreateInfo(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
 
   pipelineBuilder.m_rasterizer = vkh::init::RasterizationStateCreateInfo(VK_POLYGON_MODE_FILL);
 
@@ -394,11 +455,16 @@ void EGEngine::Draw() {
   float flash      = abs(sin(m_frameNumber / 120.f));
   clearValue.color = {{0.0f, 0.0f, flash, 1.0f}};
 
+  VkClearValue depthClear;
+  depthClear.depthStencil.depth = 1.f;
+
+  VkClearValue clearValues[2] = {clearValue, depthClear};
+
   VkRenderPassBeginInfo rpInfo = vkh::init::RenderpassBeginInfo(
       m_renderPass, m_windowExtent, m_framebuffers[swapchainImageIndex]);
 
-  rpInfo.clearValueCount = 1;
-  rpInfo.pClearValues    = &clearValue;
+  rpInfo.clearValueCount = 2;
+  rpInfo.pClearValues    = &clearValues[0];
 
   m_dispatchTable.fp_vkCmdBeginRenderPass(m_cmdBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -411,7 +477,7 @@ void EGEngine::Draw() {
 
   glm::vec3 camPos     = {0.f, 0.f, -2.f};
   glm::mat4 view       = glm::translate(glm::mat4(1.f), camPos);
-  float aspect = 4.0f / 3.0f;
+  float aspect         = 4.0f / 3.0f;
   glm::mat4 projection = glm::perspective(glm::radians(90.f), aspect, 0.1f, 200.0f);
   projection[1][1] *= -1;
   glm::mat4 model =
@@ -424,7 +490,7 @@ void EGEngine::Draw() {
                                         VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants),
                                         &constants);
 
-//  m_dispatchTable.fp_vkCmdDraw(m_cmdBuffer, m_triangleMesh.m_vertices.size(), 1, 0, 0);
+  //  m_dispatchTable.fp_vkCmdDraw(m_cmdBuffer, m_triangleMesh.m_vertices.size(), 1, 0, 0);
   m_dispatchTable.fp_vkCmdDraw(m_cmdBuffer, m_monkeyMesh.m_vertices.size(), 1, 0, 0);
   //  m_dispatchTable.fp_vkCmdDraw(m_cmdBuffer, 3, 1, 0, 0);
 

@@ -120,6 +120,11 @@ private:
   vkh::DispatchTable m_dispatchTable;
 
   VmaAllocator m_allocator;
+
+  VkImageView m_depthImageView;
+  AllocatedImage m_depthImage;
+
+  VkFormat m_depthFormat = VK_FORMAT_D32_SFLOAT;
 };
 }  // namespace ege
 

@@ -38,5 +38,11 @@ VkPipelineRasterizationStateCreateInfo RasterizationStateCreateInfo(VkPolygonMod
 VkPipelineMultisampleStateCreateInfo MultisampleStateCreateInfo();
 
 VkPipelineColorBlendAttachmentState ColorBlendAttachmentState();
+
+VkImageViewCreateInfo ImageViewCreateInfo(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags);
+
+VkImageCreateInfo ImageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent);
+
+VkPipelineDepthStencilStateCreateInfo DepthStencilStateCreateInfo(bool bDepthTest, bool bDepthWrite, VkCompareOp compareOp);
 }  // namespace vkh::init
 #endif  //VK_INIT_HPP
