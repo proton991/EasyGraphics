@@ -107,13 +107,11 @@ private:
   std::vector<VkImage> m_swapchainImages;
   std::vector<VkImageView> m_swapchainImageViews;
 
-  VkPipelineLayout m_pipelineLayout;
+//  VkPipelineLayout m_pipelineLayout;
+  VkPipelineLayout m_meshPipelineLayout;
 
   VkPipeline m_meshPipeline;
   Mesh m_triangleMesh;
-
-  VkPipeline m_trianglePipeline;
-  VkPipeline m_redTrianglePipeline;
 
   DestructionQueue m_mainDestructionQueue;
 

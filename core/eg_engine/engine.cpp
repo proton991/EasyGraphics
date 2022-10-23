@@ -8,7 +8,7 @@
 #define VMA_STATIC_VULKAN_FUNCTIONS 0
 #define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
 #include <vk_mem_alloc.h>
-
+#include <glm/gtx/transform.hpp>
 
 namespace ege {
 void EGEngine::Init() {
@@ -80,8 +80,10 @@ void EGEngine::InitVMA() {
   allocatorInfo.instance       = m_instance;
   // let VMA fetch vulkan function pointers dynamically
   VmaVulkanFunctions vmaVulkanFunctions{};
-  vmaVulkanFunctions.vkGetInstanceProcAddr = vkh::VulkanFunction::GetInstance().fp_vkGetInstanceProcAddr;
-  vmaVulkanFunctions.vkGetDeviceProcAddr = vkh::VulkanFunction::GetInstance().fp_vkGetDeviceProcAddr;
+  vmaVulkanFunctions.vkGetInstanceProcAddr =
+      vkh::VulkanFunction::GetInstance().fp_vkGetInstanceProcAddr;
+  vmaVulkanFunctions.vkGetDeviceProcAddr =
+      vkh::VulkanFunction::GetInstance().fp_vkGetDeviceProcAddr;
   allocatorInfo.pVulkanFunctions = &vmaVulkanFunctions;
   vkh::VkCheck(vmaCreateAllocator(&allocatorInfo, &m_allocator), "initialize vma");
 }
@@ -208,45 +210,21 @@ void EGEngine::InitSyncStructures() {
 }
 
 void EGEngine::InitPipelines() {
-  VkShaderModule triangleFragShader;
-  if (!LoadShaderModule("../shaders/spv/colored_triangle.frag.spv", &triangleFragShader)) {
-    vkh::Log("Error when building triangle fragment shader module!");
-  } else {
-    vkh::Log("Triangle fragment shader successfully loaded!");
-  }
-  VkShaderModule triangleVertexShader;
-  if (!LoadShaderModule("../shaders/spv/colored_triangle.vert.spv", &triangleVertexShader)) {
-    vkh::Log("Error when building the triangle vertex shader module!");
-  } else {
-    vkh::Log("Triangle vertex shader successfully loaded!");
-  }
 
-  //  //compile colored triangle modules
-  //  VkShaderModule redTriangleFragShader;
-  //  if (!LoadShaderModule("../shaders/triangle.frag.spv", &redTriangleFragShader)) {
-  //    vkh::Log("Error when building the red triangle fragment shader module!");
-  //  } else {
-  //    vkh::Log("Red Triangle fragment shader successfully loaded!");
-  //  }
-  //
-  //  VkShaderModule redTriangleVertShader;
-  //  if (!LoadShaderModule("../shaders/triangle.vert.spv", &redTriangleVertShader)) {
-  //    vkh::Log("RError when building the red triangle vertex shader module!");
-  //  } else {
-  //    vkh::Log("Red Triangle vertex shader successfully loaded!");
-  //  }
-  // default zero values
-  VkPipelineLayoutCreateInfo pipelineLayoutInfo = vkh::init::PipelineLayoutCreateInfo();
-  vkh::VkCheck(m_dispatchTable.fp_vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr,
-                                                         &m_pipelineLayout),
-               "Create pipeline layout");
+  VkPipelineLayoutCreateInfo meshPipelineLayoutInfo = vkh::init::PipelineLayoutCreateInfo();
+  VkPushConstantRange pushConstant;
+  pushConstant.offset     = 0;
+  pushConstant.size       = sizeof(MeshPushConstants);
+  pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+  meshPipelineLayoutInfo.pPushConstantRanges    = &pushConstant;
+  meshPipelineLayoutInfo.pushConstantRangeCount = 1;
+
+  vkh::VkCheck(m_dispatchTable.fp_vkCreatePipelineLayout(m_device, &meshPipelineLayoutInfo, nullptr,
+                                                         &m_meshPipelineLayout),
+               "create mesh pipeline layout");
 
   vkh::PipelineBuilder pipelineBuilder{m_dispatchTable.fp_vkCreateGraphicsPipelines};
-  pipelineBuilder.m_shaderStages.push_back(
-      vkh::init::PipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, triangleVertexShader));
-
-  pipelineBuilder.m_shaderStages.push_back(
-      vkh::init::PipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, triangleFragShader));
   // read vertex data from vertex buffers
   pipelineBuilder.m_vertexInputInfo = vkh::init::VertexInputStateCreateInfo();
   pipelineBuilder.m_inputAssembly =
@@ -268,10 +246,7 @@ void EGEngine::InitPipelines() {
 
   pipelineBuilder.m_colorBlendAttachment = vkh::init::ColorBlendAttachmentState();
 
-  pipelineBuilder.m_pipelineLayout = m_pipelineLayout;
-
-  m_trianglePipeline = pipelineBuilder.Build(m_device, m_renderPass);
-
+  pipelineBuilder.m_pipelineLayout = m_meshPipelineLayout;
 
   VertexInputDescription vertexInputDescription = Vertex::GetVertexDescription();
   pipelineBuilder.m_vertexInputInfo.pVertexAttributeDescriptions =
@@ -283,14 +258,20 @@ void EGEngine::InitPipelines() {
   pipelineBuilder.m_vertexInputInfo.vertexBindingDescriptionCount =
       vertexInputDescription.bindings.size();
 
-  pipelineBuilder.m_shaderStages.clear();
-
   VkShaderModule meshVertShader;
-  if (!LoadShaderModule("../shaders/spv/tri_mesh.vert.spv", &meshVertShader)) {
+  if (!LoadShaderModule("../shaders/spv/tri_mesh_pushconstants.vert.spv", &meshVertShader)) {
     vkh::Log("Error when building tri_mesh vertex shader module!");
   } else {
     vkh::Log("tri_mesh vertex shader successfully loaded!");
   }
+
+  VkShaderModule triangleFragShader;
+  if (!LoadShaderModule("../shaders/spv/colored_triangle.frag.spv", &triangleFragShader)) {
+    vkh::Log("Error when building triangle fragment shader module!");
+  } else {
+    vkh::Log("Triangle fragment shader successfully loaded!");
+  }
+
   pipelineBuilder.m_shaderStages.push_back(
       vkh::init::PipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, meshVertShader));
 
@@ -301,14 +282,11 @@ void EGEngine::InitPipelines() {
 
   // delete shaders
   m_dispatchTable.fp_vkDestroyShaderModule(m_device, meshVertShader, nullptr);
-  m_dispatchTable.fp_vkDestroyShaderModule(m_device, triangleVertexShader, nullptr);
   m_dispatchTable.fp_vkDestroyShaderModule(m_device, triangleFragShader, nullptr);
 
   m_mainDestructionQueue.PushFunction([=]() {
-    m_dispatchTable.fp_vkDestroyPipeline(m_device, m_trianglePipeline, nullptr);
+    m_dispatchTable.fp_vkDestroyPipelineLayout(m_device, m_meshPipelineLayout, nullptr);
     m_dispatchTable.fp_vkDestroyPipeline(m_device, m_meshPipeline, nullptr);
-
-    m_dispatchTable.fp_vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
   });
 }
 
@@ -412,7 +390,7 @@ void EGEngine::Draw() {
 
   VkClearValue clearValue;
   float flash      = abs(sin(m_frameNumber / 120.f));
-  clearValue.color = {{0.0f, flash, 0.0f, 1.0f}};
+  clearValue.color = {{0.0f, 0.0f, flash, 1.0f}};
 
   VkRenderPassBeginInfo rpInfo = vkh::init::RenderpassBeginInfo(
       m_renderPass, m_windowExtent, m_framebuffers[swapchainImageIndex]);
@@ -428,6 +406,21 @@ void EGEngine::Draw() {
   VkDeviceSize offset = 0;
   m_dispatchTable.fp_vkCmdBindVertexBuffers(m_cmdBuffer, 0, 1,
                                             &m_triangleMesh.m_vertexBuffer.m_buffer, &offset);
+
+  glm::vec3 camPos     = {0.f, 0.f, -2.f};
+  glm::mat4 view       = glm::translate(glm::mat4(1.f), camPos);
+  float aspect = m_windowExtent.width / m_windowExtent.height;
+  glm::mat4 projection = glm::perspective(glm::radians(90.f), aspect, 0.1f, 200.0f);
+  projection[1][1] *= -1;
+  glm::mat4 model =
+      glm::rotate(glm::mat4{1.0f}, glm::radians(m_frameNumber * 0.4f), glm::vec3(0, 1, 0));
+  glm::mat4 meshMatrix = projection * view * model;
+
+  MeshPushConstants constants;
+  constants.renderMatrix = meshMatrix;
+  m_dispatchTable.fp_vkCmdPushConstants(m_cmdBuffer, m_meshPipelineLayout,
+                                        VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants),
+                                        &constants);
 
   m_dispatchTable.fp_vkCmdDraw(m_cmdBuffer, m_triangleMesh.m_vertices.size(), 1, 0, 0);
   //  m_dispatchTable.fp_vkCmdDraw(m_cmdBuffer, 3, 1, 0, 0);
