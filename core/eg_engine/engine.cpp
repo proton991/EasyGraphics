@@ -299,7 +299,8 @@ void EGEngine::InitPipelines() {
   pipelineBuilder.m_scissor.offset    = {0, 0};
   pipelineBuilder.m_scissor.extent    = m_windowExtent;
 
-  pipelineBuilder.m_depthStencil = vkh::init::DepthStencilStateCreateInfo(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
+  pipelineBuilder.m_depthStencil =
+      vkh::init::DepthStencilStateCreateInfo(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
 
   pipelineBuilder.m_rasterizer = vkh::init::RasterizationStateCreateInfo(VK_POLYGON_MODE_FILL);
 
@@ -395,7 +396,8 @@ void EGEngine::LoadMeshes() {
   //we don't care about the vertex normals
 
   UploadMesh(m_triangleMesh);
-  m_monkeyMesh.LoadFromObj("../assets/monkey_smooth.obj");
+//  m_monkeyMesh.LoadFromObj("../assets/monkey_smooth.obj");
+  m_monkeyMesh.LoadFromObj("../assets/smooth_vase.obj");
   UploadMesh(m_monkeyMesh);
 }
 
@@ -453,7 +455,7 @@ void EGEngine::Draw() {
 
   VkClearValue clearValue;
   float flash      = abs(sin(m_frameNumber / 120.f));
-  clearValue.color = {{0.0f, 0.0f, flash, 1.0f}};
+  clearValue.color = {{0.0f, 0.0f, 0.0f, 1.0f}};
 
   VkClearValue depthClear;
   depthClear.depthStencil.depth = 1.f;
@@ -482,7 +484,10 @@ void EGEngine::Draw() {
   projection[1][1] *= -1;
   glm::mat4 model =
       glm::rotate(glm::mat4{1.0f}, glm::radians(m_frameNumber * 0.4f), glm::vec3(0, 1, 0));
-  glm::mat4 meshMatrix = projection * view * model;
+//    glm::mat4 meshMatrix = projection * view * model;
+  model = glm::scale(model, {5, 5, 5});
+  model = glm::translate(model, {0, 0, 0});
+  glm::mat4 meshMatrix = m_camera.GetProjectionMatrix() * m_camera.GetViewMatrix() * model;
 
   MeshPushConstants constants;
   constants.renderMatrix = meshMatrix;
@@ -531,13 +536,18 @@ void EGEngine::Draw() {
 }
 
 void EGEngine::Run() {
-  SDL_Event e;
   bool bQuit = false;
-
+  auto currentTime = std::chrono::high_resolution_clock::now();
   //main loop
   while (!bQuit) {
+    SDL_Event e;
     //Handle events on queue
     while (SDL_PollEvent(&e) != 0) {
+      auto newTime = std::chrono::high_resolution_clock::now();
+      float frameTime =
+          std::chrono::duration<float, std::chrono::seconds::period>(newTime - currentTime).count();
+      currentTime = newTime;
+      m_camera.Update(&e, frameTime);
       //close the window when user alt-f4s or clicks the X button
       if (e.type == SDL_QUIT) {
         bQuit = true;

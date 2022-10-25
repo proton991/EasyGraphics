@@ -1,16 +1,17 @@
 #ifndef ENGINE_HPP
 #define ENGINE_HPP
 #include <SDL2/SDL.h>
-#include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>
+#include <vulkan/vulkan.h>
 #include <deque>
 #include <functional>
 #include <memory>
 
+#include "camera.hpp"
+#include "mesh.hpp"
 #include "vulkan_helper/vk_device.hpp"
 #include "vulkan_helper/vk_dispatch.hpp"
 #include "vulkan_helper/vk_pipeline.hpp"
-#include "mesh.hpp"
 
 namespace ege {
 struct DestructionQueue {
@@ -107,7 +108,7 @@ private:
   std::vector<VkImage> m_swapchainImages;
   std::vector<VkImageView> m_swapchainImageViews;
 
-//  VkPipelineLayout m_pipelineLayout;
+  //  VkPipelineLayout m_pipelineLayout;
   VkPipelineLayout m_meshPipelineLayout;
 
   VkPipeline m_meshPipeline;
@@ -125,6 +126,14 @@ private:
   AllocatedImage m_depthImage;
 
   VkFormat m_depthFormat = VK_FORMAT_D32_SFLOAT;
+
+  Camera m_camera{
+      glm::vec3(0.0f, -1.0f, -2.0f),
+      glm::vec3(0.0f, -1.0f, 0.0f),
+      90.0f,
+      4.0f / 3.0f,
+      0.1f,
+      200.0f};
 };
 }  // namespace ege
 
