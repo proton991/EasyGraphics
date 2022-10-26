@@ -10,7 +10,7 @@ function(buildApp APP_NAME)
   ENDIF ()
   add_executable(${APP_NAME} ${APP_SOURCE})
   add_dependencies(${APP_NAME} Shaders)
-  target_link_libraries(${APP_NAME} vulkan_helper sdl2 eg_engine)
+  target_link_libraries(${APP_NAME} vulkan_helper eg_engine)
 endfunction()
 
 set(APPS

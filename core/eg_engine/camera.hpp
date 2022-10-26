@@ -12,8 +12,8 @@ public:
   glm::mat4 GetViewMatrix();
   glm::mat4 GetProjectionMatrix();
 
-  void ProcessInputEvent(SDL_Event* e, float velocity);
-  void Update(SDL_Event* e, float deltaTime);
+  void ProcessInputEvent(float velocity);
+  void Update(float deltaTime);
 
 private:
   void SetProjectionMatrix();
@@ -41,6 +41,8 @@ private:
   float m_speed{10.f};
   const float m_sensitivity{0.5f};
 
+  // should we update camera
+  bool m_dirty{true};
   // mouse positions
   bool m_firstMouse{true};
   double m_mousePosX{};

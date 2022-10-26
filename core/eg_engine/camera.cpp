@@ -1,4 +1,5 @@
 #include "camera.hpp"
+#include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 namespace ege {
@@ -14,9 +15,9 @@ Camera::Camera(glm::vec3 eye, glm::vec3 target, float fov, float aspect, float n
 }
 
 void Camera::UpdateBaseVectors() {
-    m_front.x = glm::cos(glm::radians(m_yaw)) * glm::cos(glm::radians(m_pitch));
-    m_front.y = glm::sin(glm::radians(m_pitch));
-    m_front.z = glm::sin(glm::radians(m_yaw)) * glm::cos(glm::radians(m_pitch));
+  m_front.x = glm::cos(glm::radians(m_yaw)) * glm::cos(glm::radians(m_pitch));
+  m_front.y = glm::sin(glm::radians(m_pitch));
+  m_front.z = glm::sin(glm::radians(m_yaw)) * glm::cos(glm::radians(m_pitch));
   // Calculate the new Front vector
 
   m_front = glm::normalize(m_front);
@@ -31,63 +32,45 @@ void Camera::SetProjectionMatrix() {
   m_projMatrix[1][1] *= -1;
 }
 
-void Camera::ProcessInputEvent(SDL_Event* e, float velocity) {
-  if (e->type == SDL_KEYDOWN) {
-    switch (e->key.keysym.sym) {
-      case SDLK_UP:
-      case SDLK_w:
-        m_position += m_front * velocity;
-        break;
-      case SDLK_DOWN:
-      case SDLK_s:
-        m_position -= m_front * velocity;
-        break;
-      case SDLK_LEFT:
-      case SDLK_a:
-        m_position -= m_right * velocity;
-        break;
-      case SDLK_RIGHT:
-      case SDLK_d:
-        m_position += m_right * velocity;
-        break;
-      case SDLK_SPACE:
-        m_position += m_worldUp * velocity;
-        break;
-      case SDLK_LCTRL:
-        m_position -= m_worldUp * velocity;
-        break;
+void Camera::ProcessInputEvent(float velocity) {
+  const Uint8* currentKeyStates = SDL_GetKeyboardState(nullptr);
+  if (m_dirty) {
+    if (currentKeyStates[SDL_SCANCODE_UP] || currentKeyStates[SDL_SCANCODE_W]) {
+      m_position += m_front * velocity;
+    } else if (currentKeyStates[SDL_SCANCODE_DOWN] || currentKeyStates[SDL_SCANCODE_S]) {
+      m_position -= m_front * velocity;
+    } else if (currentKeyStates[SDL_SCANCODE_LEFT] || currentKeyStates[SDL_SCANCODE_A]) {
+      m_position -= m_right * velocity;
+    } else if (currentKeyStates[SDL_SCANCODE_RIGHT] || currentKeyStates[SDL_SCANCODE_D]) {
+      m_position += m_right * velocity;
+    } else if (currentKeyStates[SDL_SCANCODE_SPACE]) {
+      m_position += m_worldUp * velocity;
+    } else if (currentKeyStates[SDL_SCANCODE_LCTRL]) {
+      m_position -= m_worldUp * velocity;
     }
-  } else if (e->type == SDL_KEYDOWN) {
-    switch (e->key.keysym.sym) {
-      case SDLK_UP:
-      case SDLK_w:
-        m_position -= m_front * velocity;
-        break;
-      case SDLK_DOWN:
-      case SDLK_s:
-        m_position += m_front * velocity;
-        break;
-      case SDLK_LEFT:
-      case SDLK_a:
-        m_position += m_right * velocity;
-        break;
-      case SDLK_RIGHT:
-      case SDLK_d:
-        m_position -= m_right * velocity;
-        break;
-      case SDLK_SPACE:
-        m_position -= m_worldUp * velocity;
-        break;
-      case SDLK_LCTRL:
-        m_position += m_worldUp * velocity;
-        break;
+    // process mouse movements
+    int xPos, yPos;
+    SDL_GetMouseState(&xPos, &yPos);
+    if (m_firstMouse) {
+      m_mousePosX  = xPos;
+      m_mousePosY  = yPos;
+      m_firstMouse = false;
     }
+    const auto xOffset = (m_mousePosX - xPos) * m_sensitivity;
+    const auto yOffset = -1 * (m_mousePosY - yPos) * m_sensitivity;
+
+    m_mousePosX = xPos;
+    m_mousePosY = yPos;
+
+    m_yaw += static_cast<float>(xOffset);
+    m_pitch += static_cast<float>(yOffset);
+    m_pitch = std::clamp(m_pitch, -89.0f, 89.0f);
   }
 }
 
-void Camera::Update(SDL_Event* e, float deltaTime) {
+void Camera::Update(float deltaTime) {
   const float velocity = m_speed * deltaTime;
-  ProcessInputEvent(e, velocity);
+  ProcessInputEvent(velocity);
   UpdateBaseVectors();
 }
 
