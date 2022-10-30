@@ -5,6 +5,8 @@
 #include <glm/glm.hpp>
 
 namespace ege {
+using ID_TYPE = uint32_t;
+
 struct AllocatedBuffer {
   VkBuffer m_buffer;
   VmaAllocation m_allocation;

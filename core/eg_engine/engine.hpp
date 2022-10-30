@@ -8,7 +8,9 @@
 #include <memory>
 
 #include "camera.hpp"
+#include "material_system.hpp"
 #include "mesh.hpp"
+#include "scene_system.hpp"
 #include "vulkan_helper/vk_device.hpp"
 #include "vulkan_helper/vk_dispatch.hpp"
 #include "vulkan_helper/vk_pipeline.hpp"
@@ -33,6 +35,8 @@ struct DestructionQueue {
 
 class EGEngine {
 public:
+  friend class SceneSystem;
+
   void Init();
 
   void Run();
@@ -58,12 +62,16 @@ private:
 
   void InitPipelines();
 
+  void InitScene();
+
   // load spir-v shader file
   bool LoadShaderModule(const char* shaderPath, VkShaderModule* outShaderModule);
 
   void LoadMeshes();
 
   void UploadMesh(Mesh& mesh);
+
+  void RenderScene();
 
   void Draw();
 
@@ -108,13 +116,6 @@ private:
   std::vector<VkImage> m_swapchainImages;
   std::vector<VkImageView> m_swapchainImageViews;
 
-  //  VkPipelineLayout m_pipelineLayout;
-  VkPipelineLayout m_meshPipelineLayout;
-
-  VkPipeline m_meshPipeline;
-  Mesh m_triangleMesh;
-  Mesh m_monkeyMesh;
-
   DestructionQueue m_mainDestructionQueue;
 
   PFN_vkDestroyDevice fp_vkDestroyDevice = nullptr;
@@ -127,13 +128,18 @@ private:
 
   VkFormat m_depthFormat = VK_FORMAT_D32_SFLOAT;
 
-  Camera m_camera{
-      glm::vec3(0.0f, -1.0f, -2.0f),
-      glm::vec3(0.0f, -1.0f, 0.0f),
-      90.0f,
-      4.0f / 3.0f,
-      0.1f,
-      200.0f};
+  MaterialSystem m_materialSystem;
+
+  SceneSystem m_sceneSystem;
+
+  Camera m_camera{glm::vec3(0.0f, -1.0f, -2.0f),
+                  glm::vec3(0.0f, -1.0f, 0.0f),
+                  90.0f,
+                  4.0f / 3.0f,
+                  0.1f,
+                  200.0f};
+
+  std::unordered_map<std::string, Mesh> m_meshes;
 };
 }  // namespace ege
 

@@ -109,7 +109,7 @@ bool Mesh::LoadFromObj(const char* filename) {
       index_offset += fv;
     }
   }
-
+  std::cout << filename << " vertex count: " << m_vertices.size() << std::endl;
   return true;
 }
 }

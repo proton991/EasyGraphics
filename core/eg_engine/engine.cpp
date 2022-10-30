@@ -37,6 +37,8 @@ void EGEngine::Init() {
 
   LoadMeshes();
 
+  InitScene();
+
   m_initialized = true;
 }
 void EGEngine::InitVulkan() {
@@ -279,8 +281,10 @@ void EGEngine::InitPipelines() {
   meshPipelineLayoutInfo.pPushConstantRanges    = &pushConstant;
   meshPipelineLayoutInfo.pushConstantRangeCount = 1;
 
+  VkPipelineLayout meshPipelineLayout;
+  VkPipeline meshPipeline;
   vkh::VkCheck(m_dispatchTable.fp_vkCreatePipelineLayout(m_device, &meshPipelineLayoutInfo, nullptr,
-                                                         &m_meshPipelineLayout),
+                                                         &meshPipelineLayout),
                "create mesh pipeline layout");
 
   vkh::PipelineBuilder pipelineBuilder{m_dispatchTable.fp_vkCreateGraphicsPipelines};
@@ -308,7 +312,7 @@ void EGEngine::InitPipelines() {
 
   pipelineBuilder.m_colorBlendAttachment = vkh::init::ColorBlendAttachmentState();
 
-  pipelineBuilder.m_pipelineLayout = m_meshPipelineLayout;
+  pipelineBuilder.m_pipelineLayout = meshPipelineLayout;
 
   VertexInputDescription vertexInputDescription = Vertex::GetVertexDescription();
   pipelineBuilder.m_vertexInputInfo.pVertexAttributeDescriptions =
@@ -340,16 +344,50 @@ void EGEngine::InitPipelines() {
   pipelineBuilder.m_shaderStages.push_back(
       vkh::init::PipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, triangleFragShader));
 
-  m_meshPipeline = pipelineBuilder.Build(m_device, m_renderPass);
+  meshPipeline = pipelineBuilder.Build(m_device, m_renderPass);
 
   // delete shaders
   m_dispatchTable.fp_vkDestroyShaderModule(m_device, meshVertShader, nullptr);
   m_dispatchTable.fp_vkDestroyShaderModule(m_device, triangleFragShader, nullptr);
 
   m_mainDestructionQueue.PushFunction([=]() {
-    m_dispatchTable.fp_vkDestroyPipelineLayout(m_device, m_meshPipelineLayout, nullptr);
-    m_dispatchTable.fp_vkDestroyPipeline(m_device, m_meshPipeline, nullptr);
+    m_dispatchTable.fp_vkDestroyPipelineLayout(m_device, meshPipelineLayout, nullptr);
+    m_dispatchTable.fp_vkDestroyPipeline(m_device, meshPipeline, nullptr);
   });
+
+  m_materialSystem.CreateMaterial("default", meshPipeline, meshPipelineLayout);
+}
+
+void EGEngine::InitScene() {
+  glm::mat4 vaseMat = glm::scale(glm::mat4{1.0f}, {3.f, 3.f, 3.f});
+  vaseMat           = glm::translate(vaseMat, {-0.5f, 0, 0});
+  std::vector<SceneObjectInfo> sceneObjInfos;
+  SceneObjectInfo smoothVaseObjInfo{};
+  smoothVaseObjInfo.material        = m_materialSystem.GetMaterial("default");
+  smoothVaseObjInfo.mesh            = &m_meshes["smoothVase"];
+  smoothVaseObjInfo.transformMatrix = vaseMat;
+  sceneObjInfos.push_back(smoothVaseObjInfo);
+
+  glm::mat4 vaseMat2 = glm::scale(glm::mat4{1.0f}, {3.f, 3.f, 3.f});
+  vaseMat2 = glm::translate(vaseMat2, {0.5f, 0, 0});
+  SceneObjectInfo flatVaseObjInfo{};
+  flatVaseObjInfo.material        = m_materialSystem.GetMaterial("default");
+  flatVaseObjInfo.mesh            = &m_meshes["flatVase"];
+  flatVaseObjInfo.transformMatrix = vaseMat2;
+  sceneObjInfos.push_back(flatVaseObjInfo);
+
+  for (int x = -20; x <= 20; x++) {
+    for (int y = -20; y <= 20; y++) {
+      SceneObjectInfo tri;
+      tri.mesh              = &m_meshes["tri"];
+      tri.material          = m_materialSystem.GetMaterial("default");
+      glm::mat4 translation = glm::translate(glm::mat4{1.0}, glm::vec3(x, 0.0f, y));
+      glm::mat4 scale       = glm::scale(glm::mat4{1.0}, glm::vec3(0.2, 0.2, 0.2));
+      tri.transformMatrix   = translation * scale;
+      sceneObjInfos.push_back(tri);
+    }
+  }
+  m_sceneSystem.AddObjectBatch(sceneObjInfos.data(), sceneObjInfos.size());
 }
 
 bool EGEngine::LoadShaderModule(const char* shaderPath, VkShaderModule* outShaderModule) {
@@ -380,25 +418,33 @@ bool EGEngine::LoadShaderModule(const char* shaderPath, VkShaderModule* outShade
 }
 
 void EGEngine::LoadMeshes() {
+  Mesh triMesh{};
   //make the array 3 vertices long
-  m_triangleMesh.m_vertices.resize(3);
+  triMesh.m_vertices.resize(3);
 
   //vertex positions
-  m_triangleMesh.m_vertices[0].position = {1.f, 1.f, 0.0f};
-  m_triangleMesh.m_vertices[1].position = {-1.f, 1.f, 0.0f};
-  m_triangleMesh.m_vertices[2].position = {0.f, -1.f, 0.0f};
+  triMesh.m_vertices[0].position = {1.f, 1.f, 0.0f};
+  triMesh.m_vertices[1].position = {-1.f, 1.f, 0.0f};
+  triMesh.m_vertices[2].position = {0.f, -1.f, 0.0f};
 
   //vertex colors, all green
-  m_triangleMesh.m_vertices[0].color = {0.f, 1.f, 0.0f};  //pure green
-  m_triangleMesh.m_vertices[1].color = {0.f, 1.f, 0.0f};  //pure green
-  m_triangleMesh.m_vertices[2].color = {0.f, 1.f, 0.0f};  //pure green
+  triMesh.m_vertices[0].color = {0.f, 1.f, 0.0f};  //pure green
+  triMesh.m_vertices[1].color = {0.f, 1.f, 0.0f};  //pure green
+  triMesh.m_vertices[2].color = {0.f, 1.f, 0.0f};  //pure green
 
-  //we don't care about the vertex normals
+  Mesh smoothVaseMesh{};
+  smoothVaseMesh.LoadFromObj("../assets/smooth_vase.obj");
 
-  UploadMesh(m_triangleMesh);
-//  m_monkeyMesh.LoadFromObj("../assets/monkey_smooth.obj");
-  m_monkeyMesh.LoadFromObj("../assets/smooth_vase.obj");
-  UploadMesh(m_monkeyMesh);
+  Mesh flatVaseMesh{};
+  flatVaseMesh.LoadFromObj("../assets/flat_vase.obj");
+
+  UploadMesh(triMesh);
+  UploadMesh(smoothVaseMesh);
+  UploadMesh(flatVaseMesh);
+
+  m_meshes["tri"]        = triMesh;
+  m_meshes["smoothVase"] = smoothVaseMesh;
+  m_meshes["flatVase"]   = flatVaseMesh;
 }
 
 void EGEngine::UploadMesh(Mesh& mesh) {
@@ -455,7 +501,7 @@ void EGEngine::Draw() {
 
   VkClearValue clearValue;
   float flash      = abs(sin(m_frameNumber / 120.f));
-  clearValue.color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+  clearValue.color = {{0.0f, 0.0f, flash, 1.0f}};
 
   VkClearValue depthClear;
   depthClear.depthStencil.depth = 1.f;
@@ -470,34 +516,7 @@ void EGEngine::Draw() {
 
   m_dispatchTable.fp_vkCmdBeginRenderPass(m_cmdBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-  m_dispatchTable.fp_vkCmdBindPipeline(m_cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                       m_meshPipeline);
-
-  VkDeviceSize offset = 0;
-  m_dispatchTable.fp_vkCmdBindVertexBuffers(m_cmdBuffer, 0, 1,
-                                            &m_monkeyMesh.m_vertexBuffer.m_buffer, &offset);
-
-  glm::vec3 camPos     = {0.f, 0.f, -2.f};
-  glm::mat4 view       = glm::translate(glm::mat4(1.f), camPos);
-  float aspect         = 4.0f / 3.0f;
-  glm::mat4 projection = glm::perspective(glm::radians(90.f), aspect, 0.1f, 200.0f);
-  projection[1][1] *= -1;
-  glm::mat4 model =
-      glm::rotate(glm::mat4{1.0f}, glm::radians(m_frameNumber * 0.4f), glm::vec3(0, 1, 0));
-//    glm::mat4 meshMatrix = projection * view * model;
-  model = glm::scale(model, {5, 5, 5});
-  model = glm::translate(model, {0, 0, 0});
-  glm::mat4 meshMatrix = m_camera.GetProjectionMatrix() * m_camera.GetViewMatrix() * model;
-
-  MeshPushConstants constants;
-  constants.renderMatrix = meshMatrix;
-  m_dispatchTable.fp_vkCmdPushConstants(m_cmdBuffer, m_meshPipelineLayout,
-                                        VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants),
-                                        &constants);
-
-  //  m_dispatchTable.fp_vkCmdDraw(m_cmdBuffer, m_triangleMesh.m_vertices.size(), 1, 0, 0);
-  m_dispatchTable.fp_vkCmdDraw(m_cmdBuffer, m_monkeyMesh.m_vertices.size(), 1, 0, 0);
-  //  m_dispatchTable.fp_vkCmdDraw(m_cmdBuffer, 3, 1, 0, 0);
+  RenderScene();
 
   m_dispatchTable.fp_vkCmdEndRenderPass(m_cmdBuffer);
 
@@ -536,10 +555,12 @@ void EGEngine::Draw() {
 }
 
 void EGEngine::Run() {
-  bool bQuit = false;
+  bool bQuit       = false;
   auto currentTime = std::chrono::high_resolution_clock::now();
-  //main loop
+  // place cursor at the center of the screen
+  SDL_WarpMouseInWindow(m_window, m_windowExtent.width/2, m_windowExtent.height/2);
   SDL_ShowCursor(SDL_DISABLE);
+  //main loop
   while (!bQuit) {
     SDL_Event e;
     //Handle events on queue
