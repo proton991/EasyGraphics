@@ -16,6 +16,9 @@
 #include "vulkan_helper/vk_pipeline.hpp"
 
 namespace ege {
+//number of frames to overlap when rendering
+constexpr unsigned int FRAME_OVERLAP = 2;
+
 struct DestructionQueue {
   std::deque<std::function<void()>> destructors;
 
@@ -75,6 +78,8 @@ private:
 
   void Draw();
 
+  FrameData& GetCurrentFrame() { return m_frames[m_frameNumber % FRAME_OVERLAP]; }
+
   bool m_initialized{false};
   int m_frameNumber{0};
   SDL_Window* m_window{nullptr};
@@ -85,10 +90,6 @@ private:
   VkPhysicalDevice m_chosenGPU;
   VkDevice m_device;
   VkPhysicalDeviceProperties m_gpuProperties;
-
-  VkSemaphore m_presentSemaphore;
-  VkSemaphore m_renderSemaphore;
-  VkFence m_renderFence;
 
   struct {
     uint32_t graphics;
@@ -103,8 +104,7 @@ private:
     VkQueue transfer;
   } m_queueFamilies;
 
-  VkCommandPool m_cmdPool;
-  VkCommandBuffer m_cmdBuffer;
+  FrameData m_frames[FRAME_OVERLAP];
 
   VkRenderPass m_renderPass;
 

@@ -21,5 +21,14 @@ struct MeshPushConstants {
   glm::vec4 data;
   glm::mat4 renderMatrix;
 };
+
+struct FrameData {
+  VkSemaphore presentSemaphore;
+  VkSemaphore renderSemaphore;
+
+  VkFence renderFence;
+  VkCommandPool cmdPool;
+  VkCommandBuffer cmdBuffer;
+};
 }  // namespace ege
 #endif  //TYPES_HPP

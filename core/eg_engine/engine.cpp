@@ -235,39 +235,46 @@ void EGEngine::InitFramebuffers() {
 void EGEngine::InitCommands() {
   VkCommandPoolCreateInfo cmdPoolInfo = vkh::init::CommandPoolCreateInfo(
       m_queueFamilyIndices.graphics, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-  vkh::VkCheck(m_dispatchTable.fp_vkCreateCommandPool(m_device, &cmdPoolInfo, nullptr, &m_cmdPool),
-               "Create command pool");
 
-  VkCommandBufferAllocateInfo cmdBufferInfo =
-      vkh::init::CommandBufferAllocateInfo(m_cmdPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-  vkh::VkCheck(m_dispatchTable.fp_vkAllocateCommandBuffers(m_device, &cmdBufferInfo, &m_cmdBuffer),
-               "Allocate command buffer");
+  for (int i = 0; i < FRAME_OVERLAP; ++i) {
+    vkh::VkCheck(m_dispatchTable.fp_vkCreateCommandPool(m_device, &cmdPoolInfo, nullptr,
+                                                        &m_frames[i].cmdPool),
+                 "Create command pool");
 
-  m_mainDestructionQueue.PushFunction([=] {
-    m_dispatchTable.fp_vkDestroyCommandPool(m_device, m_cmdPool, nullptr);
-  });
+    VkCommandBufferAllocateInfo cmdBufferInfo = vkh::init::CommandBufferAllocateInfo(
+        m_frames[i].cmdPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    vkh::VkCheck(m_dispatchTable.fp_vkAllocateCommandBuffers(m_device, &cmdBufferInfo,
+                                                             &m_frames[i].cmdBuffer),
+                 "Allocate command buffer");
+
+    m_mainDestructionQueue.PushFunction([=] {
+      m_dispatchTable.fp_vkDestroyCommandPool(m_device, m_frames[i].cmdPool, nullptr);
+    });
+  }
 }
 
 void EGEngine::InitSyncStructures() {
   VkFenceCreateInfo fenceInfo = vkh::init::FenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
-  vkh::VkCheck(m_dispatchTable.fp_vkCreateFence(m_device, &fenceInfo, nullptr, &m_renderFence),
-               "Create render fence");
 
-  m_mainDestructionQueue.PushFunction([=] {
-    m_dispatchTable.fp_vkDestroyFence(m_device, m_renderFence, nullptr);
-  });
   VkSemaphoreCreateInfo semaphoreInfo = vkh::init::SemaphoreCreateInfo(0);
-  vkh::VkCheck(
-      m_dispatchTable.fp_vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_presentSemaphore),
-      "Create present semaphore");
-  vkh::VkCheck(
-      m_dispatchTable.fp_vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderSemaphore),
-      "Create render semaphore");
-
-  m_mainDestructionQueue.PushFunction([=] {
-    m_dispatchTable.fp_vkDestroySemaphore(m_device, m_presentSemaphore, nullptr);
-    m_dispatchTable.fp_vkDestroySemaphore(m_device, m_renderSemaphore, nullptr);
-  });
+  for (int i = 0; i < FRAME_OVERLAP; ++i) {
+    vkh::VkCheck(
+        m_dispatchTable.fp_vkCreateFence(m_device, &fenceInfo, nullptr, &m_frames[i].renderFence),
+        "Create render fence");
+    m_mainDestructionQueue.PushFunction([=] {
+      m_dispatchTable.fp_vkDestroyFence(m_device, m_frames[i].renderFence, nullptr);
+    });
+    vkh::VkCheck(m_dispatchTable.fp_vkCreateSemaphore(m_device, &semaphoreInfo, nullptr,
+                                                      &m_frames[i].presentSemaphore),
+                 "Create present semaphore");
+    vkh::VkCheck(m_dispatchTable.fp_vkCreateSemaphore(m_device, &semaphoreInfo, nullptr,
+                                                      &m_frames[i].renderSemaphore),
+                 "Create render semaphore");
+    m_mainDestructionQueue.PushFunction([=] {
+      m_dispatchTable.fp_vkDestroySemaphore(m_device, m_frames[i].presentSemaphore, nullptr);
+      m_dispatchTable.fp_vkDestroySemaphore(m_device, m_frames[i].renderSemaphore, nullptr);
+    });
+  }
 }
 
 void EGEngine::InitPipelines() {
@@ -369,7 +376,7 @@ void EGEngine::InitScene() {
   sceneObjInfos.push_back(smoothVaseObjInfo);
 
   glm::mat4 vaseMat2 = glm::scale(glm::mat4{1.0f}, {3.f, 3.f, 3.f});
-  vaseMat2 = glm::translate(vaseMat2, {0.5f, 0, 0});
+  vaseMat2           = glm::translate(vaseMat2, {0.5f, 0, 0});
   SceneObjectInfo flatVaseObjInfo{};
   flatVaseObjInfo.material        = m_materialSystem.GetMaterial("default");
   flatVaseObjInfo.mesh            = &m_meshes["flatVase"];
@@ -482,21 +489,24 @@ void EGEngine::Draw() {
     return;
   }
   auto timeOut = std::numeric_limits<uint64_t>::max();
-  vkh::VkCheck(m_dispatchTable.fp_vkWaitForFences(m_device, 1, &m_renderFence, true, timeOut),
+  vkh::VkCheck(m_dispatchTable.fp_vkWaitForFences(m_device, 1, &GetCurrentFrame().renderFence, true,
+                                                  timeOut),
                "Wait for fences");
-  vkh::VkCheck(m_dispatchTable.fp_vkResetFences(m_device, 1, &m_renderFence), "Reset fences");
-  vkh::VkCheck(m_dispatchTable.fp_vkResetCommandBuffer(m_cmdBuffer, 0), "Reset command buffer");
+  vkh::VkCheck(m_dispatchTable.fp_vkResetFences(m_device, 1, &GetCurrentFrame().renderFence),
+               "Reset fences");
+  vkh::VkCheck(m_dispatchTable.fp_vkResetCommandBuffer(GetCurrentFrame().cmdBuffer, 0),
+               "Reset command buffer");
 
   uint32_t swapchainImageIndex;
-  vkh::VkCheck(
-      m_dispatchTable.fp_vkAcquireNextImageKHR(m_device, m_swapchain, timeOut, m_presentSemaphore,
-                                               nullptr, &swapchainImageIndex),
-      "Acquire image index");
+  vkh::VkCheck(m_dispatchTable.fp_vkAcquireNextImageKHR(m_device, m_swapchain, timeOut,
+                                                        GetCurrentFrame().presentSemaphore, nullptr,
+                                                        &swapchainImageIndex),
+               "Acquire image index");
 
   VkCommandBufferBeginInfo cmdBeginInfo =
       vkh::init::CommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-  vkh::VkCheck(m_dispatchTable.fp_vkBeginCommandBuffer(m_cmdBuffer, &cmdBeginInfo),
+  vkh::VkCheck(m_dispatchTable.fp_vkBeginCommandBuffer(GetCurrentFrame().cmdBuffer, &cmdBeginInfo),
                "begin command buffer");
 
   VkClearValue clearValue;
@@ -514,29 +524,31 @@ void EGEngine::Draw() {
   rpInfo.clearValueCount = 2;
   rpInfo.pClearValues    = &clearValues[0];
 
-  m_dispatchTable.fp_vkCmdBeginRenderPass(m_cmdBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+  m_dispatchTable.fp_vkCmdBeginRenderPass(GetCurrentFrame().cmdBuffer, &rpInfo,
+                                          VK_SUBPASS_CONTENTS_INLINE);
 
   RenderScene();
 
-  m_dispatchTable.fp_vkCmdEndRenderPass(m_cmdBuffer);
+  m_dispatchTable.fp_vkCmdEndRenderPass(GetCurrentFrame().cmdBuffer);
 
-  vkh::VkCheck(m_dispatchTable.fp_vkEndCommandBuffer(m_cmdBuffer), "end command buffer");
+  vkh::VkCheck(m_dispatchTable.fp_vkEndCommandBuffer(GetCurrentFrame().cmdBuffer),
+               "end command buffer");
 
-  VkSubmitInfo submitInfo        = vkh::init::SubmitInfo(&m_cmdBuffer);
+  VkSubmitInfo submitInfo        = vkh::init::SubmitInfo(&GetCurrentFrame().cmdBuffer);
   VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
   submitInfo.pWaitDstStageMask = &waitStage;
 
   submitInfo.waitSemaphoreCount = 1;
-  submitInfo.pWaitSemaphores    = &m_presentSemaphore;
+  submitInfo.pWaitSemaphores    = &GetCurrentFrame().presentSemaphore;
 
   submitInfo.signalSemaphoreCount = 1;
-  submitInfo.pSignalSemaphores    = &m_renderSemaphore;
+  submitInfo.pSignalSemaphores    = &GetCurrentFrame().renderSemaphore;
 
   //submit command buffer to the queue and execute it.
-  vkh::VkCheck(
-      m_dispatchTable.fp_vkQueueSubmit(m_queueFamilies.graphics, 1, &submitInfo, m_renderFence),
-      "submit to graphics queue");
+  vkh::VkCheck(m_dispatchTable.fp_vkQueueSubmit(m_queueFamilies.graphics, 1, &submitInfo,
+                                                GetCurrentFrame().renderFence),
+               "submit to graphics queue");
 
   VkPresentInfoKHR presentInfo = vkh::init::PresentInfo();
 
@@ -544,7 +556,7 @@ void EGEngine::Draw() {
   presentInfo.pSwapchains    = &m_swapchain;
 
   presentInfo.waitSemaphoreCount = 1;
-  presentInfo.pWaitSemaphores    = &m_renderSemaphore;
+  presentInfo.pWaitSemaphores    = &GetCurrentFrame().renderSemaphore;
 
   presentInfo.pImageIndices = &swapchainImageIndex;
 
@@ -558,7 +570,7 @@ void EGEngine::Run() {
   bool bQuit       = false;
   auto currentTime = std::chrono::high_resolution_clock::now();
   // place cursor at the center of the screen
-  SDL_WarpMouseInWindow(m_window, m_windowExtent.width/2, m_windowExtent.height/2);
+  SDL_WarpMouseInWindow(m_window, m_windowExtent.width / 2, m_windowExtent.height / 2);
   SDL_ShowCursor(SDL_DISABLE);
   //main loop
   while (!bQuit) {
