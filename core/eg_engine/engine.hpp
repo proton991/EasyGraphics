@@ -63,6 +63,8 @@ private:
 
   void InitSyncStructures();
 
+  void InitDescriptors();
+
   void InitPipelines();
 
   void InitScene();
@@ -77,6 +79,8 @@ private:
   void RenderScene();
 
   void Draw();
+
+  AllocatedBuffer CreateBuffer(size_t bufferSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags requiredFlags = 0);
 
   FrameData& GetCurrentFrame() { return m_frames[m_frameNumber % FRAME_OVERLAP]; }
 

@@ -29,6 +29,15 @@ struct FrameData {
   VkFence renderFence;
   VkCommandPool cmdPool;
   VkCommandBuffer cmdBuffer;
+
+  AllocatedBuffer cameraBuffer;
 };
+
+struct GPUCameraData{
+  glm::mat4 view;
+  glm::mat4 proj;
+  glm::mat4 viewProj;
+};
+
 }  // namespace ege
 #endif  //TYPES_HPP

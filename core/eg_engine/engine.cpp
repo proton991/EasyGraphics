@@ -277,6 +277,19 @@ void EGEngine::InitSyncStructures() {
   }
 }
 
+void EGEngine::InitDescriptors() {
+  for (int i = 0; i < FRAME_OVERLAP; ++i) {
+    m_frames[i].cameraBuffer = CreateBuffer(
+        sizeof(GPUCameraData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+  }
+  for (int i = 0; i < FRAME_OVERLAP; ++i) {
+    m_mainDestructionQueue.PushFunction([&]() {
+      vmaDestroyBuffer(m_allocator, m_frames[i].cameraBuffer.m_buffer,
+                       m_frames[i].cameraBuffer.m_allocation);
+    });
+  }
+}
+
 void EGEngine::InitPipelines() {
 
   VkPipelineLayoutCreateInfo meshPipelineLayoutInfo = vkh::init::PipelineLayoutCreateInfo();
@@ -628,5 +641,26 @@ void EGEngine::Destroy() {
 
     SDL_DestroyWindow(m_window);
   }
+}
+
+AllocatedBuffer EGEngine::CreateBuffer(size_t bufferSize, VkBufferUsageFlags usage,
+                                       VmaMemoryUsage memoryUsage,
+                                       VkMemoryPropertyFlags requiredFlags) {
+  VkBufferCreateInfo bufferInfo{};
+  bufferInfo.size  = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+  bufferInfo.pNext = nullptr;
+  bufferInfo.size  = bufferSize;
+  bufferInfo.usage = usage;
+
+  VmaAllocationCreateInfo vmaAllocInfo{};
+  vmaAllocInfo.usage         = memoryUsage;
+  vmaAllocInfo.requiredFlags = requiredFlags;
+
+  AllocatedBuffer buffer{};
+  vkh::VkCheck(vmaCreateBuffer(m_allocator, &bufferInfo, &vmaAllocInfo, &buffer.m_buffer,
+                               &buffer.m_allocation, nullptr),
+               "create buffer using vma");
+
+  return buffer;
 }
 }  // namespace ege
