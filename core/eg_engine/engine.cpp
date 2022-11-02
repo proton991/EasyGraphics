@@ -33,6 +33,8 @@ void EGEngine::Init() {
 
   InitSyncStructures();
 
+  InitDescriptors();
+
   InitPipelines();
 
   LoadMeshes();
@@ -278,16 +280,22 @@ void EGEngine::InitSyncStructures() {
 }
 
 void EGEngine::InitDescriptors() {
+    m_descriptorAllocator = new vkh::DescriptorAllocator();
+    m_descriptorAllocator->Init(m_device);
+
+    m_descriptorLayoutCache = new vkh::DescriptorLayoutCache();
+    m_descriptorLayoutCache->Init(m_device);
+
   for (int i = 0; i < FRAME_OVERLAP; ++i) {
     m_frames[i].cameraBuffer = CreateBuffer(
         sizeof(GPUCameraData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
   }
-  for (int i = 0; i < FRAME_OVERLAP; ++i) {
-    m_mainDestructionQueue.PushFunction([&]() {
+  m_mainDestructionQueue.PushFunction([&]() {
+    for (int i = 0; i < FRAME_OVERLAP; ++i) {
       vmaDestroyBuffer(m_allocator, m_frames[i].cameraBuffer.m_buffer,
                        m_frames[i].cameraBuffer.m_allocation);
-    });
-  }
+    }
+  });
 }
 
 void EGEngine::InitPipelines() {
@@ -631,6 +639,9 @@ void EGEngine::Destroy() {
 
     vmaDestroyAllocator(m_allocator);
 
+    m_descriptorAllocator->Cleanup();
+    m_descriptorLayoutCache->Cleanup();
+
     vkh::VulkanFunction::GetInstance().fp_vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 
     fp_vkDestroyDevice(m_device, nullptr);
@@ -647,7 +658,7 @@ AllocatedBuffer EGEngine::CreateBuffer(size_t bufferSize, VkBufferUsageFlags usa
                                        VmaMemoryUsage memoryUsage,
                                        VkMemoryPropertyFlags requiredFlags) {
   VkBufferCreateInfo bufferInfo{};
-  bufferInfo.size  = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+  bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
   bufferInfo.pNext = nullptr;
   bufferInfo.size  = bufferSize;
   bufferInfo.usage = usage;

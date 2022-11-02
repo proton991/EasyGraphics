@@ -14,6 +14,7 @@
 #include "vulkan_helper/vk_device.hpp"
 #include "vulkan_helper/vk_dispatch.hpp"
 #include "vulkan_helper/vk_pipeline.hpp"
+#include "vulkan_helper/vk_descriptors.hpp"
 
 namespace ege {
 //number of frames to overlap when rendering
@@ -144,6 +145,9 @@ private:
                   200.0f};
 
   std::unordered_map<std::string, Mesh> m_meshes;
+
+  vkh::DescriptorAllocator* m_descriptorAllocator;
+  vkh::DescriptorLayoutCache* m_descriptorLayoutCache;
 };
 }  // namespace ege
 
