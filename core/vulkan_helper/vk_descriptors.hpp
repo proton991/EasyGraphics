@@ -31,13 +31,12 @@ public:
   void Cleanup();
 
   VkDevice m_device;
+
 private:
   VkDescriptorPool CreatePool(const DescriptorAllocator::PoolSizes& poolSizes, int count,
                               VkDescriptorPoolCreateFlags flags);
 
   VkDescriptorPool GrabPool();
-
-
 
   VkDescriptorPool m_currentPool{VK_NULL_HANDLE};
   PoolSizes m_poolSizes;
@@ -84,8 +83,8 @@ private:
 
 class DescriptorBuilder {
 public:
-  static DescriptorBuilder Begin(DescriptorLayoutCache* layoutCache, DescriptorAllocator* allocator,
-                                 PFN_vkUpdateDescriptorSets fp_vkUpdateDescriptorSets);
+  static DescriptorBuilder Begin(DescriptorLayoutCache* layoutCache,
+                                 DescriptorAllocator* allocator);
 
   DescriptorBuilder& BindBuffer(uint32_t binding, VkDescriptorBufferInfo* bufferInfo,
                                 VkDescriptorType type, VkShaderStageFlags stageFlags);

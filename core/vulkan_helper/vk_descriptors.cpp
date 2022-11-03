@@ -205,13 +205,14 @@ size_t DescriptorLayoutCache::DescriptorLayoutInfo::hash() const {
 
 /** DescriptorBuilder **/
 DescriptorBuilder DescriptorBuilder::Begin(DescriptorLayoutCache* layoutCache,
-                                           DescriptorAllocator* allocator,
-                                           PFN_vkUpdateDescriptorSets fp_vkUpdateDescriptorSets) {
+                                           DescriptorAllocator* allocator) {
   DescriptorBuilder builder;
   builder.m_cache     = layoutCache;
   builder.m_allocator = allocator;
 
-  builder.m_table.fp_vkUpdateDescriptorSets = fp_vkUpdateDescriptorSets;
+  builder.m_table.fp_vkUpdateDescriptorSets = reinterpret_cast<PFN_vkUpdateDescriptorSets>(
+      VulkanFunction::GetInstance().fp_vkGetDeviceProcAddr(builder.m_allocator->m_device,
+                                                           "vkUpdateDescriptorSets"));
 
   return builder;
 }

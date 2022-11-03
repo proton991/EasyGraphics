@@ -248,4 +248,17 @@ VkPipelineDepthStencilStateCreateInfo DepthStencilStateCreateInfo(bool bDepthTes
 
   return info;
 }
+
+VkDescriptorSetLayoutBinding DescriptorSetLayoutBinding(VkDescriptorType type,
+                                                        VkShaderStageFlags stageFlags,
+                                                        uint32_t binding) {
+  VkDescriptorSetLayoutBinding setbind{};
+  setbind.binding            = binding;
+  setbind.descriptorCount    = 1;
+  setbind.descriptorType     = type;
+  setbind.pImmutableSamplers = nullptr;
+  setbind.stageFlags         = stageFlags;
+
+  return setbind;
+}
 }  // namespace vkh::init

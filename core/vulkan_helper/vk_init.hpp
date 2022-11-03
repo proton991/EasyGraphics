@@ -21,7 +21,8 @@ VkSubmitInfo SubmitInfo(VkCommandBuffer* cmd);
 
 VkPresentInfoKHR PresentInfo();
 
-VkRenderPassBeginInfo RenderpassBeginInfo(VkRenderPass renderPass, VkExtent2D windowExtent, VkFramebuffer framebuffer);
+VkRenderPassBeginInfo RenderpassBeginInfo(VkRenderPass renderPass, VkExtent2D windowExtent,
+                                          VkFramebuffer framebuffer);
 
 VkPipelineLayoutCreateInfo PipelineLayoutCreateInfo();
 
@@ -39,10 +40,16 @@ VkPipelineMultisampleStateCreateInfo MultisampleStateCreateInfo();
 
 VkPipelineColorBlendAttachmentState ColorBlendAttachmentState();
 
-VkImageViewCreateInfo ImageViewCreateInfo(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags);
+VkImageViewCreateInfo ImageViewCreateInfo(VkFormat format, VkImage image,
+                                          VkImageAspectFlags aspectFlags);
 
 VkImageCreateInfo ImageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent);
 
-VkPipelineDepthStencilStateCreateInfo DepthStencilStateCreateInfo(bool bDepthTest, bool bDepthWrite, VkCompareOp compareOp);
+VkPipelineDepthStencilStateCreateInfo DepthStencilStateCreateInfo(bool bDepthTest, bool bDepthWrite,
+                                                                  VkCompareOp compareOp);
+
+VkDescriptorSetLayoutBinding DescriptorSetLayoutBinding(VkDescriptorType type,
+                                                        VkShaderStageFlags stageFlags,
+                                                        uint32_t binding);
 }  // namespace vkh::init
 #endif  //VK_INIT_HPP

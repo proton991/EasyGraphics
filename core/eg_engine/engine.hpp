@@ -148,6 +148,8 @@ private:
 
   vkh::DescriptorAllocator* m_descriptorAllocator;
   vkh::DescriptorLayoutCache* m_descriptorLayoutCache;
+
+  VkDescriptorSetLayout m_globalSetLayout;
 };
 }  // namespace ege
 

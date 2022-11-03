@@ -280,18 +280,27 @@ void EGEngine::InitSyncStructures() {
 }
 
 void EGEngine::InitDescriptors() {
-    m_descriptorAllocator = new vkh::DescriptorAllocator();
-    m_descriptorAllocator->Init(m_device);
+  m_descriptorAllocator = new vkh::DescriptorAllocator();
+  m_descriptorAllocator->Init(m_device);
 
-    m_descriptorLayoutCache = new vkh::DescriptorLayoutCache();
-    m_descriptorLayoutCache->Init(m_device);
+  m_descriptorLayoutCache = new vkh::DescriptorLayoutCache();
+  m_descriptorLayoutCache->Init(m_device);
 
   for (int i = 0; i < FRAME_OVERLAP; ++i) {
+    m_frames[i].descriptorAllocator = new vkh::DescriptorAllocator();
+    m_frames[i].descriptorAllocator->Init(m_device);
+
     m_frames[i].cameraBuffer = CreateBuffer(
         sizeof(GPUCameraData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    VkDescriptorBufferInfo cameraBufferInfo = m_frames[i].cameraBuffer.GetDescriptorBufferInfo();
+    vkh::DescriptorBuilder::Begin(m_descriptorLayoutCache, m_frames[i].descriptorAllocator)
+        .BindBuffer(0, &cameraBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                    VK_SHADER_STAGE_VERTEX_BIT)
+        .Build(m_frames[i].globalDescriptor, m_globalSetLayout);
   }
   m_mainDestructionQueue.PushFunction([&]() {
     for (int i = 0; i < FRAME_OVERLAP; ++i) {
+      m_frames[i].descriptorAllocator->Cleanup();
       vmaDestroyBuffer(m_allocator, m_frames[i].cameraBuffer.m_buffer,
                        m_frames[i].cameraBuffer.m_allocation);
     }
@@ -308,6 +317,11 @@ void EGEngine::InitPipelines() {
 
   meshPipelineLayoutInfo.pPushConstantRanges    = &pushConstant;
   meshPipelineLayoutInfo.pushConstantRangeCount = 1;
+
+  VkDescriptorSetLayout setLayouts[] = {m_globalSetLayout};
+
+  meshPipelineLayoutInfo.setLayoutCount = 1;
+  meshPipelineLayoutInfo.pSetLayouts    = setLayouts;
 
   VkPipelineLayout meshPipelineLayout;
   VkPipeline meshPipeline;
@@ -353,7 +367,7 @@ void EGEngine::InitPipelines() {
       vertexInputDescription.bindings.size();
 
   VkShaderModule meshVertShader;
-  if (!LoadShaderModule("../shaders/spv/tri_mesh_pushconstants.vert.spv", &meshVertShader)) {
+  if (!LoadShaderModule("../shaders/spv/tri_mesh_descriptors.vert.spv", &meshVertShader)) {
     vkh::Log("Error when building tri_mesh vertex shader module!");
   } else {
     vkh::Log("tri_mesh vertex shader successfully loaded!");
@@ -531,8 +545,7 @@ void EGEngine::Draw() {
                "begin command buffer");
 
   VkClearValue clearValue;
-  float flash      = abs(sin(m_frameNumber / 120.f));
-  clearValue.color = {{0.0f, 0.0f, flash, 1.0f}};
+  clearValue.color = {{0.0f, 0.0f, 0.0f, 1.0f}};
 
   VkClearValue depthClear;
   depthClear.depthStencil.depth = 1.f;
@@ -671,6 +684,7 @@ AllocatedBuffer EGEngine::CreateBuffer(size_t bufferSize, VkBufferUsageFlags usa
   vkh::VkCheck(vmaCreateBuffer(m_allocator, &bufferInfo, &vmaAllocInfo, &buffer.m_buffer,
                                &buffer.m_allocation, nullptr),
                "create buffer using vma");
+  buffer.m_size = bufferSize;
 
   return buffer;
 }
