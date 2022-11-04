@@ -75,6 +75,8 @@ void EGEngine::InitVulkan() {
   m_dispatchTable = vkhDevice.MakeDispatchTable();
   vkh::VulkanFunction::GetInstance().GetDeviceProcAddr(m_device, fp_vkDestroyDevice,
                                                        "vkDestroyDevice");
+  std::cout << "The GPU has a minimum buffer alignment of "
+            << m_gpuProperties.limits.minUniformBufferOffsetAlignment << std::endl;
 }
 
 void EGEngine::InitVMA() {
@@ -286,6 +288,10 @@ void EGEngine::InitDescriptors() {
   m_descriptorLayoutCache = new vkh::DescriptorLayoutCache();
   m_descriptorLayoutCache->Init(m_device);
 
+  const size_t sceneParamBufferSize = FRAME_OVERLAP * PadUniformBufferSize(sizeof(GPUSceneData));
+  m_sceneParameterBuffer = CreateBuffer(sceneParamBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                        VMA_MEMORY_USAGE_CPU_TO_GPU);
+
   for (int i = 0; i < FRAME_OVERLAP; ++i) {
     m_frames[i].descriptorAllocator = new vkh::DescriptorAllocator();
     m_frames[i].descriptorAllocator->Init(m_device);
@@ -293,12 +299,20 @@ void EGEngine::InitDescriptors() {
     m_frames[i].cameraBuffer = CreateBuffer(
         sizeof(GPUCameraData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
     VkDescriptorBufferInfo cameraBufferInfo = m_frames[i].cameraBuffer.GetDescriptorBufferInfo();
+    VkDescriptorBufferInfo sceneBufferInfo  = m_sceneParameterBuffer.GetDescriptorBufferInfo();
+
+    sceneBufferInfo.range = sizeof(GPUSceneData);
+
     vkh::DescriptorBuilder::Begin(m_descriptorLayoutCache, m_frames[i].descriptorAllocator)
         .BindBuffer(0, &cameraBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                     VK_SHADER_STAGE_VERTEX_BIT)
+        .BindBuffer(1, &sceneBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
         .Build(m_frames[i].globalDescriptor, m_globalSetLayout);
   }
   m_mainDestructionQueue.PushFunction([&]() {
+    vmaDestroyBuffer(m_allocator, m_sceneParameterBuffer.m_buffer,
+                     m_sceneParameterBuffer.m_allocation);
     for (int i = 0; i < FRAME_OVERLAP; ++i) {
       m_frames[i].descriptorAllocator->Cleanup();
       vmaDestroyBuffer(m_allocator, m_frames[i].cameraBuffer.m_buffer,
@@ -374,7 +388,7 @@ void EGEngine::InitPipelines() {
   }
 
   VkShaderModule triangleFragShader;
-  if (!LoadShaderModule("../shaders/spv/colored_triangle.frag.spv", &triangleFragShader)) {
+  if (!LoadShaderModule("../shaders/spv/default_lit.frag.spv", &triangleFragShader)) {
     vkh::Log("Error when building triangle fragment shader module!");
   } else {
     vkh::Log("Triangle fragment shader successfully loaded!");
@@ -687,5 +701,15 @@ AllocatedBuffer EGEngine::CreateBuffer(size_t bufferSize, VkBufferUsageFlags usa
   buffer.m_size = bufferSize;
 
   return buffer;
+}
+
+size_t EGEngine::PadUniformBufferSize(size_t originalSize) {
+  // Calculate required alignment based on minimum device offset alignment
+  size_t minUboAlignment = m_gpuProperties.limits.minUniformBufferOffsetAlignment;
+  size_t alignedSize     = originalSize;
+  if (minUboAlignment > 0) {
+    alignedSize = (alignedSize + minUboAlignment - 1) & ~(minUboAlignment - 1);
+  }
+  return alignedSize;
 }
 }  // namespace ege

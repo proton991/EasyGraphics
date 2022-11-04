@@ -15,6 +15,19 @@ void EGEngine::RenderScene() {
 
   vmaUnmapMemory(m_allocator, GetCurrentFrame().cameraBuffer.m_allocation);
 
+  float framed = (m_frameNumber / 120.f);
+
+  m_sceneParameters.ambientColor = {sin(framed), 0, cos(framed), 1};
+
+  char* sceneData;
+  vmaMapMemory(m_allocator, m_sceneParameterBuffer.m_allocation, (void**)&sceneData);
+  int frameIndex = m_frameNumber % FRAME_OVERLAP;
+
+  uint32_t uniformOffset = PadUniformBufferSize(sizeof(GPUSceneData)) * frameIndex;
+  sceneData += PadUniformBufferSize(sizeof(GPUSceneData)) * frameIndex;
+  memcpy(sceneData, &m_sceneParameters, sizeof(GPUSceneData));
+  vmaUnmapMemory(m_allocator, m_sceneParameterBuffer.m_allocation);
+
   Mesh* lastMesh         = nullptr;
   Material* lastMaterial = nullptr;
 
@@ -26,7 +39,7 @@ void EGEngine::RenderScene() {
                                            VK_PIPELINE_BIND_POINT_GRAPHICS, material->pipeline);
       m_dispatchTable.fp_vkCmdBindDescriptorSets(
           GetCurrentFrame().cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, material->pipelineLayout, 0,
-          1, &GetCurrentFrame().globalDescriptor, 0, nullptr);
+          1, &GetCurrentFrame().globalDescriptor, 1, &uniformOffset);
 
       lastMaterial = material;
     }

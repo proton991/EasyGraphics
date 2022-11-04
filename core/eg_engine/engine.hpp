@@ -81,6 +81,8 @@ private:
 
   void Draw();
 
+  size_t PadUniformBufferSize(size_t originalSize);
+
   AllocatedBuffer CreateBuffer(size_t bufferSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags requiredFlags = 0);
 
   FrameData& GetCurrentFrame() { return m_frames[m_frameNumber % FRAME_OVERLAP]; }
@@ -150,6 +152,9 @@ private:
   vkh::DescriptorLayoutCache* m_descriptorLayoutCache;
 
   VkDescriptorSetLayout m_globalSetLayout;
+
+  GPUSceneData m_sceneParameters;
+  AllocatedBuffer m_sceneParameterBuffer;
 };
 }  // namespace ege
 
