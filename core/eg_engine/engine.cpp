@@ -58,7 +58,13 @@ void EGEngine::InitVulkan() {
   vkh::PhysicalDevice vkhPhysicalDevice =
       pdSelector.SetSurface(m_surface).RequirePresent(true).Select();
   vkh::DeviceBuilder deviceBuilder{vkhPhysicalDevice};
-  vkh::Device vkhDevice         = deviceBuilder.Build();
+  VkPhysicalDeviceShaderDrawParametersFeatures shader_draw_parameters_features{};
+  shader_draw_parameters_features.sType =
+      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;
+  shader_draw_parameters_features.pNext                = nullptr;
+  shader_draw_parameters_features.shaderDrawParameters = VK_TRUE;
+
+  vkh::Device vkhDevice         = deviceBuilder.addPNext(&shader_draw_parameters_features).Build();
   m_device                      = vkhDevice.vkDevice;
   m_chosenGPU                   = vkhDevice.physicalDevice;
   m_gpuProperties               = vkhPhysicalDevice.properties;
@@ -298,10 +304,17 @@ void EGEngine::InitDescriptors() {
 
     m_frames[i].cameraBuffer = CreateBuffer(
         sizeof(GPUCameraData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+
+    m_frames[i].objectBuffer =
+        CreateBuffer(sizeof(GPUObjectData) * MAX_OBJECTS, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                     VMA_MEMORY_USAGE_CPU_TO_GPU);
+
     VkDescriptorBufferInfo cameraBufferInfo = m_frames[i].cameraBuffer.GetDescriptorBufferInfo();
     VkDescriptorBufferInfo sceneBufferInfo  = m_sceneParameterBuffer.GetDescriptorBufferInfo();
 
     sceneBufferInfo.range = sizeof(GPUSceneData);
+
+    VkDescriptorBufferInfo objBufferInfo = m_frames[i].objectBuffer.GetDescriptorBufferInfo();
 
     vkh::DescriptorBuilder::Begin(m_descriptorLayoutCache, m_frames[i].descriptorAllocator)
         .BindBuffer(0, &cameraBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -309,6 +322,11 @@ void EGEngine::InitDescriptors() {
         .BindBuffer(1, &sceneBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
         .Build(m_frames[i].globalDescriptor, m_globalSetLayout);
+
+    vkh::DescriptorBuilder::Begin(m_descriptorLayoutCache, m_frames[i].descriptorAllocator)
+        .BindBuffer(0, &objBufferInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                    VK_SHADER_STAGE_VERTEX_BIT)
+        .Build(m_frames[i].objectDescriptor, m_objectSetLayout);
   }
   m_mainDestructionQueue.PushFunction([&]() {
     vmaDestroyBuffer(m_allocator, m_sceneParameterBuffer.m_buffer,
@@ -317,6 +335,8 @@ void EGEngine::InitDescriptors() {
       m_frames[i].descriptorAllocator->Cleanup();
       vmaDestroyBuffer(m_allocator, m_frames[i].cameraBuffer.m_buffer,
                        m_frames[i].cameraBuffer.m_allocation);
+      vmaDestroyBuffer(m_allocator, m_frames[i].objectBuffer.m_buffer,
+                       m_frames[i].objectBuffer.m_allocation);
     }
   });
 }
@@ -332,9 +352,9 @@ void EGEngine::InitPipelines() {
   meshPipelineLayoutInfo.pPushConstantRanges    = &pushConstant;
   meshPipelineLayoutInfo.pushConstantRangeCount = 1;
 
-  VkDescriptorSetLayout setLayouts[] = {m_globalSetLayout};
+  VkDescriptorSetLayout setLayouts[] = {m_globalSetLayout, m_objectSetLayout};
 
-  meshPipelineLayoutInfo.setLayoutCount = 1;
+  meshPipelineLayoutInfo.setLayoutCount = 2;
   meshPipelineLayoutInfo.pSetLayouts    = setLayouts;
 
   VkPipelineLayout meshPipelineLayout;
@@ -381,7 +401,7 @@ void EGEngine::InitPipelines() {
       vertexInputDescription.bindings.size();
 
   VkShaderModule meshVertShader;
-  if (!LoadShaderModule("../shaders/spv/tri_mesh_descriptors.vert.spv", &meshVertShader)) {
+  if (!LoadShaderModule("../shaders/spv/tri_mesh_ssbo.vert.spv", &meshVertShader)) {
     vkh::Log("Error when building tri_mesh vertex shader module!");
   } else {
     vkh::Log("tri_mesh vertex shader successfully loaded!");

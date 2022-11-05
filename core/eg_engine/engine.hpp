@@ -16,6 +16,7 @@
 #include "vulkan_helper/vk_pipeline.hpp"
 #include "vulkan_helper/vk_descriptors.hpp"
 
+#define MAX_OBJECTS 10000
 namespace ege {
 //number of frames to overlap when rendering
 constexpr unsigned int FRAME_OVERLAP = 2;
@@ -152,6 +153,7 @@ private:
   vkh::DescriptorLayoutCache* m_descriptorLayoutCache;
 
   VkDescriptorSetLayout m_globalSetLayout;
+  VkDescriptorSetLayout m_objectSetLayout;
 
   GPUSceneData m_sceneParameters;
   AllocatedBuffer m_sceneParameterBuffer;

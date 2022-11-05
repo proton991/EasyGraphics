@@ -46,6 +46,9 @@ struct FrameData {
   AllocatedBuffer cameraBuffer;
   VkDescriptorSet globalDescriptor;
 
+  AllocatedBuffer objectBuffer;
+  VkDescriptorSet objectDescriptor;
+
   vkh::DescriptorAllocator* descriptorAllocator;
 };
 

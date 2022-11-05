@@ -28,10 +28,22 @@ void EGEngine::RenderScene() {
   memcpy(sceneData, &m_sceneParameters, sizeof(GPUSceneData));
   vmaUnmapMemory(m_allocator, m_sceneParameterBuffer.m_allocation);
 
+  void* objectData;
+  vmaMapMemory(m_allocator, GetCurrentFrame().objectBuffer.m_allocation, &objectData);
+
+  GPUObjectData* objectSSBO = (GPUObjectData*)objectData;
+
+  for (int i = 0; i < m_sceneSystem.m_sceneObjs.size(); i++) {
+    auto& object              = m_sceneSystem.m_sceneObjs[i];
+    objectSSBO[i].modelMatrix = object.transformMatrix;
+  }
+
+  vmaUnmapMemory(m_allocator, GetCurrentFrame().objectBuffer.m_allocation);
   Mesh* lastMesh         = nullptr;
   Material* lastMaterial = nullptr;
 
-  for (const auto& sceneObj : m_sceneSystem.m_sceneObjs) {
+  for (int i = 0; i < m_sceneSystem.m_sceneObjs.size(); i++) {
+    const auto& sceneObj = m_sceneSystem.m_sceneObjs[i];
     Material* material = m_sceneSystem.m_materials[sceneObj.materialId];
     Mesh* mesh         = m_sceneSystem.m_meshes[sceneObj.meshId];
     if (material != lastMaterial) {
@@ -41,6 +53,9 @@ void EGEngine::RenderScene() {
           GetCurrentFrame().cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, material->pipelineLayout, 0,
           1, &GetCurrentFrame().globalDescriptor, 1, &uniformOffset);
 
+      m_dispatchTable.fp_vkCmdBindDescriptorSets(
+          GetCurrentFrame().cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, material->pipelineLayout, 1,
+          1, &GetCurrentFrame().objectDescriptor, 0, nullptr);
       lastMaterial = material;
     }
 
@@ -55,7 +70,7 @@ void EGEngine::RenderScene() {
                                                 &mesh->m_vertexBuffer.m_buffer, &offset);
       lastMesh = mesh;
     }
-    m_dispatchTable.fp_vkCmdDraw(GetCurrentFrame().cmdBuffer, mesh->m_vertices.size(), 1, 0, 0);
+    m_dispatchTable.fp_vkCmdDraw(GetCurrentFrame().cmdBuffer, mesh->m_vertices.size(), 1, 0, i);
   }
 }
 }  // namespace ege

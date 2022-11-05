@@ -254,6 +254,8 @@ Device DeviceBuilder::Build() const {
   deviceCreateInfo.queueCreateInfoCount    = static_cast<uint32_t>(queueCreateInfos.size());
   deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
   deviceCreateInfo.ppEnabledExtensionNames = extensions.data();
+
+  SetPNextChain(deviceCreateInfo, deviceInfo.pNextChain);
   Device device;
   VulkanFunction::GetInstance().fp_vkCreateDevice(physicalDevice.physicalDevice, &deviceCreateInfo,
                                                   nullptr, &device.vkDevice);
