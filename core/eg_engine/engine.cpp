@@ -64,7 +64,8 @@ void EGEngine::InitVulkan() {
   shader_draw_parameters_features.pNext                = nullptr;
   shader_draw_parameters_features.shaderDrawParameters = VK_TRUE;
 
-  vkh::Device vkhDevice         = deviceBuilder.addPNext(&shader_draw_parameters_features).Build();
+  vkh::Device vkhDevice = deviceBuilder.addPNext(&shader_draw_parameters_features).Build();
+
   m_device                      = vkhDevice.vkDevice;
   m_chosenGPU                   = vkhDevice.physicalDevice;
   m_gpuProperties               = vkhPhysicalDevice.properties;
@@ -121,8 +122,9 @@ void EGEngine::InitSwapchain() {
       m_depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, depthImageExtent);
 
   VmaAllocationCreateInfo depthImageAllocInfo{};
-  depthImageAllocInfo.usage         = VMA_MEMORY_USAGE_GPU_ONLY;
-  depthImageAllocInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+  depthImageAllocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+  depthImageAllocInfo.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+  //  depthImageAllocInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
   vmaCreateImage(m_allocator, &depthImageInfo, &depthImageAllocInfo, &m_depthImage.m_image,
                  &m_depthImage.m_allocation, nullptr);
@@ -295,19 +297,21 @@ void EGEngine::InitDescriptors() {
   m_descriptorLayoutCache->Init(m_device);
 
   const size_t sceneParamBufferSize = FRAME_OVERLAP * PadUniformBufferSize(sizeof(GPUSceneData));
-  m_sceneParameterBuffer = CreateBuffer(sceneParamBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                        VMA_MEMORY_USAGE_CPU_TO_GPU);
+  m_sceneParameterBuffer =
+      CreateBuffer(sceneParamBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO,
+                   VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
   for (int i = 0; i < FRAME_OVERLAP; ++i) {
     m_frames[i].descriptorAllocator = new vkh::DescriptorAllocator();
     m_frames[i].descriptorAllocator->Init(m_device);
 
-    m_frames[i].cameraBuffer = CreateBuffer(
-        sizeof(GPUCameraData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    m_frames[i].cameraBuffer =
+        CreateBuffer(sizeof(GPUCameraData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                     VMA_MEMORY_USAGE_AUTO, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
     m_frames[i].objectBuffer =
         CreateBuffer(sizeof(GPUObjectData) * MAX_OBJECTS, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                     VMA_MEMORY_USAGE_CPU_TO_GPU);
+                     VMA_MEMORY_USAGE_AUTO, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
     VkDescriptorBufferInfo cameraBufferInfo = m_frames[i].cameraBuffer.GetDescriptorBufferInfo();
     VkDescriptorBufferInfo sceneBufferInfo  = m_sceneParameterBuffer.GetDescriptorBufferInfo();
@@ -703,7 +707,7 @@ void EGEngine::Destroy() {
 
 AllocatedBuffer EGEngine::CreateBuffer(size_t bufferSize, VkBufferUsageFlags usage,
                                        VmaMemoryUsage memoryUsage,
-                                       VkMemoryPropertyFlags requiredFlags) {
+                                       VmaAllocationCreateFlags vmaFlags) {
   VkBufferCreateInfo bufferInfo{};
   bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
   bufferInfo.pNext = nullptr;
@@ -711,8 +715,8 @@ AllocatedBuffer EGEngine::CreateBuffer(size_t bufferSize, VkBufferUsageFlags usa
   bufferInfo.usage = usage;
 
   VmaAllocationCreateInfo vmaAllocInfo{};
-  vmaAllocInfo.usage         = memoryUsage;
-  vmaAllocInfo.requiredFlags = requiredFlags;
+  vmaAllocInfo.usage = memoryUsage;
+  vmaAllocInfo.flags = vmaFlags;
 
   AllocatedBuffer buffer{};
   vkh::VkCheck(vmaCreateBuffer(m_allocator, &bufferInfo, &vmaAllocInfo, &buffer.m_buffer,

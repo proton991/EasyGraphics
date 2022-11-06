@@ -73,7 +73,7 @@ private:
     bool requireDedicateComputeQueue  = false;
     bool requireDedicateTransferQueue = true;
     std::vector<std::string> requiredExtensions;
-    VkPhysicalDeviceFeatures requiredFeatures;
+    VkPhysicalDeviceFeatures requiredFeatures{};
   } criteria;
 };
 
@@ -110,7 +110,6 @@ public:
   VkSurfaceKHR surface                           = VK_NULL_HANDLE;
   VkAllocationCallbacks* allocationCallbacks    = VK_NULL_HANDLE;
   PFN_vkGetDeviceProcAddr fp_vkGetDeviceProcAddr = nullptr;
-  DispatchTable dispatchTable;
 
 private:
   struct {
@@ -139,6 +138,7 @@ private:
     std::vector<VkBaseOutStructure*> pNextChain;
     VkDeviceCreateFlags flags                  = static_cast<VkDeviceCreateFlags>(0);
     VkAllocationCallbacks* allocationCallbacks = VK_NULL_HANDLE;
+    VkPhysicalDeviceFeatures features{};
   } deviceInfo;
 };
 }  // namespace vkh

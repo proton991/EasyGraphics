@@ -84,7 +84,7 @@ private:
 
   size_t PadUniformBufferSize(size_t originalSize);
 
-  AllocatedBuffer CreateBuffer(size_t bufferSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags requiredFlags = 0);
+  AllocatedBuffer CreateBuffer(size_t bufferSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags vmaFlags);
 
   FrameData& GetCurrentFrame() { return m_frames[m_frameNumber % FRAME_OVERLAP]; }
 

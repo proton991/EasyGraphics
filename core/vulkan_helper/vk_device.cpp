@@ -222,8 +222,9 @@ void Device::DisplayInfo() const {
   std::cout << "Compute Queue: " << computeQueueIndex << "\n";
 }
 
-DeviceBuilder::DeviceBuilder(PhysicalDevice pd)
-    : physicalDevice(pd){}
+DeviceBuilder::DeviceBuilder(PhysicalDevice pd) : physicalDevice(pd) {
+  deviceInfo.features = pd.features;
+}
 
 Device DeviceBuilder::Build() const {
   std::vector<CustomQueueDescription> queueDescriptions;
@@ -232,11 +233,11 @@ Device DeviceBuilder::Build() const {
   }
   std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
   for (auto& description : queueDescriptions) {
-    VkDeviceQueueCreateInfo createInfo = {};
-    createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    createInfo.queueFamilyIndex        = description.index;
-    createInfo.queueCount              = description.count;
-    createInfo.pQueuePriorities        = description.priorities.data();
+    VkDeviceQueueCreateInfo createInfo{};
+    createInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    createInfo.queueFamilyIndex = description.index;
+    createInfo.queueCount       = description.count;
+    createInfo.pQueuePriorities = description.priorities.data();
     queueCreateInfos.push_back(createInfo);
   }
   std::vector<const char*> extensions;
@@ -252,8 +253,9 @@ Device DeviceBuilder::Build() const {
   deviceCreateInfo.flags                   = deviceInfo.flags;
   deviceCreateInfo.pQueueCreateInfos       = queueCreateInfos.data();
   deviceCreateInfo.queueCreateInfoCount    = static_cast<uint32_t>(queueCreateInfos.size());
-  deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+  deviceCreateInfo.enabledExtensionCount   = static_cast<uint32_t>(extensions.size());
   deviceCreateInfo.ppEnabledExtensionNames = extensions.data();
+  deviceCreateInfo.pEnabledFeatures        = &deviceInfo.features;
 
   SetPNextChain(deviceCreateInfo, deviceInfo.pNextChain);
   Device device;
