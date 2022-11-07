@@ -263,7 +263,14 @@ void EGEngine::InitCommands() {
       m_dispatchTable.fp_vkDestroyCommandPool(m_device, m_frames[i].cmdPool, nullptr);
     });
   }
-}
+  VkCommandPoolCreateInfo uploadCmdPoolInfo =
+      vkh::init::CommandPoolCreateInfo(m_queueFamilyIndices.graphics);
+  vkh::VkCheck(m_dispatchTable.fp_vkCreateCommandPool(m_device, &uploadCmdPoolInfo, nullptr,
+                                                      &m_uploadContext.cmdPool),
+               "create upload context command pool");
+  m_mainDestructionQueue.PushFunction([=]() {
+    m_dispatchTable.fp_vkDestroyCommandPool(m_device, m_uploadContext.cmdPool, nullptr);
+  });}
 
 void EGEngine::InitSyncStructures() {
   VkFenceCreateInfo fenceInfo = vkh::init::FenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
@@ -287,6 +294,14 @@ void EGEngine::InitSyncStructures() {
       m_dispatchTable.fp_vkDestroySemaphore(m_device, m_frames[i].renderSemaphore, nullptr);
     });
   }
+
+  VkFenceCreateInfo uploadFenceInfo = vkh::init::FenceCreateInfo();
+  vkh::VkCheck(m_dispatchTable.fp_vkCreateFence(m_device, &uploadFenceInfo, nullptr,
+                                                &m_uploadContext.uploadFence),
+               "create upload context fence");
+  m_mainDestructionQueue.PushFunction([=]() {
+    m_dispatchTable.fp_vkDestroyFence(m_device, m_uploadContext.uploadFence, nullptr);
+  });
 }
 
 void EGEngine::InitDescriptors() {
@@ -528,33 +543,57 @@ void EGEngine::LoadMeshes() {
 }
 
 void EGEngine::UploadMesh(Mesh& mesh) {
-  // allocate vertex buffer
-  VkBufferCreateInfo bufferInfo{};
-  bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-  bufferInfo.pNext = nullptr;
-  // size in bytes
-  bufferInfo.size  = mesh.m_vertices.size() * sizeof(Vertex);
-  bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+  const size_t bufferSize = mesh.m_vertices.size() * sizeof(Vertex);
+
+  VkBufferCreateInfo stagingBufferInfo{};
+  stagingBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+  stagingBufferInfo.pNext = nullptr;
+  stagingBufferInfo.size  = bufferSize;
+  stagingBufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
   VmaAllocationCreateInfo vmaAllocationInfo{};
-  vmaAllocationInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+  vmaAllocationInfo.usage = VMA_MEMORY_USAGE_AUTO;
+  vmaAllocationInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
 
+  AllocatedBuffer stagingBuffer;
+  vkh::VkCheck(vmaCreateBuffer(m_allocator, &stagingBufferInfo, &vmaAllocationInfo,
+                               &stagingBuffer.m_buffer, &stagingBuffer.m_allocation, nullptr),
+               "vma create staging buffer");
+
+  //copy vertex data
+  void* data;
+  vmaMapMemory(m_allocator, stagingBuffer.m_allocation, &data);
+
+  memcpy(data, mesh.m_vertices.data(), bufferSize);
+
+  vmaUnmapMemory(m_allocator, stagingBuffer.m_allocation);
+  // allocate vertex buffer
+  VkBufferCreateInfo vertexBufferInfo{};
+  vertexBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+  vertexBufferInfo.pNext = nullptr;
+  // size in bytes
+  vertexBufferInfo.size  = bufferSize;
+  vertexBufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+  // let the VMA library know that this data should be gpu native
+  vmaAllocationInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
   vkh::VkCheck(
-      vmaCreateBuffer(m_allocator, &bufferInfo, &vmaAllocationInfo, &mesh.m_vertexBuffer.m_buffer,
-                      &mesh.m_vertexBuffer.m_allocation, nullptr),
+      vmaCreateBuffer(m_allocator, &vertexBufferInfo, &vmaAllocationInfo,
+                      &mesh.m_vertexBuffer.m_buffer, &mesh.m_vertexBuffer.m_allocation, nullptr),
       "vma create buffer");
 
   m_mainDestructionQueue.PushFunction([=]() {
     vmaDestroyBuffer(m_allocator, mesh.m_vertexBuffer.m_buffer, mesh.m_vertexBuffer.m_allocation);
   });
 
-  void* data;
-  // copy vertex data
-  vmaMapMemory(m_allocator, mesh.m_vertexBuffer.m_allocation, &data);
-
-  memcpy(data, mesh.m_vertices.data(), mesh.m_vertices.size() * sizeof(Vertex));
-
-  vmaUnmapMemory(m_allocator, mesh.m_vertexBuffer.m_allocation);
+  ImmediateSubmit([=](VkCommandBuffer cmd) {
+    VkBufferCopy copy;
+    copy.dstOffset = 0;
+    copy.srcOffset = 0;
+    copy.size      = bufferSize;
+    m_dispatchTable.fp_vkCmdCopyBuffer(cmd, stagingBuffer.m_buffer, mesh.m_vertexBuffer.m_buffer, 1,
+                                       &copy);
+  });
+  vmaDestroyBuffer(m_allocator, stagingBuffer.m_buffer, stagingBuffer.m_allocation);
 }
 
 void EGEngine::Draw() {
@@ -736,4 +775,32 @@ size_t EGEngine::PadUniformBufferSize(size_t originalSize) {
   }
   return alignedSize;
 }
+
+void EGEngine::ImmediateSubmit(std::function<void(VkCommandBuffer cmdBuffer)>&& function) {
+  VkCommandBuffer cmdBuffer;
+  VkCommandBufferAllocateInfo cmdBufferAllocInfo =
+      vkh::init::CommandBufferAllocateInfo(m_uploadContext.cmdPool, 1);
+  vkh::VkCheck(
+      m_dispatchTable.fp_vkAllocateCommandBuffers(m_device, &cmdBufferAllocInfo, &cmdBuffer),
+      "allocate immediate submit cmd buffer");
+
+  VkCommandBufferBeginInfo cmdBeginInfo =
+      vkh::init::CommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+  vkh::VkCheck(m_dispatchTable.fp_vkBeginCommandBuffer(cmdBuffer, &cmdBeginInfo),
+               "begin one time submit command buffer");
+  function(cmdBuffer);
+  vkh::VkCheck(m_dispatchTable.fp_vkEndCommandBuffer(cmdBuffer),
+               "end one time submit command buffer");
+
+  VkSubmitInfo submitInfo = vkh::init::SubmitInfo(&cmdBuffer);
+  vkh::VkCheck(m_dispatchTable.fp_vkQueueSubmit(m_queueFamilies.graphics, 1, &submitInfo,
+                                                m_uploadContext.uploadFence),
+               "submit command buffer");
+
+  m_dispatchTable.fp_vkWaitForFences(m_device, 1, &m_uploadContext.uploadFence, true, 99999);
+  m_dispatchTable.fp_vkResetFences(m_device, 1, &m_uploadContext.uploadFence);
+
+  m_dispatchTable.fp_vkResetCommandPool(m_device, m_uploadContext.cmdPool, 0);
+}
+
 }  // namespace ege

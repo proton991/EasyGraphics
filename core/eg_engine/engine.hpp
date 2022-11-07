@@ -86,6 +86,8 @@ private:
 
   AllocatedBuffer CreateBuffer(size_t bufferSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags vmaFlags);
 
+  void ImmediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function);
+
   FrameData& GetCurrentFrame() { return m_frames[m_frameNumber % FRAME_OVERLAP]; }
 
   bool m_initialized{false};
@@ -157,6 +159,8 @@ private:
 
   GPUSceneData m_sceneParameters;
   AllocatedBuffer m_sceneParameterBuffer;
+
+  UploadContext m_uploadContext;
 };
 }  // namespace ege
 

@@ -69,5 +69,10 @@ struct GPUSceneData {
 struct GPUObjectData {
   glm::mat4 modelMatrix;
 };
+
+struct UploadContext {
+  VkFence uploadFence;
+  VkCommandPool cmdPool;
+};
 }  // namespace ege
 #endif  //TYPES_HPP
