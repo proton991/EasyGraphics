@@ -2,8 +2,8 @@
 #define SCENE_SYSTEM_HPP
 
 #include <glm/glm.hpp>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 #include "types.hpp"
 
@@ -42,7 +42,6 @@ private:
 
   std::unordered_map<Mesh*, ID_TYPE> m_meshMap;
   std::unordered_map<Material*, ID_TYPE> m_materialMap;
-
 };
-}
+}  // namespace ege
 #endif  //SCENE_SYSTEM_HPP

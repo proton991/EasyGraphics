@@ -119,7 +119,7 @@ void EGEngine::InitSwapchain() {
   m_swapchainImageViews  = vkhSwapchain.GetImageViews();
 
   m_mainDestructionQueue.PushFunction([=]() {
-    m_dispatchTable.fp_vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+    m_dispatchTable.destroySwapchainKHR(m_swapchain, nullptr);
   });
   VkExtent3D depthImageExtent      = {m_windowExtent.width, m_windowExtent.height, 1};
   VkImageCreateInfo depthImageInfo = vkh::init::ImageCreateInfo(
@@ -136,12 +136,11 @@ void EGEngine::InitSwapchain() {
   VkImageViewCreateInfo depthImgViewInfo = vkh::init::ImageViewCreateInfo(
       m_depthFormat, m_depthImage.m_image, VK_IMAGE_ASPECT_DEPTH_BIT);
 
-  vkh::VkCheck(
-      m_dispatchTable.fp_vkCreateImageView(m_device, &depthImgViewInfo, nullptr, &m_depthImageView),
-      "create depth image view");
+  vkh::VkCheck(m_dispatchTable.createImageView(&depthImgViewInfo, nullptr, &m_depthImageView),
+               "create depth image view");
 
   m_mainDestructionQueue.PushFunction([=] {
-    m_dispatchTable.fp_vkDestroyImageView(m_device, m_depthImageView, nullptr);
+    m_dispatchTable.destroyImageView(m_depthImageView, nullptr);
     vmaDestroyImage(m_allocator, m_depthImage.m_image, m_depthImage.m_allocation);
   });
 }
@@ -215,12 +214,11 @@ void EGEngine::InitDefaultRenderPass() {
   renderPassInfo.dependencyCount = 2;
   renderPassInfo.pDependencies   = &dependencies[0];
 
-  vkh::VkCheck(
-      m_dispatchTable.fp_vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass),
-      "Create render pass");
+  vkh::VkCheck(m_dispatchTable.createRenderPass(&renderPassInfo, nullptr, &m_renderPass),
+               "Create render pass");
 
   m_mainDestructionQueue.PushFunction([=]() {
-    m_dispatchTable.fp_vkDestroyRenderPass(m_device, m_renderPass, nullptr);
+    m_dispatchTable.destroyRenderPass(m_renderPass, nullptr);
   });
 }
 
@@ -238,12 +236,11 @@ void EGEngine::InitFramebuffers() {
     fbInfo.attachmentCount = 2;
     fbInfo.pAttachments    = &attachments[0];
 
-    vkh::VkCheck(
-        m_dispatchTable.fp_vkCreateFramebuffer(m_device, &fbInfo, nullptr, &m_framebuffers[i]),
-        "Create frame buffer");
+    vkh::VkCheck(m_dispatchTable.createFramebuffer(&fbInfo, nullptr, &m_framebuffers[i]),
+                 "Create frame buffer");
     m_mainDestructionQueue.PushFunction([=] {
-      m_dispatchTable.fp_vkDestroyFramebuffer(m_device, m_framebuffers[i], nullptr);
-      m_dispatchTable.fp_vkDestroyImageView(m_device, m_swapchainImageViews[i], nullptr);
+      m_dispatchTable.destroyFramebuffer(m_framebuffers[i], nullptr);
+      m_dispatchTable.destroyImageView(m_swapchainImageViews[i], nullptr);
     });
   }
 }
@@ -253,27 +250,25 @@ void EGEngine::InitCommands() {
       m_queueFamilyIndices.graphics, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
   for (int i = 0; i < FRAME_OVERLAP; ++i) {
-    vkh::VkCheck(m_dispatchTable.fp_vkCreateCommandPool(m_device, &cmdPoolInfo, nullptr,
-                                                        &m_frames[i].cmdPool),
+    vkh::VkCheck(m_dispatchTable.createCommandPool(&cmdPoolInfo, nullptr, &m_frames[i].cmdPool),
                  "Create command pool");
 
     VkCommandBufferAllocateInfo cmdBufferInfo = vkh::init::CommandBufferAllocateInfo(
         m_frames[i].cmdPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-    vkh::VkCheck(m_dispatchTable.fp_vkAllocateCommandBuffers(m_device, &cmdBufferInfo,
-                                                             &m_frames[i].cmdBuffer),
+    vkh::VkCheck(m_dispatchTable.allocateCommandBuffers(&cmdBufferInfo, &m_frames[i].cmdBuffer),
                  "Allocate command buffer");
 
     m_mainDestructionQueue.PushFunction([=] {
-      m_dispatchTable.fp_vkDestroyCommandPool(m_device, m_frames[i].cmdPool, nullptr);
+      m_dispatchTable.destroyCommandPool(m_frames[i].cmdPool, nullptr);
     });
   }
   VkCommandPoolCreateInfo uploadCmdPoolInfo =
       vkh::init::CommandPoolCreateInfo(m_queueFamilyIndices.graphics);
-  vkh::VkCheck(m_dispatchTable.fp_vkCreateCommandPool(m_device, &uploadCmdPoolInfo, nullptr,
-                                                      &m_uploadContext.cmdPool),
-               "create upload context command pool");
+  vkh::VkCheck(
+      m_dispatchTable.createCommandPool(&uploadCmdPoolInfo, nullptr, &m_uploadContext.cmdPool),
+      "create upload context command pool");
   m_mainDestructionQueue.PushFunction([=]() {
-    m_dispatchTable.fp_vkDestroyCommandPool(m_device, m_uploadContext.cmdPool, nullptr);
+    m_dispatchTable.destroyCommandPool(m_uploadContext.cmdPool, nullptr);
   });
 }
 
@@ -282,30 +277,28 @@ void EGEngine::InitSyncStructures() {
 
   VkSemaphoreCreateInfo semaphoreInfo = vkh::init::SemaphoreCreateInfo(0);
   for (int i = 0; i < FRAME_OVERLAP; ++i) {
-    vkh::VkCheck(
-        m_dispatchTable.fp_vkCreateFence(m_device, &fenceInfo, nullptr, &m_frames[i].renderFence),
-        "Create render fence");
+    vkh::VkCheck(m_dispatchTable.createFence(&fenceInfo, nullptr, &m_frames[i].renderFence),
+                 "Create render fence");
     m_mainDestructionQueue.PushFunction([=] {
-      m_dispatchTable.fp_vkDestroyFence(m_device, m_frames[i].renderFence, nullptr);
+      m_dispatchTable.destroyFence(m_frames[i].renderFence, nullptr);
     });
-    vkh::VkCheck(m_dispatchTable.fp_vkCreateSemaphore(m_device, &semaphoreInfo, nullptr,
-                                                      &m_frames[i].presentSemaphore),
-                 "Create present semaphore");
-    vkh::VkCheck(m_dispatchTable.fp_vkCreateSemaphore(m_device, &semaphoreInfo, nullptr,
-                                                      &m_frames[i].renderSemaphore),
-                 "Create render semaphore");
+    vkh::VkCheck(
+        m_dispatchTable.createSemaphore(&semaphoreInfo, nullptr, &m_frames[i].presentSemaphore),
+        "Create present semaphore");
+    vkh::VkCheck(
+        m_dispatchTable.createSemaphore(&semaphoreInfo, nullptr, &m_frames[i].renderSemaphore),
+        "Create render semaphore");
     m_mainDestructionQueue.PushFunction([=] {
-      m_dispatchTable.fp_vkDestroySemaphore(m_device, m_frames[i].presentSemaphore, nullptr);
-      m_dispatchTable.fp_vkDestroySemaphore(m_device, m_frames[i].renderSemaphore, nullptr);
+      m_dispatchTable.destroySemaphore(m_frames[i].presentSemaphore, nullptr);
+      m_dispatchTable.destroySemaphore(m_frames[i].renderSemaphore, nullptr);
     });
   }
 
   VkFenceCreateInfo uploadFenceInfo = vkh::init::FenceCreateInfo();
-  vkh::VkCheck(m_dispatchTable.fp_vkCreateFence(m_device, &uploadFenceInfo, nullptr,
-                                                &m_uploadContext.uploadFence),
+  vkh::VkCheck(m_dispatchTable.createFence(&uploadFenceInfo, nullptr, &m_uploadContext.uploadFence),
                "create upload context fence");
   m_mainDestructionQueue.PushFunction([=]() {
-    m_dispatchTable.fp_vkDestroyFence(m_device, m_uploadContext.uploadFence, nullptr);
+    m_dispatchTable.destroyFence(m_uploadContext.uploadFence, nullptr);
   });
 }
 
@@ -382,8 +375,7 @@ void EGEngine::InitPipelines() {
   }
 
   VkShaderModule texturedMeshShader;
-  if (!LoadShaderModule("../shaders/spv/textured_lit.frag.spv", &texturedMeshShader))
-  {
+  if (!LoadShaderModule("../shaders/spv/textured_lit.frag.spv", &texturedMeshShader)) {
     vkh::Log("Error when building textured_lit fragment shader ");
   } else {
     vkh::Log("textured_lit fragment shader successfully loaded!");
@@ -405,9 +397,9 @@ void EGEngine::InitPipelines() {
 
   VkPipelineLayout meshPipelineLayout;
   VkPipeline meshPipeline;
-  vkh::VkCheck(m_dispatchTable.fp_vkCreatePipelineLayout(m_device, &meshPipelineLayoutInfo, nullptr,
-                                                         &meshPipelineLayout),
-               "create mesh pipeline layout");
+  vkh::VkCheck(
+      m_dispatchTable.createPipelineLayout(&meshPipelineLayoutInfo, nullptr, &meshPipelineLayout),
+      "create mesh pipeline layout");
 
   vkh::PipelineBuilder pipelineBuilder{m_dispatchTable.fp_vkCreateGraphicsPipelines};
   // read vertex data from vertex buffers
@@ -462,13 +454,13 @@ void EGEngine::InitPipelines() {
       vkh::init::PipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, texturedMeshShader));
 
   // delete shaders
-  m_dispatchTable.fp_vkDestroyShaderModule(m_device, meshVertShader, nullptr);
-  m_dispatchTable.fp_vkDestroyShaderModule(m_device, colorFragShader, nullptr);
-  m_dispatchTable.fp_vkDestroyShaderModule(m_device, texturedMeshShader, nullptr);
+  m_dispatchTable.destroyShaderModule(meshVertShader, nullptr);
+  m_dispatchTable.destroyShaderModule(colorFragShader, nullptr);
+  m_dispatchTable.destroyShaderModule(texturedMeshShader, nullptr);
 
   m_mainDestructionQueue.PushFunction([=]() {
-    m_dispatchTable.fp_vkDestroyPipelineLayout(m_device, meshPipelineLayout, nullptr);
-    m_dispatchTable.fp_vkDestroyPipeline(m_device, meshPipeline, nullptr);
+    m_dispatchTable.destroyPipelineLayout(meshPipelineLayout, nullptr);
+    m_dispatchTable.destroyPipeline(meshPipeline, nullptr);
   });
 
   m_materialSystem.CreateMaterial("default", meshPipeline, meshPipelineLayout);
@@ -526,9 +518,8 @@ bool EGEngine::LoadShaderModule(const char* shaderPath, VkShaderModule* outShade
   shaderModuleInfo.codeSize = buffer.size() * sizeof(uint32_t);
   shaderModuleInfo.pCode    = buffer.data();
   VkShaderModule shaderModule;
-  vkh::VkCheck(
-      m_dispatchTable.fp_vkCreateShaderModule(m_device, &shaderModuleInfo, nullptr, &shaderModule),
-      "Create shader module");
+  vkh::VkCheck(m_dispatchTable.createShaderModule(&shaderModuleInfo, nullptr, &shaderModule),
+               "Create shader module");
   *outShaderModule = shaderModule;
   return true;
 }
@@ -570,10 +561,10 @@ void EGEngine::LoadImages() {
   VkImageViewCreateInfo imageViewInfo = vkh::init::ImageViewCreateInfo(
       VK_FORMAT_R8G8B8A8_SRGB, lostEmpire.image.m_image, VK_IMAGE_ASPECT_COLOR_BIT);
 
-  m_dispatchTable.fp_vkCreateImageView(m_device, &imageViewInfo, nullptr, &lostEmpire.imageView);
+  m_dispatchTable.createImageView(&imageViewInfo, nullptr, &lostEmpire.imageView);
 
   m_mainDestructionQueue.PushFunction([=]() {
-    m_dispatchTable.fp_vkDestroyImageView(m_device, lostEmpire.imageView, nullptr);
+    m_dispatchTable.destroyImageView(lostEmpire.imageView, nullptr);
   });
 
   m_loadedTextures["empire_diffuse"] = lostEmpire;
@@ -635,8 +626,8 @@ void EGEngine::UploadMesh(Mesh& mesh) {
     copy.dstOffset = 0;
     copy.srcOffset = 0;
     copy.size      = bufferSize;
-    m_dispatchTable.fp_vkCmdCopyBuffer(cmd, stagingBuffer.m_buffer, mesh.m_vertexBuffer.m_buffer, 1,
-                                       &copy);
+    m_dispatchTable.cmdCopyBuffer(cmd, stagingBuffer.m_buffer, mesh.m_vertexBuffer.m_buffer, 1,
+                                  &copy);
   });
   vmaDestroyBuffer(m_allocator, stagingBuffer.m_buffer, stagingBuffer.m_allocation);
 }
@@ -645,24 +636,22 @@ void EGEngine::Draw() {
   if (SDL_GetWindowFlags(m_window) & SDL_WINDOW_MINIMIZED) {
     return;
   }
-  vkh::VkCheck(m_dispatchTable.fp_vkWaitForFences(m_device, 1, &GetCurrentFrame().renderFence, true,
-                                                  TIME_OUT),
+  vkh::VkCheck(m_dispatchTable.waitForFences(1, &GetCurrentFrame().renderFence, true, TIME_OUT),
                "Wait for fences");
-  vkh::VkCheck(m_dispatchTable.fp_vkResetFences(m_device, 1, &GetCurrentFrame().renderFence),
-               "Reset fences");
-  vkh::VkCheck(m_dispatchTable.fp_vkResetCommandBuffer(GetCurrentFrame().cmdBuffer, 0),
+  vkh::VkCheck(m_dispatchTable.resetFences(1, &GetCurrentFrame().renderFence), "Reset fences");
+  vkh::VkCheck(m_dispatchTable.resetCommandBuffer(GetCurrentFrame().cmdBuffer, 0),
                "Reset command buffer");
 
   uint32_t swapchainImageIndex;
-  vkh::VkCheck(m_dispatchTable.fp_vkAcquireNextImageKHR(m_device, m_swapchain, TIME_OUT,
-                                                        GetCurrentFrame().presentSemaphore, nullptr,
-                                                        &swapchainImageIndex),
-               "Acquire image index");
+  vkh::VkCheck(
+      m_dispatchTable.acquireNextImageKHR(m_swapchain, TIME_OUT, GetCurrentFrame().presentSemaphore,
+                                          nullptr, &swapchainImageIndex),
+      "Acquire image index");
 
   VkCommandBufferBeginInfo cmdBeginInfo =
       vkh::init::CommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-  vkh::VkCheck(m_dispatchTable.fp_vkBeginCommandBuffer(GetCurrentFrame().cmdBuffer, &cmdBeginInfo),
+  vkh::VkCheck(m_dispatchTable.beginCommandBuffer(GetCurrentFrame().cmdBuffer, &cmdBeginInfo),
                "begin command buffer");
 
   VkClearValue clearValue;
@@ -679,15 +668,14 @@ void EGEngine::Draw() {
   rpInfo.clearValueCount = 2;
   rpInfo.pClearValues    = &clearValues[0];
 
-  m_dispatchTable.fp_vkCmdBeginRenderPass(GetCurrentFrame().cmdBuffer, &rpInfo,
-                                          VK_SUBPASS_CONTENTS_INLINE);
+  m_dispatchTable.cmdBeginRenderPass(GetCurrentFrame().cmdBuffer, &rpInfo,
+                                     VK_SUBPASS_CONTENTS_INLINE);
 
   RenderScene();
 
-  m_dispatchTable.fp_vkCmdEndRenderPass(GetCurrentFrame().cmdBuffer);
+  m_dispatchTable.cmdEndRenderPass(GetCurrentFrame().cmdBuffer);
 
-  vkh::VkCheck(m_dispatchTable.fp_vkEndCommandBuffer(GetCurrentFrame().cmdBuffer),
-               "end command buffer");
+  vkh::VkCheck(m_dispatchTable.endCommandBuffer(GetCurrentFrame().cmdBuffer), "end command buffer");
 
   VkSubmitInfo submitInfo        = vkh::init::SubmitInfo(&GetCurrentFrame().cmdBuffer);
   VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -701,8 +689,8 @@ void EGEngine::Draw() {
   submitInfo.pSignalSemaphores    = &GetCurrentFrame().renderSemaphore;
 
   //submit command buffer to the queue and execute it.
-  vkh::VkCheck(m_dispatchTable.fp_vkQueueSubmit(m_queueFamilies.graphics, 1, &submitInfo,
-                                                GetCurrentFrame().renderFence),
+  vkh::VkCheck(m_dispatchTable.queueSubmit(m_queueFamilies.graphics, 1, &submitInfo,
+                                           GetCurrentFrame().renderFence),
                "submit to graphics queue");
 
   VkPresentInfoKHR presentInfo = vkh::init::PresentInfo();
@@ -715,7 +703,7 @@ void EGEngine::Draw() {
 
   presentInfo.pImageIndices = &swapchainImageIndex;
 
-  vkh::VkCheck(m_dispatchTable.fp_vkQueuePresentKHR(m_queueFamilies.graphics, &presentInfo),
+  vkh::VkCheck(m_dispatchTable.queuePresentKHR(m_queueFamilies.graphics, &presentInfo),
                "queue present");
 
   m_frameNumber++;
@@ -767,7 +755,7 @@ void EGEngine::DisplayInfo() {
 
 void EGEngine::Destroy() {
   if (m_initialized) {
-    m_dispatchTable.fp_vkDeviceWaitIdle(m_device);
+    m_dispatchTable.deviceWaitIdle();
 
     m_mainDestructionQueue.Flush();
 
@@ -824,27 +812,25 @@ void EGEngine::ImmediateSubmit(std::function<void(VkCommandBuffer cmdBuffer)>&& 
   VkCommandBuffer cmdBuffer;
   VkCommandBufferAllocateInfo cmdBufferAllocInfo =
       vkh::init::CommandBufferAllocateInfo(m_uploadContext.cmdPool, 1);
-  vkh::VkCheck(
-      m_dispatchTable.fp_vkAllocateCommandBuffers(m_device, &cmdBufferAllocInfo, &cmdBuffer),
-      "allocate immediate submit cmd buffer");
+  vkh::VkCheck(m_dispatchTable.allocateCommandBuffers(&cmdBufferAllocInfo, &cmdBuffer),
+               "allocate immediate submit cmd buffer");
 
   VkCommandBufferBeginInfo cmdBeginInfo =
       vkh::init::CommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-  vkh::VkCheck(m_dispatchTable.fp_vkBeginCommandBuffer(cmdBuffer, &cmdBeginInfo),
+  vkh::VkCheck(m_dispatchTable.beginCommandBuffer(cmdBuffer, &cmdBeginInfo),
                "begin one time submit command buffer");
   function(cmdBuffer);
-  vkh::VkCheck(m_dispatchTable.fp_vkEndCommandBuffer(cmdBuffer),
-               "end one time submit command buffer");
+  vkh::VkCheck(m_dispatchTable.endCommandBuffer(cmdBuffer), "end one time submit command buffer");
 
   VkSubmitInfo submitInfo = vkh::init::SubmitInfo(&cmdBuffer);
-  vkh::VkCheck(m_dispatchTable.fp_vkQueueSubmit(m_queueFamilies.graphics, 1, &submitInfo,
-                                                m_uploadContext.uploadFence),
+  vkh::VkCheck(m_dispatchTable.queueSubmit(m_queueFamilies.graphics, 1, &submitInfo,
+                                           m_uploadContext.uploadFence),
                "submit command buffer");
 
-  m_dispatchTable.fp_vkWaitForFences(m_device, 1, &m_uploadContext.uploadFence, true, TIME_OUT);
-  m_dispatchTable.fp_vkResetFences(m_device, 1, &m_uploadContext.uploadFence);
+  m_dispatchTable.waitForFences(1, &m_uploadContext.uploadFence, true, TIME_OUT);
+  m_dispatchTable.resetFences(1, &m_uploadContext.uploadFence);
 
-  m_dispatchTable.fp_vkResetCommandPool(m_device, m_uploadContext.cmdPool, 0);
+  m_dispatchTable.resetCommandPool(m_uploadContext.cmdPool, 0);
 }
 
 }  // namespace ege

@@ -97,7 +97,7 @@ private:
     // debug callback - use the default so it is not nullptr
     PFN_vkDebugUtilsMessengerCallbackEXT debugCallback = VulkanDebugCallback;
     VkDebugUtilsMessageSeverityFlagsEXT debugMessageSeverity =
-        VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
     VkDebugUtilsMessageTypeFlagsEXT debugMessageType =
         VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
         VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |

@@ -46,15 +46,17 @@ void EGEngine::InitVulkan() {
                                                        "vkDestroyDevice");
 }
 void EGEngine::InitSwapchain() {
-  vkh::SwapchainBuilder swapchainBuilder{m_chosenGPU, m_device, m_surface, m_queueFamilyIndices.graphics, m_queueFamilyIndices.present};
+  vkh::SwapchainBuilder swapchainBuilder{m_chosenGPU, m_device, m_surface,
+                                         m_queueFamilyIndices.graphics,
+                                         m_queueFamilyIndices.present};
   vkh::Swapchain vkhSwapchain = swapchainBuilder.UseDefaultFormat()
                                     .SetDesiredPresentMode(VK_PRESENT_MODE_FIFO_KHR)
                                     .SetExtent(m_windowExtent.width, m_windowExtent.height)
                                     .Build();
   m_swapchain            = vkhSwapchain.swapchain;
   m_swapchainImageFormat = vkhSwapchain.imageFormat;
-//  m_swapchainImages      = vkhSwapchain.GetImages();
-//  m_swapchainImageViews  = vkhSwapchain.GetImageViews();
+  //  m_swapchainImages      = vkhSwapchain.GetImages();
+  //  m_swapchainImageViews  = vkhSwapchain.GetImageViews();
 }
 void EGEngine::DisplayInfo() {
   std::cout << "\n=========================================\n";
@@ -75,8 +77,8 @@ void EGEngine::DisplayInfo() {
 
 void EGEngine::Destroy() {
   if (m_initialized) {
-    m_dispatchTable.fp_vkDeviceWaitIdle(m_device);
-    m_dispatchTable.fp_vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+    m_dispatchTable.deviceWaitIdle();
+    m_dispatchTable.destroySwapchainKHR(m_swapchain, nullptr);
     vkh::VulkanFunction::GetInstance().fp_vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
     fp_vkDestroyDevice(m_device, nullptr);
     vkh::DestroyDebugUtilsMessenger(m_instance, m_debugUtilsMessenger, nullptr);
@@ -84,4 +86,4 @@ void EGEngine::Destroy() {
     SDL_DestroyWindow(m_window);
   }
 }
-}  // namespace egv
+}  // namespace ege

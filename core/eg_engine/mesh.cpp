@@ -7,45 +7,45 @@ VertexInputDescription Vertex::GetVertexDescription() {
   VertexInputDescription description;
 
   //we will have just 1 vertex buffer binding, with a per-vertex rate
-  VkVertexInputBindingDescription mainBinding = {};
-  mainBinding.binding = 0;
-  mainBinding.stride = sizeof(Vertex);
+  VkVertexInputBindingDescription mainBinding{};
+  mainBinding.binding   = 0;
+  mainBinding.stride    = sizeof(Vertex);
   mainBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
   description.bindings.push_back(mainBinding);
 
   //Position will be stored at Location 0
-  VkVertexInputAttributeDescription positionAttribute = {};
-  positionAttribute.binding = 0;
+  VkVertexInputAttributeDescription positionAttribute{};
+  positionAttribute.binding  = 0;
   positionAttribute.location = 0;
-  positionAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
-  positionAttribute.offset = offsetof(Vertex, position);
+  positionAttribute.format   = VK_FORMAT_R32G32B32_SFLOAT;
+  positionAttribute.offset   = offsetof(Vertex, position);
 
   //Normal will be stored at Location 1
-  VkVertexInputAttributeDescription normalAttribute = {};
-  normalAttribute.binding = 0;
+  VkVertexInputAttributeDescription normalAttribute{};
+  normalAttribute.binding  = 0;
   normalAttribute.location = 1;
-  normalAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
-  normalAttribute.offset = offsetof(Vertex, normal);
+  normalAttribute.format   = VK_FORMAT_R32G32B32_SFLOAT;
+  normalAttribute.offset   = offsetof(Vertex, normal);
 
   //Position will be stored at Location 2
-  VkVertexInputAttributeDescription colorAttribute = {};
-  colorAttribute.binding = 0;
+  VkVertexInputAttributeDescription colorAttribute{};
+  colorAttribute.binding  = 0;
   colorAttribute.location = 2;
-  colorAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
-  colorAttribute.offset = offsetof(Vertex, color);
+  colorAttribute.format   = VK_FORMAT_R32G32B32_SFLOAT;
+  colorAttribute.offset   = offsetof(Vertex, color);
 
   //UV will be stored at Location 3
-  VkVertexInputAttributeDescription uvAttribute = {};
-  uvAttribute.binding = 0;
+  VkVertexInputAttributeDescription uvAttribute{};
+  uvAttribute.binding  = 0;
   uvAttribute.location = 3;
-  uvAttribute.format = VK_FORMAT_R32G32_SFLOAT;
-  uvAttribute.offset = offsetof(Vertex, uv);
+  uvAttribute.format   = VK_FORMAT_R32G32_SFLOAT;
+  uvAttribute.offset   = offsetof(Vertex, uv);
 
   description.attributes.push_back(positionAttribute);
   description.attributes.push_back(normalAttribute);
   description.attributes.push_back(colorAttribute);
-//  description.attributes.push_back(uvAttribute);
+  //  description.attributes.push_back(uvAttribute);
   return description;
 }
 
@@ -62,8 +62,7 @@ bool Mesh::LoadFromObj(const char* filename) {
   std::string err;
 
   //load the OBJ file
-  tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filename,
-                   nullptr);
+  tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filename, nullptr);
   //make sure to output the warnings to the console, in case there are issues with the file
   if (!warn.empty()) {
     std::cout << "WARN: " << warn << std::endl;
@@ -102,7 +101,6 @@ bool Mesh::LoadFromObj(const char* filename) {
         tinyobj::real_t ux = attrib.texcoords[2 * idx.texcoord_index + 0];
         tinyobj::real_t uy = attrib.texcoords[2 * idx.texcoord_index + 1];
 
-
         //copy it into our vertex
         Vertex new_vert;
         new_vert.position.x = vx;
@@ -114,11 +112,10 @@ bool Mesh::LoadFromObj(const char* filename) {
         new_vert.normal.z = nz;
 
         new_vert.uv.x = ux;
-        new_vert.uv.y = 1-uy;
+        new_vert.uv.y = 1 - uy;
 
         //we are setting the vertex color as the vertex normal. This is just for display purposes
         new_vert.color = new_vert.normal;
-
 
         m_vertices.push_back(new_vert);
       }
@@ -128,4 +125,4 @@ bool Mesh::LoadFromObj(const char* filename) {
   std::cout << filename << " vertex count: " << m_vertices.size() << std::endl;
   return true;
 }
-}
+}  // namespace ege

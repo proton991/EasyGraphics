@@ -83,9 +83,9 @@ AllocatedImage UploadImage(int texWidth, int texHeight, VkFormat image_format, E
     imageBarrier_toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
     //barrier the image into the transfer-receive layout
-    engine.m_dispatchTable.fp_vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                                                   VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
-                                                   nullptr, 1, &imageBarrier_toTransfer);
+    engine.m_dispatchTable.cmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                              VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+                                              nullptr, 1, &imageBarrier_toTransfer);
 
     VkBufferImageCopy copyRegion{};
     copyRegion.bufferOffset      = 0;
@@ -99,9 +99,9 @@ AllocatedImage UploadImage(int texWidth, int texHeight, VkFormat image_format, E
     copyRegion.imageExtent                     = imageExtent;
 
     //copy the buffer into the image
-    engine.m_dispatchTable.fp_vkCmdCopyBufferToImage(cmd, stagingBuffer.m_buffer, newImage.m_image,
-                                                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
-                                                     &copyRegion);
+    engine.m_dispatchTable.cmdCopyBufferToImage(cmd, stagingBuffer.m_buffer, newImage.m_image,
+                                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+                                                &copyRegion);
 
     VkImageMemoryBarrier imageBarrier_toReadable = imageBarrier_toTransfer;
 
@@ -112,9 +112,9 @@ AllocatedImage UploadImage(int texWidth, int texHeight, VkFormat image_format, E
     imageBarrier_toReadable.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
     //barrier the image into the shader readable layout
-    engine.m_dispatchTable.fp_vkCmdPipelineBarrier(
-        cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr,
-        0, nullptr, 1, &imageBarrier_toReadable);
+    engine.m_dispatchTable.cmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                              VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr,
+                                              0, nullptr, 1, &imageBarrier_toReadable);
   });
 
   engine.m_mainDestructionQueue.PushFunction([=, &engine]() {

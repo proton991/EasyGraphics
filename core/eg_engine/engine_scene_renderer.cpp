@@ -47,13 +47,13 @@ void EGEngine::RenderScene() {
     Material* material = m_sceneSystem.m_materials[sceneObj.materialId];
     Mesh* mesh         = m_sceneSystem.m_meshes[sceneObj.meshId];
     if (material != lastMaterial) {
-      m_dispatchTable.fp_vkCmdBindPipeline(GetCurrentFrame().cmdBuffer,
+      m_dispatchTable.cmdBindPipeline(GetCurrentFrame().cmdBuffer,
                                            VK_PIPELINE_BIND_POINT_GRAPHICS, material->pipeline);
-      m_dispatchTable.fp_vkCmdBindDescriptorSets(
+      m_dispatchTable.cmdBindDescriptorSets(
           GetCurrentFrame().cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, material->pipelineLayout, 0,
           1, &GetCurrentFrame().globalDescriptor, 1, &uniformOffset);
 
-      m_dispatchTable.fp_vkCmdBindDescriptorSets(
+      m_dispatchTable.cmdBindDescriptorSets(
           GetCurrentFrame().cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, material->pipelineLayout, 1,
           1, &GetCurrentFrame().objectDescriptor, 0, nullptr);
       lastMaterial = material;
@@ -61,16 +61,16 @@ void EGEngine::RenderScene() {
 
     MeshPushConstants pushConstants{};
     pushConstants.renderMatrix = sceneObj.transformMatrix;
-    m_dispatchTable.fp_vkCmdPushConstants(GetCurrentFrame().cmdBuffer, material->pipelineLayout,
+    m_dispatchTable.cmdPushConstants(GetCurrentFrame().cmdBuffer, material->pipelineLayout,
                                           VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants),
                                           &pushConstants);
     if (mesh != lastMesh) {
       VkDeviceSize offset = 0;
-      m_dispatchTable.fp_vkCmdBindVertexBuffers(GetCurrentFrame().cmdBuffer, 0, 1,
+      m_dispatchTable.cmdBindVertexBuffers(GetCurrentFrame().cmdBuffer, 0, 1,
                                                 &mesh->m_vertexBuffer.m_buffer, &offset);
       lastMesh = mesh;
     }
-    m_dispatchTable.fp_vkCmdDraw(GetCurrentFrame().cmdBuffer, mesh->m_vertices.size(), 1, 0, i);
+    m_dispatchTable.cmdDraw(GetCurrentFrame().cmdBuffer, mesh->m_vertices.size(), 1, 0, i);
   }
 }
 }  // namespace ege
