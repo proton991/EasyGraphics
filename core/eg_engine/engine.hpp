@@ -11,10 +11,10 @@
 #include "material_system.hpp"
 #include "mesh.hpp"
 #include "scene_system.hpp"
+#include "vulkan_helper/vk_descriptors.hpp"
 #include "vulkan_helper/vk_device.hpp"
 #include "vulkan_helper/vk_dispatch.hpp"
 #include "vulkan_helper/vk_pipeline.hpp"
-#include "vulkan_helper/vk_descriptors.hpp"
 
 #define MAX_OBJECTS 10000
 namespace ege {
@@ -50,6 +50,9 @@ public:
 
   void DisplayInfo();
 
+//  const uint64_t TIME_OUT = std::numeric_limits<uint64_t>::max();
+  const uint64_t TIME_OUT = 1000000000;
+
 private:
   void InitVulkan();
 
@@ -76,6 +79,8 @@ private:
 
   void LoadMeshes();
 
+  void LoadImages();
+
   void UploadMesh(Mesh& mesh);
 
   void RenderScene();
@@ -84,7 +89,8 @@ private:
 
   size_t PadUniformBufferSize(size_t originalSize);
 
-  AllocatedBuffer CreateBuffer(size_t bufferSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags vmaFlags);
+  AllocatedBuffer CreateBuffer(size_t bufferSize, VkBufferUsageFlags usage,
+                               VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags vmaFlags);
 
   void ImmediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function);
 
@@ -161,6 +167,12 @@ private:
   AllocatedBuffer m_sceneParameterBuffer;
 
   UploadContext m_uploadContext;
+
+  std::unordered_map<std::string, Texture> m_loadedTextures;
+
+  friend bool LoadImageFromFile(EGEngine& engine, const char* file, AllocatedImage& outImage);
+  friend AllocatedImage UploadImage(int texWidth, int texHeight, VkFormat image_format,
+                                    EGEngine& engine, AllocatedBuffer& stagingBuffer);
 };
 }  // namespace ege
 

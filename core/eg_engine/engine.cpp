@@ -2,8 +2,10 @@
 #include <SDL2/SDL_vulkan.h>
 #include <fstream>
 #include <string>
+#include "texture.hpp"
 #include "vulkan_helper/core.hpp"
 #include "vulkan_helper/vk_init.hpp"
+
 #define VMA_IMPLEMENTATION
 #define VMA_STATIC_VULKAN_FUNCTIONS 0
 #define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
@@ -36,6 +38,8 @@ void EGEngine::Init() {
   InitDescriptors();
 
   InitPipelines();
+
+  LoadImages();
 
   LoadMeshes();
 
@@ -270,7 +274,8 @@ void EGEngine::InitCommands() {
                "create upload context command pool");
   m_mainDestructionQueue.PushFunction([=]() {
     m_dispatchTable.fp_vkDestroyCommandPool(m_device, m_uploadContext.cmdPool, nullptr);
-  });}
+  });
+}
 
 void EGEngine::InitSyncStructures() {
   VkFenceCreateInfo fenceInfo = vkh::init::FenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
@@ -362,6 +367,28 @@ void EGEngine::InitDescriptors() {
 
 void EGEngine::InitPipelines() {
 
+  VkShaderModule meshVertShader;
+  if (!LoadShaderModule("../shaders/spv/tri_mesh_ssbo.vert.spv", &meshVertShader)) {
+    vkh::Log("Error when building tri_mesh vertex shader module!");
+  } else {
+    vkh::Log("tri_mesh_ssbo vertex shader successfully loaded!");
+  }
+
+  VkShaderModule colorFragShader;
+  if (!LoadShaderModule("../shaders/spv/default_lit.frag.spv", &colorFragShader)) {
+    vkh::Log("Error when building default_lit fragment shader module!");
+  } else {
+    vkh::Log("default_lit fragment shader successfully loaded!");
+  }
+
+  VkShaderModule texturedMeshShader;
+  if (!LoadShaderModule("../shaders/spv/textured_lit.frag.spv", &texturedMeshShader))
+  {
+    vkh::Log("Error when building textured_lit fragment shader ");
+  } else {
+    vkh::Log("textured_lit fragment shader successfully loaded!");
+  }
+
   VkPipelineLayoutCreateInfo meshPipelineLayoutInfo = vkh::init::PipelineLayoutCreateInfo();
   VkPushConstantRange pushConstant;
   pushConstant.offset     = 0;
@@ -419,31 +446,25 @@ void EGEngine::InitPipelines() {
   pipelineBuilder.m_vertexInputInfo.vertexBindingDescriptionCount =
       vertexInputDescription.bindings.size();
 
-  VkShaderModule meshVertShader;
-  if (!LoadShaderModule("../shaders/spv/tri_mesh_ssbo.vert.spv", &meshVertShader)) {
-    vkh::Log("Error when building tri_mesh vertex shader module!");
-  } else {
-    vkh::Log("tri_mesh vertex shader successfully loaded!");
-  }
-
-  VkShaderModule triangleFragShader;
-  if (!LoadShaderModule("../shaders/spv/default_lit.frag.spv", &triangleFragShader)) {
-    vkh::Log("Error when building triangle fragment shader module!");
-  } else {
-    vkh::Log("Triangle fragment shader successfully loaded!");
-  }
-
   pipelineBuilder.m_shaderStages.push_back(
       vkh::init::PipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, meshVertShader));
 
   pipelineBuilder.m_shaderStages.push_back(
-      vkh::init::PipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, triangleFragShader));
+      vkh::init::PipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, colorFragShader));
 
   meshPipeline = pipelineBuilder.Build(m_device, m_renderPass);
 
+  pipelineBuilder.m_shaderStages.clear();
+  pipelineBuilder.m_shaderStages.push_back(
+      vkh::init::PipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, meshVertShader));
+
+  pipelineBuilder.m_shaderStages.push_back(
+      vkh::init::PipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, texturedMeshShader));
+
   // delete shaders
   m_dispatchTable.fp_vkDestroyShaderModule(m_device, meshVertShader, nullptr);
-  m_dispatchTable.fp_vkDestroyShaderModule(m_device, triangleFragShader, nullptr);
+  m_dispatchTable.fp_vkDestroyShaderModule(m_device, colorFragShader, nullptr);
+  m_dispatchTable.fp_vkDestroyShaderModule(m_device, texturedMeshShader, nullptr);
 
   m_mainDestructionQueue.PushFunction([=]() {
     m_dispatchTable.fp_vkDestroyPipelineLayout(m_device, meshPipelineLayout, nullptr);
@@ -542,23 +563,42 @@ void EGEngine::LoadMeshes() {
   m_meshes["flatVase"]   = flatVaseMesh;
 }
 
+void EGEngine::LoadImages() {
+  Texture lostEmpire;
+  LoadImageFromFile(*this, "../assets/lost_empire-RGBA.png", lostEmpire.image);
+
+  VkImageViewCreateInfo imageViewInfo = vkh::init::ImageViewCreateInfo(
+      VK_FORMAT_R8G8B8A8_SRGB, lostEmpire.image.m_image, VK_IMAGE_ASPECT_COLOR_BIT);
+
+  m_dispatchTable.fp_vkCreateImageView(m_device, &imageViewInfo, nullptr, &lostEmpire.imageView);
+
+  m_mainDestructionQueue.PushFunction([=]() {
+    m_dispatchTable.fp_vkDestroyImageView(m_device, lostEmpire.imageView, nullptr);
+  });
+
+  m_loadedTextures["empire_diffuse"] = lostEmpire;
+}
+
 void EGEngine::UploadMesh(Mesh& mesh) {
   const size_t bufferSize = mesh.m_vertices.size() * sizeof(Vertex);
 
-  VkBufferCreateInfo stagingBufferInfo{};
-  stagingBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-  stagingBufferInfo.pNext = nullptr;
-  stagingBufferInfo.size  = bufferSize;
-  stagingBufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+  //  VkBufferCreateInfo stagingBufferInfo{};
+  //  stagingBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+  //  stagingBufferInfo.pNext = nullptr;
+  //  stagingBufferInfo.size  = bufferSize;
+  //  stagingBufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+  //
+  //  VmaAllocationCreateInfo vmaAllocationInfo{};
+  //  vmaAllocationInfo.usage = VMA_MEMORY_USAGE_AUTO;
+  //  vmaAllocationInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
 
-  VmaAllocationCreateInfo vmaAllocationInfo{};
-  vmaAllocationInfo.usage = VMA_MEMORY_USAGE_AUTO;
-  vmaAllocationInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
-
-  AllocatedBuffer stagingBuffer;
-  vkh::VkCheck(vmaCreateBuffer(m_allocator, &stagingBufferInfo, &vmaAllocationInfo,
-                               &stagingBuffer.m_buffer, &stagingBuffer.m_allocation, nullptr),
-               "vma create staging buffer");
+  //  AllocatedBuffer stagingBuffer;
+  AllocatedBuffer stagingBuffer =
+      CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_AUTO,
+                   VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+  //  vkh::VkCheck(vmaCreateBuffer(m_allocator, &stagingBufferInfo, &vmaAllocationInfo,
+  //                               &stagingBuffer.m_buffer, &stagingBuffer.m_allocation, nullptr),
+  //               "vma create staging buffer");
 
   //copy vertex data
   void* data;
@@ -567,19 +607,24 @@ void EGEngine::UploadMesh(Mesh& mesh) {
   memcpy(data, mesh.m_vertices.data(), bufferSize);
 
   vmaUnmapMemory(m_allocator, stagingBuffer.m_allocation);
+  //  // allocate vertex buffer
+  //  VkBufferCreateInfo vertexBufferInfo{};
+  //  vertexBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+  //  vertexBufferInfo.pNext = nullptr;
+  //  // size in bytes
+  //  vertexBufferInfo.size  = bufferSize;
+  //  vertexBufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+  //  // let the VMA library know that this data should be gpu native
+  //  vmaAllocationInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+
   // allocate vertex buffer
-  VkBufferCreateInfo vertexBufferInfo{};
-  vertexBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-  vertexBufferInfo.pNext = nullptr;
-  // size in bytes
-  vertexBufferInfo.size  = bufferSize;
-  vertexBufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-  // let the VMA library know that this data should be gpu native
-  vmaAllocationInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
-  vkh::VkCheck(
-      vmaCreateBuffer(m_allocator, &vertexBufferInfo, &vmaAllocationInfo,
-                      &mesh.m_vertexBuffer.m_buffer, &mesh.m_vertexBuffer.m_allocation, nullptr),
-      "vma create buffer");
+  mesh.m_vertexBuffer =
+      CreateBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                   VMA_MEMORY_USAGE_AUTO, VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
+  //  vkh::VkCheck(
+  //      vmaCreateBuffer(m_allocator, &vertexBufferInfo, &vmaAllocationInfo,
+  //                      &mesh.m_vertexBuffer.m_buffer, &mesh.m_vertexBuffer.m_allocation, nullptr),
+  //      "vma create buffer");
 
   m_mainDestructionQueue.PushFunction([=]() {
     vmaDestroyBuffer(m_allocator, mesh.m_vertexBuffer.m_buffer, mesh.m_vertexBuffer.m_allocation);
@@ -600,9 +645,8 @@ void EGEngine::Draw() {
   if (SDL_GetWindowFlags(m_window) & SDL_WINDOW_MINIMIZED) {
     return;
   }
-  auto timeOut = std::numeric_limits<uint64_t>::max();
   vkh::VkCheck(m_dispatchTable.fp_vkWaitForFences(m_device, 1, &GetCurrentFrame().renderFence, true,
-                                                  timeOut),
+                                                  TIME_OUT),
                "Wait for fences");
   vkh::VkCheck(m_dispatchTable.fp_vkResetFences(m_device, 1, &GetCurrentFrame().renderFence),
                "Reset fences");
@@ -610,7 +654,7 @@ void EGEngine::Draw() {
                "Reset command buffer");
 
   uint32_t swapchainImageIndex;
-  vkh::VkCheck(m_dispatchTable.fp_vkAcquireNextImageKHR(m_device, m_swapchain, timeOut,
+  vkh::VkCheck(m_dispatchTable.fp_vkAcquireNextImageKHR(m_device, m_swapchain, TIME_OUT,
                                                         GetCurrentFrame().presentSemaphore, nullptr,
                                                         &swapchainImageIndex),
                "Acquire image index");
@@ -797,7 +841,7 @@ void EGEngine::ImmediateSubmit(std::function<void(VkCommandBuffer cmdBuffer)>&& 
                                                 m_uploadContext.uploadFence),
                "submit command buffer");
 
-  m_dispatchTable.fp_vkWaitForFences(m_device, 1, &m_uploadContext.uploadFence, true, 99999);
+  m_dispatchTable.fp_vkWaitForFences(m_device, 1, &m_uploadContext.uploadFence, true, TIME_OUT);
   m_dispatchTable.fp_vkResetFences(m_device, 1, &m_uploadContext.uploadFence);
 
   m_dispatchTable.fp_vkResetCommandPool(m_device, m_uploadContext.cmdPool, 0);

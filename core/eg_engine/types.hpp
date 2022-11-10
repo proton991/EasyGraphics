@@ -74,5 +74,11 @@ struct UploadContext {
   VkFence uploadFence;
   VkCommandPool cmdPool;
 };
+
+struct Texture {
+  AllocatedImage image;
+  VkImageView imageView;
+};
+
 }  // namespace ege
 #endif  //TYPES_HPP
