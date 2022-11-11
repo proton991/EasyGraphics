@@ -10,6 +10,7 @@ struct Material {
   std::string name;
   VkPipeline pipeline;
   VkPipelineLayout pipelineLayout;
+  VkDescriptorSet textureSet{VK_NULL_HANDLE};
 };
 class MaterialSystem {
 public:

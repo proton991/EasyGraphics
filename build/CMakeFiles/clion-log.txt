@@ -1,0 +1,50 @@
+"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_MAKE_PROGRAM=E:/Program Files/JetBrains/CLion 2021.3.4/bin/ninja/win/ninja.exe" -G Ninja E:\Coding\MyCraft\EasyGraphics
+-- The C compiler identification is MSVC 19.33.31630.0
+-- The CXX compiler identification is MSVC 19.33.31630.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.33.31629/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.33.31629/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found Vulkan: C:/VulkanSDK/1.3.211.0/Lib/vulkan-1.lib (found version "1.3.211") 
+-- SDL2: E:/Coding/MyCraft/EasyGraphics/third_party/sdl2
+-- Generating project file for app in E:/Coding/MyCraft/EasyGraphics/app/CreateInstance
+-- Generating project file for app in E:/Coding/MyCraft/EasyGraphics/app/CreateDevice
+-- Generating project file for app in E:/Coding/MyCraft/EasyGraphics/app/CreateSwapchain
+-- Generating project file for app in E:/Coding/MyCraft/EasyGraphics/app/FirstTriangle
+-- BUILDING SHADER
+-- E:/Coding/MyCraft/EasyGraphics/shaders/colored_triangle.frag
+-- BUILDING SHADER
+-- E:/Coding/MyCraft/EasyGraphics/shaders/colored_triangle.vert
+-- BUILDING SHADER
+-- E:/Coding/MyCraft/EasyGraphics/shaders/default_lit.frag
+-- BUILDING SHADER
+-- E:/Coding/MyCraft/EasyGraphics/shaders/funky_triangle.frag
+-- BUILDING SHADER
+-- E:/Coding/MyCraft/EasyGraphics/shaders/mesh.frag
+-- BUILDING SHADER
+-- E:/Coding/MyCraft/EasyGraphics/shaders/mesh.vert
+-- BUILDING SHADER
+-- E:/Coding/MyCraft/EasyGraphics/shaders/textured_lit.frag
+-- BUILDING SHADER
+-- E:/Coding/MyCraft/EasyGraphics/shaders/tri_mesh.vert
+-- BUILDING SHADER
+-- E:/Coding/MyCraft/EasyGraphics/shaders/tri_mesh_descriptors.vert
+-- BUILDING SHADER
+-- E:/Coding/MyCraft/EasyGraphics/shaders/tri_mesh_pushconstants.vert
+-- BUILDING SHADER
+-- E:/Coding/MyCraft/EasyGraphics/shaders/tri_mesh_ssbo.vert
+-- BUILDING SHADER
+-- E:/Coding/MyCraft/EasyGraphics/shaders/tri_mesh_ssbo_textured.vert
+-- BUILDING SHADER
+-- E:/Coding/MyCraft/EasyGraphics/shaders/triangle.frag
+-- BUILDING SHADER
+-- E:/Coding/MyCraft/EasyGraphics/shaders/triangle.vert
+-- Configuring done
+-- Generating done
+-- Build files have been written to: E:/Coding/MyCraft/EasyGraphics/build

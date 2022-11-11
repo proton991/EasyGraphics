@@ -162,6 +162,7 @@ private:
 
   VkDescriptorSetLayout m_globalSetLayout;
   VkDescriptorSetLayout m_objectSetLayout;
+  VkDescriptorSetLayout m_singleTextureSetLayout;
 
   GPUSceneData m_sceneParameters;
   AllocatedBuffer m_sceneParameterBuffer;

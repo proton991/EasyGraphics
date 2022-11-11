@@ -45,7 +45,7 @@ VertexInputDescription Vertex::GetVertexDescription() {
   description.attributes.push_back(positionAttribute);
   description.attributes.push_back(normalAttribute);
   description.attributes.push_back(colorAttribute);
-  //  description.attributes.push_back(uvAttribute);
+  description.attributes.push_back(uvAttribute);
   return description;
 }
 

@@ -51,5 +51,8 @@ VkPipelineDepthStencilStateCreateInfo DepthStencilStateCreateInfo(bool bDepthTes
 VkDescriptorSetLayoutBinding DescriptorSetLayoutBinding(VkDescriptorType type,
                                                         VkShaderStageFlags stageFlags,
                                                         uint32_t binding);
+
+VkSamplerCreateInfo SamplerCreateInfo(
+    VkFilter filters, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT);
 }  // namespace vkh::init
 #endif  //VK_INIT_HPP

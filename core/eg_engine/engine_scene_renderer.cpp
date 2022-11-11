@@ -44,11 +44,11 @@ void EGEngine::RenderScene() {
 
   for (int i = 0; i < m_sceneSystem.m_sceneObjs.size(); i++) {
     const auto& sceneObj = m_sceneSystem.m_sceneObjs[i];
-    Material* material = m_sceneSystem.m_materials[sceneObj.materialId];
-    Mesh* mesh         = m_sceneSystem.m_meshes[sceneObj.meshId];
+    Material* material   = m_sceneSystem.m_materials[sceneObj.materialId];
+    Mesh* mesh           = m_sceneSystem.m_meshes[sceneObj.meshId];
     if (material != lastMaterial) {
-      m_dispatchTable.cmdBindPipeline(GetCurrentFrame().cmdBuffer,
-                                           VK_PIPELINE_BIND_POINT_GRAPHICS, material->pipeline);
+      m_dispatchTable.cmdBindPipeline(GetCurrentFrame().cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                      material->pipeline);
       m_dispatchTable.cmdBindDescriptorSets(
           GetCurrentFrame().cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, material->pipelineLayout, 0,
           1, &GetCurrentFrame().globalDescriptor, 1, &uniformOffset);
@@ -56,18 +56,24 @@ void EGEngine::RenderScene() {
       m_dispatchTable.cmdBindDescriptorSets(
           GetCurrentFrame().cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, material->pipelineLayout, 1,
           1, &GetCurrentFrame().objectDescriptor, 0, nullptr);
+
+      if (material->textureSet != VK_NULL_HANDLE) {
+        m_dispatchTable.cmdBindDescriptorSets(
+            GetCurrentFrame().cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, material->pipelineLayout,
+            2, 1, &material->textureSet, 0, nullptr);
+      }
       lastMaterial = material;
     }
 
     MeshPushConstants pushConstants{};
     pushConstants.renderMatrix = sceneObj.transformMatrix;
     m_dispatchTable.cmdPushConstants(GetCurrentFrame().cmdBuffer, material->pipelineLayout,
-                                          VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants),
-                                          &pushConstants);
+                                     VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants),
+                                     &pushConstants);
     if (mesh != lastMesh) {
       VkDeviceSize offset = 0;
       m_dispatchTable.cmdBindVertexBuffers(GetCurrentFrame().cmdBuffer, 0, 1,
-                                                &mesh->m_vertexBuffer.m_buffer, &offset);
+                                           &mesh->m_vertexBuffer.m_buffer, &offset);
       lastMesh = mesh;
     }
     m_dispatchTable.cmdDraw(GetCurrentFrame().cmdBuffer, mesh->m_vertices.size(), 1, 0, i);

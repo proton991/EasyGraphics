@@ -314,6 +314,17 @@ void EGEngine::InitDescriptors() {
       CreateBuffer(sceneParamBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO,
                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
+  VkDescriptorSetLayoutBinding textureBind = vkh::init::DescriptorSetLayoutBinding(
+      VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+  VkDescriptorSetLayoutCreateInfo setInfo{};
+  setInfo.bindingCount = 1;
+  setInfo.flags        = 0;
+  setInfo.pNext        = nullptr;
+  setInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+  setInfo.pBindings    = &textureBind;
+
+  m_singleTextureSetLayout = m_descriptorLayoutCache->CreateDescriptorSetLayout(&setInfo);
+
   for (int i = 0; i < FRAME_OVERLAP; ++i) {
     m_frames[i].descriptorAllocator = new vkh::DescriptorAllocator();
     m_frames[i].descriptorAllocator->Init(m_device);
@@ -374,8 +385,8 @@ void EGEngine::InitPipelines() {
     vkh::Log("default_lit fragment shader successfully loaded!");
   }
 
-  VkShaderModule texturedMeshShader;
-  if (!LoadShaderModule("../shaders/spv/textured_lit.frag.spv", &texturedMeshShader)) {
+  VkShaderModule texturedFragShader;
+  if (!LoadShaderModule("../shaders/spv/textured_lit.frag.spv", &texturedFragShader)) {
     vkh::Log("Error when building textured_lit fragment shader ");
   } else {
     vkh::Log("textured_lit fragment shader successfully loaded!");
@@ -400,6 +411,19 @@ void EGEngine::InitPipelines() {
   vkh::VkCheck(
       m_dispatchTable.createPipelineLayout(&meshPipelineLayoutInfo, nullptr, &meshPipelineLayout),
       "create mesh pipeline layout");
+
+  VkPipelineLayoutCreateInfo texturedPipelineLayoutInfo = meshPipelineLayoutInfo;
+
+  VkDescriptorSetLayout texturedSetLayouts[] = {m_globalSetLayout, m_objectSetLayout,
+                                                m_singleTextureSetLayout};
+
+  texturedPipelineLayoutInfo.setLayoutCount = 3;
+  texturedPipelineLayoutInfo.pSetLayouts    = texturedSetLayouts;
+
+  VkPipelineLayout texturedPipeLayout;
+  vkh::VkCheck(m_dispatchTable.createPipelineLayout(&texturedPipelineLayoutInfo, nullptr,
+                                                    &texturedPipeLayout),
+               "create texture pipeline layout");
 
   vkh::PipelineBuilder pipelineBuilder{m_dispatchTable.fp_vkCreateGraphicsPipelines};
   // read vertex data from vertex buffers
@@ -451,16 +475,20 @@ void EGEngine::InitPipelines() {
       vkh::init::PipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, meshVertShader));
 
   pipelineBuilder.m_shaderStages.push_back(
-      vkh::init::PipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, texturedMeshShader));
-
+      vkh::init::PipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, texturedFragShader));
+  pipelineBuilder.m_pipelineLayout = texturedPipeLayout;
+  VkPipeline texturePipeline       = pipelineBuilder.Build(m_device, m_renderPass);
+  m_materialSystem.CreateMaterial("textured", texturePipeline, texturedPipeLayout);
   // delete shaders
   m_dispatchTable.destroyShaderModule(meshVertShader, nullptr);
   m_dispatchTable.destroyShaderModule(colorFragShader, nullptr);
-  m_dispatchTable.destroyShaderModule(texturedMeshShader, nullptr);
+  m_dispatchTable.destroyShaderModule(texturedFragShader, nullptr);
 
   m_mainDestructionQueue.PushFunction([=]() {
     m_dispatchTable.destroyPipelineLayout(meshPipelineLayout, nullptr);
+    m_dispatchTable.destroyPipelineLayout(texturedPipeLayout, nullptr);
     m_dispatchTable.destroyPipeline(meshPipeline, nullptr);
+    m_dispatchTable.destroyPipeline(texturePipeline, nullptr);
   });
 
   m_materialSystem.CreateMaterial("default", meshPipeline, meshPipelineLayout);
@@ -471,7 +499,7 @@ void EGEngine::InitScene() {
   vaseMat           = glm::translate(vaseMat, {-0.5f, 0, 0});
   std::vector<SceneObjectInfo> sceneObjInfos;
   SceneObjectInfo smoothVaseObjInfo{};
-  smoothVaseObjInfo.material        = m_materialSystem.GetMaterial("default");
+  smoothVaseObjInfo.material        = m_materialSystem.GetMaterial("textured");
   smoothVaseObjInfo.mesh            = &m_meshes["smoothVase"];
   smoothVaseObjInfo.transformMatrix = vaseMat;
   sceneObjInfos.push_back(smoothVaseObjInfo);
@@ -479,7 +507,7 @@ void EGEngine::InitScene() {
   glm::mat4 vaseMat2 = glm::scale(glm::mat4{1.0f}, {3.f, 3.f, 3.f});
   vaseMat2           = glm::translate(vaseMat2, {0.5f, 0, 0});
   SceneObjectInfo flatVaseObjInfo{};
-  flatVaseObjInfo.material        = m_materialSystem.GetMaterial("default");
+  flatVaseObjInfo.material        = m_materialSystem.GetMaterial("textured");
   flatVaseObjInfo.mesh            = &m_meshes["flatVase"];
   flatVaseObjInfo.transformMatrix = vaseMat2;
   sceneObjInfos.push_back(flatVaseObjInfo);
@@ -496,6 +524,23 @@ void EGEngine::InitScene() {
     }
   }
   m_sceneSystem.AddObjectBatch(sceneObjInfos.data(), sceneObjInfos.size());
+
+  Material* texturedMat = m_materialSystem.GetMaterial("textured");
+
+  VkSamplerCreateInfo sampleInfo = vkh::init::SamplerCreateInfo(VK_FILTER_NEAREST);
+  VkSampler basicSampler;
+  m_dispatchTable.createSampler(&sampleInfo, nullptr, &basicSampler);
+  m_mainDestructionQueue.PushFunction([=]() {
+    m_dispatchTable.destroySampler(basicSampler, nullptr);
+  });
+  VkDescriptorImageInfo imageBufferInfo;
+  imageBufferInfo.sampler     = basicSampler;
+  imageBufferInfo.imageView   = m_loadedTextures["board"].imageView;
+  imageBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+  vkh::DescriptorBuilder::Begin(m_descriptorLayoutCache, m_descriptorAllocator)
+      .BindImage(0, &imageBufferInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                 VK_SHADER_STAGE_FRAGMENT_BIT)
+      .Build(texturedMat->textureSet, m_singleTextureSetLayout);
 }
 
 bool EGEngine::LoadShaderModule(const char* shaderPath, VkShaderModule* outShaderModule) {
@@ -555,19 +600,19 @@ void EGEngine::LoadMeshes() {
 }
 
 void EGEngine::LoadImages() {
-  Texture lostEmpire;
-  LoadImageFromFile(*this, "../assets/lost_empire-RGBA.png", lostEmpire.image);
+  Texture board;
+  LoadImageFromFile(*this, "../assets/missing.png", board.image);
 
   VkImageViewCreateInfo imageViewInfo = vkh::init::ImageViewCreateInfo(
-      VK_FORMAT_R8G8B8A8_SRGB, lostEmpire.image.m_image, VK_IMAGE_ASPECT_COLOR_BIT);
+      VK_FORMAT_R8G8B8A8_SRGB, board.image.m_image, VK_IMAGE_ASPECT_COLOR_BIT);
 
-  m_dispatchTable.createImageView(&imageViewInfo, nullptr, &lostEmpire.imageView);
+  m_dispatchTable.createImageView(&imageViewInfo, nullptr, &board.imageView);
 
   m_mainDestructionQueue.PushFunction([=]() {
-    m_dispatchTable.destroyImageView(lostEmpire.imageView, nullptr);
+    m_dispatchTable.destroyImageView(board.imageView, nullptr);
   });
 
-  m_loadedTextures["empire_diffuse"] = lostEmpire;
+  m_loadedTextures["board"] = board;
 }
 
 void EGEngine::UploadMesh(Mesh& mesh) {
