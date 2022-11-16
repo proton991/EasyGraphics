@@ -69,7 +69,8 @@ void EGEngine::InitVulkan() {
   shader_draw_parameters_features.shaderDrawParameters = VK_TRUE;
 
   vkh::Device vkhDevice = deviceBuilder.addPNext(&shader_draw_parameters_features).Build();
-
+  m_debugUtil = std::make_unique<vkh::debug::DebugUtil>();
+  m_debugUtil->SetDevice(vkhDevice.vkDevice);
   m_device                      = vkhDevice.vkDevice;
   m_chosenGPU                   = vkhDevice.physicalDevice;
   m_gpuProperties               = vkhPhysicalDevice.properties;
@@ -377,7 +378,7 @@ void EGEngine::InitPipelines() {
   } else {
     vkh::Log("tri_mesh_ssbo vertex shader successfully loaded!");
   }
-
+  m_debugUtil->SetObjectName(meshVertShader, "mesh vertex shader");
   VkShaderModule colorFragShader;
   if (!LoadShaderModule("../shaders/spv/default_lit.frag.spv", &colorFragShader)) {
     vkh::Log("Error when building default_lit fragment shader module!");

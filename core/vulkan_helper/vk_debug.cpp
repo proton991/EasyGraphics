@@ -2,14 +2,11 @@
 #include "vk_functions.hpp"
 
 namespace vkh::debug {
-DebugUtil::DebugUtil(const Instance& instance) {
-  fp_vkSetDebugUtilsObjectNameEXT = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(
-      instance.fp_vkGetInstanceProcAddr(instance.instance, "vkSetDebugUtilsObjectNameEXT"));
-#ifndef NDEBUG
+DebugUtil::DebugUtil() {
+  VulkanFunction::GetInstance().GetInstanceProcAddr(fp_vkSetDebugUtilsObjectNameEXT, "vkSetDebugUtilsObjectNameEXT");
   if (fp_vkSetDebugUtilsObjectNameEXT == nullptr) {
     throw std::runtime_error("failed to get address of 'vkSetDebugUtilsObjectNameEXT'");
   }
-#endif
 }
 
 VkResult CreateDebugUtilsMessenger(VkInstance instance,

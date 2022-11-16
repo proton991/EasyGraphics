@@ -5,9 +5,9 @@
 namespace vkh::debug {
 class DebugUtil final {
 public:
-  //  VULKAN_NON_COPIABLE(DebugUtil)
+    VULKAN_NON_COPIABLE(DebugUtil)
 
-  explicit DebugUtil(const class Instance& instance);
+  explicit DebugUtil();
   ~DebugUtil() = default;
 
   void SetDevice(VkDevice device) { this->device = device; }
@@ -62,12 +62,12 @@ private:
   template <typename T>
   void SetObjectName(const T& object, const char* name, VkObjectType type) const {
 #ifndef NDEBUG
-    VkDebugUtilsObjectNameInfoEXT info = {};
-    info.sType                         = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    info.pNext                         = nullptr;
-    info.objectHandle                  = reinterpret_cast<const uint64_t&>(object);
-    info.objectType                    = type;
-    info.pObjectName                   = name;
+    VkDebugUtilsObjectNameInfoEXT info{};
+    info.sType        = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+    info.pNext        = nullptr;
+    info.objectHandle = reinterpret_cast<const uint64_t&>(object);
+    info.objectType   = type;
+    info.pObjectName  = name;
 
     VkCheck(fp_vkSetDebugUtilsObjectNameEXT(device, &info), "set object name");
 #endif

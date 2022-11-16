@@ -103,6 +103,7 @@ private:
 
   VkInstance m_instance;
   VkDebugUtilsMessengerEXT m_debugUtilsMessenger;
+  std::unique_ptr<vkh::debug::DebugUtil> m_debugUtil;
   VkPhysicalDevice m_chosenGPU;
   VkDevice m_device;
   VkPhysicalDeviceProperties m_gpuProperties;
