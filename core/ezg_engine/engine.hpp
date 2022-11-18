@@ -17,7 +17,7 @@
 #include "vulkan_helper/vk_pipeline.hpp"
 
 #define MAX_OBJECTS 10000
-namespace ege {
+namespace ezg {
 //number of frames to overlap when rendering
 constexpr unsigned int FRAME_OVERLAP = 2;
 
@@ -176,6 +176,6 @@ private:
   friend AllocatedImage UploadImage(int texWidth, int texHeight, VkFormat image_format,
                                     EGEngine& engine, AllocatedBuffer& stagingBuffer);
 };
-}  // namespace ege
+}  // namespace ezg
 
 #endif  //ENGINE_HPP

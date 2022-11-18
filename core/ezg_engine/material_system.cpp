@@ -1,6 +1,6 @@
 #include "material_system.hpp"
 
-namespace ege {
+namespace ezg {
 void MaterialSystem::Init() {}
 
 Material* MaterialSystem::GetMaterial(const std::string& name) {
@@ -24,4 +24,4 @@ void MaterialSystem::CreateMaterial(const std::string& name, VkPipeline pipeline
     m_materials[name]        = material;
   }
 }
-}  // namespace ege
+}  // namespace ezg

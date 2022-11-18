@@ -1,7 +1,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "engine.hpp"
 
-namespace ege {
+namespace ezg {
 void EGEngine::RenderScene() {
   GPUCameraData camData;
   camData.proj     = m_camera.GetProjectionMatrix();
@@ -79,4 +79,4 @@ void EGEngine::RenderScene() {
     m_dispatchTable.cmdDraw(GetCurrentFrame().cmdBuffer, mesh->m_vertices.size(), 1, 0, i);
   }
 }
-}  // namespace ege
+}  // namespace ezg

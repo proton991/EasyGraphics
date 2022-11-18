@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 #include "vulkan_helper/vk_descriptors.hpp"
 
-namespace ege {
+namespace ezg {
 using ID_TYPE = uint32_t;
 
 struct AllocatedBuffer {
@@ -80,5 +80,5 @@ struct Texture {
   VkImageView imageView;
 };
 
-}  // namespace ege
+}  // namespace ezg
 #endif  //TYPES_HPP

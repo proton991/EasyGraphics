@@ -3,7 +3,7 @@
 #include <string>
 #include "vulkan_helper/core.hpp"
 
-namespace ege {
+namespace ezg {
 void EGEngine::Init() {
   auto windowFlags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN);
   m_window         = SDL_CreateWindow("EGEngine", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
@@ -86,4 +86,4 @@ void EGEngine::Destroy() {
     SDL_DestroyWindow(m_window);
   }
 }
-}  // namespace ege
+}  // namespace ezg

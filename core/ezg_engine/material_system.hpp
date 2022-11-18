@@ -4,7 +4,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace ege {
+namespace ezg {
 struct MaterialInfo {};
 struct Material {
   std::string name;
@@ -24,5 +24,5 @@ public:
 private:
   std::unordered_map<std::string, Material*> m_materials;
 };
-}  // namespace ege
+}  // namespace ezg
 #endif  //MATERIAL_SYSTEM_HPP

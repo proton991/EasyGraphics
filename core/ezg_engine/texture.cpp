@@ -5,7 +5,7 @@
 #include <iostream>
 #include "vulkan_helper/vk_init.hpp"
 
-namespace ege {
+namespace ezg {
 
 bool LoadImageFromFile(EGEngine& engine, const char* file, AllocatedImage& outImage) {
   int width;
@@ -122,4 +122,4 @@ AllocatedImage UploadImage(int texWidth, int texHeight, VkFormat image_format, E
   });
   return newImage;
 }
-}  // namespace ege
+}  // namespace ezg

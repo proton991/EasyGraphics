@@ -1,7 +1,7 @@
 #include "CreateSwapchain.hpp"
 
 int main(int argc, char* argv[]) {
-  ege::EGEngine engine;
+  ezg::EGEngine engine;
   engine.Init();
   engine.DisplayInfo();
 

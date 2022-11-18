@@ -29,7 +29,7 @@ private:
   PFN_vkCreateGraphicsPipelines fp_vkCreateGraphicsPipelines;
 };
 
-}  // namespace ege
+}  // namespace ezg
 #endif  //PIPELINE_HPP
 
 #endif  //VK_PIPELINE_HPP

@@ -7,7 +7,7 @@
 
 #include "types.hpp"
 
-namespace ege {
+namespace ezg {
 
 struct Mesh;
 struct Material;
@@ -43,5 +43,5 @@ private:
   std::unordered_map<Mesh*, ID_TYPE> m_meshMap;
   std::unordered_map<Material*, ID_TYPE> m_materialMap;
 };
-}  // namespace ege
+}  // namespace ezg
 #endif  //SCENE_SYSTEM_HPP

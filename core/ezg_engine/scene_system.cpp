@@ -3,7 +3,7 @@
 #include "engine.hpp"
 #include "mesh.hpp"
 
-namespace ege {
+namespace ezg {
 void SceneSystem::Init() {}
 
 //void SceneSystem::LoadDefaultScene() {
@@ -74,4 +74,4 @@ ID_TYPE SceneSystem::GetMaterialId(Material* material) {
   }
   return id;
 }
-}  // namespace ege
+}  // namespace ezg

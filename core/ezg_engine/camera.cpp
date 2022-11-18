@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
-namespace ege {
+namespace ezg {
 Camera::Camera(glm::vec3 eye, glm::vec3 target, float fov, float aspect, float near, float far)
     : m_position{eye}, m_aspect{aspect}, m_fovY{fov}, m_near{near}, m_far{far} {
   glm::vec3 direction = glm::normalize(target - m_position);
@@ -81,4 +81,4 @@ glm::mat4 Camera::GetViewMatrix() {
 glm::mat4 Camera::GetProjectionMatrix() {
   return m_projMatrix;
 }
-}  // namespace ege
+}  // namespace ezg

@@ -4,11 +4,11 @@
 #include "engine.hpp"
 #include "types.hpp"
 
-namespace ege {
+namespace ezg {
 
 bool LoadImageFromFile(EGEngine& engine, const char* file, AllocatedImage& outImage);
 
 AllocatedImage UploadImage(int texWidth, int texHeight, VkFormat image_format, EGEngine& engine,
                            AllocatedBuffer& stagingBuffer);
-}  // namespace ege
+}  // namespace ezg
 #endif  //TEXTURE_HPP

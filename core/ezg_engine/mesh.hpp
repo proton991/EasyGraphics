@@ -5,7 +5,7 @@
 #include <vector>
 #include "types.hpp"
 
-namespace ege {
+namespace ezg {
 struct VertexInputDescription {
   std::vector<VkVertexInputBindingDescription> bindings;
   std::vector<VkVertexInputAttributeDescription> attributes;
@@ -28,5 +28,5 @@ struct Mesh {
 
   bool LoadFromObj(const char* filename);
 };
-}  // namespace ege
+}  // namespace ezg
 #endif  //MESH_HPP

@@ -12,7 +12,7 @@
 #include <vk_mem_alloc.h>
 #include <glm/gtx/transform.hpp>
 
-namespace ege {
+namespace ezg {
 void EGEngine::Init() {
   // We initialize SDL and create a window with it.
   SDL_Init(SDL_INIT_VIDEO);
@@ -879,4 +879,4 @@ void EGEngine::ImmediateSubmit(std::function<void(VkCommandBuffer cmdBuffer)>&& 
   m_dispatchTable.resetCommandPool(m_uploadContext.cmdPool, 0);
 }
 
-}  // namespace ege
+}  // namespace ezg

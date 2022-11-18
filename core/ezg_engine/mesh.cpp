@@ -2,7 +2,7 @@
 #include <tiny_obj_loader.h>
 #include <iostream>
 
-namespace ege {
+namespace ezg {
 VertexInputDescription Vertex::GetVertexDescription() {
   VertexInputDescription description;
 
@@ -125,4 +125,4 @@ bool Mesh::LoadFromObj(const char* filename) {
   std::cout << filename << " vertex count: " << m_vertices.size() << std::endl;
   return true;
 }
-}  // namespace ege
+}  // namespace ezg

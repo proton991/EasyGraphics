@@ -5,7 +5,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 
-namespace ege {
+namespace ezg {
 class Camera {
 public:
   Camera(glm::vec3 eye, glm::vec3 target, float fov, float aspect, float near, float far);
@@ -48,6 +48,6 @@ private:
   double m_mousePosX{};
   double m_mousePosY{};
 };
-}  // namespace ege
+}  // namespace ezg
 
 #endif  //CAMERA_HPP
