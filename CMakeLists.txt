@@ -6,7 +6,7 @@ project(EasyGraphics VERSION 0.1)
 #                    Include Directories                   #
 ############################################################
 set(VULKAN_INCLUDE_DIR $ENV{VULKAN_SDK}/Include)
-include_directories(${VULKAN_INCLUDE_DIR})
+#include_directories(${VULKAN_INCLUDE_DIR})
 include_directories(core)
 #include_directories(third_party)
 

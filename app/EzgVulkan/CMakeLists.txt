@@ -1,0 +1,2 @@
+add_executable(01_init_vk_instance 01_init_vk_instance.cpp)
+target_link_libraries(01_init_vk_instance ezg_vk)

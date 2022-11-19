@@ -19,7 +19,7 @@ set(APPS
   CreateSwapchain
   FirstTriangle
 )
-
+add_subdirectory(EzgVulkan)
 
 ############################################################
 #                    Build Apps                            #

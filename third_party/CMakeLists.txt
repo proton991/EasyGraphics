@@ -60,3 +60,15 @@ target_sources(imgui PRIVATE
 target_link_libraries(imgui PUBLIC Vulkan::Vulkan sdl2)
 
 target_include_directories(stb_image INTERFACE stb_image)
+
+# volk must be STATIC.
+add_library(volk STATIC volk/volk.c volk/volk.h)
+if (WIN32)
+  target_compile_definitions(volk PRIVATE VK_USE_PLATFORM_WIN32_KHR)
+else()
+  target_link_libraries(volk PRIVATE dl)
+endif()
+target_include_directories(volk PUBLIC volk ${VULKAN_INCLUDE_DIR})
+
+add_library(spdlog INTERFACE)
+target_include_directories(spdlog INTERFACE spdlog-1.11.0/include)
