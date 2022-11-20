@@ -1,5 +1,6 @@
 #include "context.hpp"
 #include <mutex>
+#include "common.hpp"
 #include "spdlog/spdlog.h"
 
 namespace spd = spdlog;
@@ -19,9 +20,9 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_util_messenger_cb(
   switch (messageSeverity) {
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
       if (messageType == VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) {
-        spd::error("[Vulkan]: Validation Error: {}", pCallbackData->pMessage);
+        spd::error("[Vulkan]: {}", pCallbackData->pMessage);
       } else
-        spd::error("[Vulkan]: Other Error: {}", pCallbackData->pMessage);
+        spd::error("[Vulkan] Other Error: {}", pCallbackData->pMessage);
       break;
 
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
@@ -62,6 +63,21 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_util_messenger_cb(
   }
 
   return VK_FALSE;
+}
+
+VkDebugUtilsMessengerCreateInfoEXT DebugUtilMessengerCI() {
+  VkDebugUtilsMessengerCreateInfoEXT messengerCreateInfo{};
+  messengerCreateInfo.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+  messengerCreateInfo.pNext           = nullptr;
+  messengerCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
+                                        VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+                                        VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+                                        VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+  messengerCreateInfo.pfnUserCallback = debug_util_messenger_cb;
+  messengerCreateInfo.messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                                    VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
+                                    VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
+  return messengerCreateInfo;
 }
 
 VulkanLib& VulkanLib::Get() {
@@ -127,10 +143,10 @@ Context::Context() {
   //query instance layers
   uint32_t layerCount = 0;
   vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-  m_layers.resize(layerCount);
-  vkEnumerateInstanceLayerProperties(&layerCount, m_layers.data());
+  m_instLayers.resize(layerCount);
+  vkEnumerateInstanceLayerProperties(&layerCount, m_instLayers.data());
   spd::info("Layer Count: {}", layerCount);
-  for (auto& layer : m_layers) {
+  for (auto& layer : m_instLayers) {
     spd::info("Found layer: {}", layer.layerName);
   }
   // query instance extensions
@@ -140,7 +156,7 @@ Context::Context() {
   vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtCount, m_instanceExts.data());
   spd::info("Instance Extension Count: {}", instanceExtCount);
   for (auto& instanceExt : m_instanceExts) {
-    spd::info("Found extension: {}", instanceExt.extensionName);
+    spd::info("Found instance extension: {}", instanceExt.extensionName);
   }
   m_appInfo.sType            = VK_STRUCTURE_TYPE_APPLICATION_INFO;
   m_appInfo.apiVersion       = VK_API_VERSION_1_1;
@@ -148,16 +164,6 @@ Context::Context() {
   m_appInfo.pNext            = nullptr;
   m_appInfo.pApplicationName = "Easy Graphics With Vulkan";
   m_appInfo.pEngineName      = "No Engine";
-}
-
-Context& Context::EnableInstanceExt(const char* ext) {
-  m_requiredInstExts.push_back(ext);
-  return *this;
-}
-
-Context& Context::EnableInstanceLayer(const char* layer) {
-  m_requiredLayers.push_back(layer);
-  return *this;
 }
 
 bool Context::CreateInstance() {
@@ -169,11 +175,11 @@ bool Context::CreateInstance() {
     return itr != m_instanceExts.end();
   };
   const auto has_layer = [&](const char* name) -> bool {
-    auto layer_itr =
-        find_if(m_layers.begin(), m_layers.end(), [name](const VkLayerProperties& e) -> bool {
-          return strcmp(e.layerName, name) == 0;
-        });
-    return layer_itr != m_layers.end();
+    auto layer_itr = find_if(m_instLayers.begin(), m_instLayers.end(),
+                             [name](const VkLayerProperties& e) -> bool {
+                               return strcmp(e.layerName, name) == 0;
+                             });
+    return layer_itr != m_instLayers.end();
   };
   VkInstanceCreateInfo instanceInfo = {VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};
   instanceInfo.pApplicationInfo     = &m_appInfo;
@@ -182,7 +188,8 @@ bool Context::CreateInstance() {
   std::vector<const char*> instanceExts;
   std::vector<const char*> instanceLayers;
   instanceExts.insert(instanceExts.end(), m_requiredInstExts.begin(), m_requiredInstExts.end());
-  instanceLayers.insert(instanceLayers.end(), m_requiredLayers.begin(), m_requiredLayers.end());
+  instanceLayers.insert(instanceLayers.end(), m_requiredInstLayers.begin(),
+                        m_requiredInstLayers.end());
 
   if (has_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
     instanceExts.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -246,6 +253,13 @@ bool Context::CreateInstance() {
   instanceInfo.enabledLayerCount       = instanceLayers.size();
   instanceInfo.ppEnabledLayerNames     = instanceLayers.empty() ? nullptr : instanceLayers.data();
 
+  std::vector<VkBaseOutStructure*> pNextChain;
+  if (m_enableValidation && ext.supports_debug_utils) {
+    VkDebugUtilsMessengerCreateInfoEXT messengerCreateInfo = DebugUtilMessengerCI();
+    messengerCreateInfo.pUserData = this;
+    pNextChain.push_back(reinterpret_cast<VkBaseOutStructure*>(&messengerCreateInfo));
+  }
+  SetPNextChain(instanceInfo, pNextChain);
   if (m_instance == VK_NULL_HANDLE) {
     if (vkCreateInstance(&instanceInfo, nullptr, &m_instance) != VK_SUCCESS) {
       return false;
@@ -262,16 +276,7 @@ bool Context::CreateInstance() {
   }
 
   if (ext.supports_debug_utils) {
-    VkDebugUtilsMessengerCreateInfoEXT debugInfo = {
-        VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
-    debugInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
-                                VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
-                                VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-                                VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
-    debugInfo.pfnUserCallback = debug_util_messenger_cb;
-    debugInfo.messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
-                            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
+    VkDebugUtilsMessengerCreateInfoEXT debugInfo = DebugUtilMessengerCI();
     debugInfo.pUserData = this;
 
     // For some reason, this segfaults Android, sigh ... We get relevant output in logcat anyways.
@@ -281,12 +286,212 @@ bool Context::CreateInstance() {
   return true;
 }
 
+void Context::SelectGPU() {
+  uint32_t gpuCount = 0;
+  Check(vkEnumeratePhysicalDevices(m_instance, &gpuCount, nullptr), "enumerate gpu count");
+  if (gpuCount == 0) {
+    spd::critical("No Vulkan GPU found!");
+    return;
+  }
+  std::vector<VkPhysicalDevice> gpus(gpuCount);
+  Check(vkEnumeratePhysicalDevices(m_instance, &gpuCount, gpus.data()), "enumerate gpu");
+  for (auto& gpu : gpus) {
+    VkPhysicalDeviceProperties props;
+    vkGetPhysicalDeviceProperties(gpu, &props);
+    spd::info("Found Vulkan GPU: {}", props.deviceName);
+    spd::info("    API: {}.{}.{}", VK_VERSION_MAJOR(props.apiVersion),
+              VK_VERSION_MINOR(props.apiVersion), VK_VERSION_PATCH(props.apiVersion));
+    spd::info("    Driver: {}.{}.{}\n", VK_VERSION_MAJOR(props.driverVersion),
+              VK_VERSION_MINOR(props.driverVersion), VK_VERSION_PATCH(props.driverVersion));
+    // select first discrete gpu that has proper api version
+    if (m_gpu == VK_NULL_HANDLE && props.apiVersion >= VK_API_VERSION_1_1 &&
+        props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+      m_gpu = gpu;
+    }
+  }
+  if (m_gpu != VK_NULL_HANDLE) {
+    vkGetPhysicalDeviceProperties(m_gpu, &m_gpuProps);
+    vkGetPhysicalDeviceMemoryProperties(m_gpu, &m_gpuMemProps);
+    spd::info("Using GPU: {}", m_gpuProps.deviceName);
+    spd::info("The GPU has a minimum buffer alignment of {}",
+              m_gpuProps.limits.minUniformBufferOffsetAlignment);
+  } else {
+    spd::critical("No Vulkan GPU found!");
+  }
+  // query device extensions
+  uint32_t extCount = 0;
+  vkEnumerateDeviceExtensionProperties(m_gpu, nullptr, &extCount, nullptr);
+  m_deviceExts.resize(extCount);
+  vkEnumerateDeviceExtensionProperties(m_gpu, nullptr, &extCount, m_deviceExts.data());
+  for (auto& deviceExt : m_deviceExts) {
+    spd::info("Found device extension: {}", deviceExt.extensionName);
+  }
+}
+
+bool Context::PopulateQueueInfo() {
+  // query queue family and queue family indices
+  uint32_t qFamilyCount = 0;
+  vkGetPhysicalDeviceQueueFamilyProperties(m_gpu, &qFamilyCount, nullptr);
+  std::vector<VkQueueFamilyProperties> qProps(qFamilyCount);
+  std::vector<uint32_t> qOffsets(qFamilyCount);
+  //  std::vector<std::vector<float>> qPriorities(qFamilyCount);
+  m_qPriorities.resize(qFamilyCount);
+  vkGetPhysicalDeviceQueueFamilyProperties(m_gpu, &qFamilyCount, qProps.data());
+  m_customQInfo = {};
+
+  const auto find_vacant_queue = [&](uint32_t& family, uint32_t& index, VkQueueFlags required,
+                                     VkQueueFlags ignore_flags, float priority) -> bool {
+    for (unsigned familyIndex = 0; familyIndex < qFamilyCount; familyIndex++) {
+      if ((qProps[familyIndex].queueFlags & ignore_flags) != 0)
+        continue;
+
+      // A graphics queue candidate must support present for us to select it.
+      if ((required & VK_QUEUE_GRAPHICS_BIT) != 0 && m_surface != VK_NULL_HANDLE) {
+        VkBool32 supported = VK_FALSE;
+        if (vkGetPhysicalDeviceSurfaceSupportKHR(m_gpu, familyIndex, m_surface, &supported) !=
+                VK_SUCCESS ||
+            !supported)
+          continue;
+      }
+
+      if (qProps[familyIndex].queueCount &&
+          (qProps[familyIndex].queueFlags & required) == required) {
+        family = familyIndex;
+        qProps[familyIndex].queueCount--;
+        index = qOffsets[familyIndex]++;
+        m_qPriorities[familyIndex].push_back(priority);
+        return true;
+      }
+    }
+    return false;
+  };
+  if (!find_vacant_queue(m_customQInfo.familyIndices[QUEUE_INDEX_GRAPHICS],
+                         m_qIndices[QUEUE_INDEX_GRAPHICS],
+                         VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, 0, 0.5f)) {
+    spd::error("Could not find suitable graphics queue.");
+    return false;
+  }
+  // Prefer another graphics queue since we can do async graphics that way.
+  // The compute queue is to be treated as high priority since we also do async graphics on it.
+  if (!find_vacant_queue(m_customQInfo.familyIndices[QUEUE_INDEX_COMPUTE],
+                         m_qIndices[QUEUE_INDEX_COMPUTE],
+                         VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, 0, 1.0f) &&
+      !find_vacant_queue(m_customQInfo.familyIndices[QUEUE_INDEX_COMPUTE],
+                         m_qIndices[QUEUE_INDEX_COMPUTE], VK_QUEUE_COMPUTE_BIT, 0, 1.0f)) {
+    // Fallback to the graphics queue if we must.
+    m_customQInfo.familyIndices[QUEUE_INDEX_COMPUTE] =
+        m_customQInfo.familyIndices[QUEUE_INDEX_GRAPHICS];
+    m_qIndices[QUEUE_INDEX_COMPUTE] = m_qIndices[QUEUE_INDEX_GRAPHICS];
+  }
+
+  // For transfer, try to find a queue which only supports transfer, e.g. DMA queue.
+  // If not, fallback to a dedicated compute queue.
+  // Finally, fallback to same queue as compute.
+  if (!find_vacant_queue(m_customQInfo.familyIndices[QUEUE_INDEX_TRANSFER],
+                         m_qIndices[QUEUE_INDEX_TRANSFER], VK_QUEUE_TRANSFER_BIT,
+                         VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, 0.5f) &&
+      !find_vacant_queue(m_customQInfo.familyIndices[QUEUE_INDEX_TRANSFER],
+                         m_qIndices[QUEUE_INDEX_TRANSFER], VK_QUEUE_COMPUTE_BIT,
+                         VK_QUEUE_GRAPHICS_BIT, 0.5f)) {
+    m_customQInfo.familyIndices[QUEUE_INDEX_TRANSFER] =
+        m_customQInfo.familyIndices[QUEUE_INDEX_COMPUTE];
+    m_qIndices[QUEUE_INDEX_TRANSFER] = m_qIndices[QUEUE_INDEX_COMPUTE];
+  }
+
+  std::vector<float> defaultPriorities = std::vector<float>{1.0f};
+  for (uint32_t familyIndex = 0; familyIndex < qFamilyCount; familyIndex++) {
+    if (qOffsets[familyIndex] == 0)
+      continue;
+
+    VkDeviceQueueCreateInfo info = {VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
+    info.queueFamilyIndex        = familyIndex;
+    info.queueCount              = qOffsets[familyIndex];
+    info.pQueuePriorities        = m_qPriorities[familyIndex].data();
+    m_qCreateInfos.push_back(info);
+  }
+  return true;
+}
+
+bool Context::CreateDevice() {
+  SelectGPU();
+  const auto has_extension = [&](const char* name) -> bool {
+    auto itr = find_if(begin(m_deviceExts), end(m_deviceExts),
+                       [name](const VkExtensionProperties& e) -> bool {
+                         return strcmp(e.extensionName, name) == 0;
+                       });
+    return itr != end(m_deviceExts);
+  };
+  std::vector<const char*> enabledExts;
+  for (auto& extension : m_requiredDeviceExts) {
+    if (!has_extension(extension)) {
+      spd::critical("Device extension {} not supported.", extension);
+      return false;
+    }
+    enabledExts.push_back(extension);
+  }
+  PopulateQueueInfo();
+  VkDeviceCreateInfo deviceInfo      = {VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
+  deviceInfo.pQueueCreateInfos       = m_qCreateInfos.data();
+  deviceInfo.queueCreateInfoCount    = static_cast<uint32_t>(m_qCreateInfos.size());
+  deviceInfo.enabledExtensionCount   = static_cast<uint32_t>(enabledExts.size());
+  deviceInfo.ppEnabledExtensionNames = enabledExts.data();
+  SetPNextChain(deviceInfo, m_pNextChain);
+  for (auto& extension : enabledExts) {
+    spd::info("Enabling device extension {}", extension);
+  }
+
+  Check(vkCreateDevice(m_gpu, &deviceInfo, nullptr, &m_device), "create device");
+  volkLoadDevice(m_device);
+  for (int i = 0; i < QUEUE_INDEX_COUNT; i++) {
+    if (m_customQInfo.familyIndices[i] != VK_QUEUE_FAMILY_IGNORED) {
+      vkGetDeviceQueue(m_device, m_customQInfo.familyIndices[i], m_qIndices[i],
+                       &m_customQInfo.queues[i]);
+    } else {
+      m_customQInfo.queues[i] = VK_NULL_HANDLE;
+    }
+  }
+
+  return true;
+}
+
+bool CreateContext(const ContextCreateInfo& ctxInfo, Context* ctx) {
+  for (int i = 0; i < ctxInfo.enabledLayerCount; ++i) {
+    ctx->m_requiredInstLayers.push_back(ctxInfo.ppEnabledInstLayers[i]);
+  }
+  for (int i = 0; i < ctxInfo.enabledInstExtCount; ++i) {
+    ctx->m_requiredInstExts.push_back(ctxInfo.ppEnabledInstExts[i]);
+  }
+  for (int i = 0; i < ctxInfo.enabledDeviceExtCount; ++i) {
+    ctx->m_requiredDeviceExts.push_back(ctxInfo.ppEnabledDeviceExts[i]);
+  }
+  for (auto& pNext : ctxInfo.pNexts) {
+    ctx->m_pNextChain.push_back(pNext);
+  }
+  ctx->m_requiredDeviceExts.push_back("VK_KHR_swapchain");
+  ctx->m_window = ctxInfo.window;
+
+  if (!ctx->CreateInstance()) {
+    spd::critical("Failed to create vulkan instance");
+    return false;
+  }
+
+  SDL_Vulkan_CreateSurface(ctx->m_window, ctx->m_instance, &ctx->m_surface);
+
+  if (!ctx->CreateDevice()) {
+    spd::critical("Failed to create vulkan device");
+    return false;
+  }
+  return true;
+}
 Context::~Context() {
   Destroy();
 }
 void Context::Destroy() {
   if (m_device != VK_NULL_HANDLE) {
     vkDeviceWaitIdle(m_device);
+  }
+  if (m_surface != VK_NULL_HANDLE) {
+    vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
   }
   if (m_debugMessenger != VK_NULL_HANDLE) {
     vkDestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);

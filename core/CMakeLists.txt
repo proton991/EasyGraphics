@@ -6,7 +6,7 @@ add_library(ezg_engine ${ezg_engine_src})
 add_library(ezg_vk ${ezg_vk_src})
 
 target_link_libraries(ezg_engine vma tinyobjloader sdl2 stb_image)
-target_link_libraries(ezg_vk volk spdlog)
+target_link_libraries(ezg_vk volk spdlog sdl2)
 
 target_include_directories(ezg_engine PUBLIC ${VULKAN_INCLUDE_DIR})
 target_include_directories(ezg_vk PUBLIC ${VULKAN_INCLUDE_DIR})

@@ -8,11 +8,12 @@ Built a basic renderer by following [Vulkan Guide](https://vkguide.dev/)' chapte
 
 #### Next, continue to improve the engine.
 
-Reference projects:
+**Reference projects:**
 
 1. Vulkan Guide Engine: https://github.com/vblanco20-1/vulkan-guide
 2. Granite: https://github.com/Themaister/Granite
 3. VulkanSceneGraph: https://github.com/vsg-dev/VulkanSceneGraph
+4. vulkan-renderer: https://github.com/inexorgame/vulkan-renderer
 
 #### Start Phase1
 
@@ -26,3 +27,28 @@ Currently **`vk_helper`** module achieved some level of abstractions on Vulkan A
 6. UI: integrate imgui.
 
 **Mark current version as V0.1**
+
+
+
+## 2022.11.20 (Phase1)
+
+#### Current Progress:
+
+Implement `Context` abstraction layer by referencing project [Granite](https://github.com/Themaister/Granite).
+
+`Context`is responsible for:
+
+1. Create Instance.
+2. Create Device.
+3. Set up debugUtil Messenger.
+
+Other progress:
+
+1. Integrated logging system: [spdlog](https://github.com/gabime/spdlog).
+2. Integrated [volk ](https://github.com/gnuradio/volk)to load Vulkan functions dynamically.
+
+#### Next:
+
+1. Implement `WSI` abstraction layer that manages things like window creation, surface creation, frame operations...
+2. Implement `Device` class which includes operation about `VkDevice`.
+3. Implement asset-loader.

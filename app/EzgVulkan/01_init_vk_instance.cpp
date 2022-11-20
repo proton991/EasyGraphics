@@ -12,4 +12,5 @@ int main(int argc, char* argv[]) {
   if (ctx.GetVkInstance() == VK_NULL_HANDLE) {
     std::cerr << "Failed to create instance\n";
   }
+  return 0;
 }
