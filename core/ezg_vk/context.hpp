@@ -12,6 +12,7 @@
 #endif
 #include <Windows.h>
 #include "common.hpp"
+#include "debug.hpp"
 #endif  // _WIN32
 
 namespace ezg::vk {
@@ -162,7 +163,7 @@ class Context {
 public:
   static bool InitLoader(PFN_vkGetInstanceProcAddr fp_vkGetInstanceProcAddr = nullptr);
   static PFN_vkGetInstanceProcAddr InstanceFuncLoader();
-  static PFN_vkGetDeviceProcAddr DeviceFuncLoader();
+
   [[nodiscard]] VkInstance GetVkInstance() const { return m_instance; }
   explicit Context();
   ~Context();

@@ -8,7 +8,7 @@ namespace ezg::vk {
 
 static std::mutex mutex;
 static PFN_vkGetInstanceProcAddr fp_vkGetInstanceProcAddr{VK_NULL_HANDLE};
-static PFN_vkGetDeviceProcAddr fp_vkGetDeviceProcAddr{VK_NULL_HANDLE};
+//static PFN_vkGetDeviceProcAddr fp_vkGetDeviceProcAddr{VK_NULL_HANDLE};
 static bool loaderInit = false;
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_util_messenger_cb(
@@ -58,7 +58,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_util_messenger_cb(
   if (log_object_names) {
     for (uint32_t i = 0; i < pCallbackData->objectCount; i++) {
       auto* name = pCallbackData->pObjects[i].pObjectName;
-      spd::info("  Object #%u: {}", i, name ? name : "N/A");
+      spd::info("  Object {}: {}", i, name ? name : "N/A");
     }
   }
 
@@ -133,10 +133,6 @@ bool Context::InitLoader(PFN_vkGetInstanceProcAddr addr) {
 
 PFN_vkGetInstanceProcAddr Context::InstanceFuncLoader() {
   return fp_vkGetInstanceProcAddr;
-}
-
-PFN_vkGetDeviceProcAddr Context::DeviceFuncLoader() {
-  return fp_vkGetDeviceProcAddr;
 }
 
 Context::Context() {
@@ -256,7 +252,7 @@ bool Context::CreateInstance() {
   std::vector<VkBaseOutStructure*> pNextChain;
   if (m_enableValidation && ext.supports_debug_utils) {
     VkDebugUtilsMessengerCreateInfoEXT messengerCreateInfo = DebugUtilMessengerCI();
-    messengerCreateInfo.pUserData = this;
+    messengerCreateInfo.pUserData                          = nullptr;
     pNextChain.push_back(reinterpret_cast<VkBaseOutStructure*>(&messengerCreateInfo));
   }
   SetPNextChain(instanceInfo, pNextChain);
@@ -277,7 +273,7 @@ bool Context::CreateInstance() {
 
   if (ext.supports_debug_utils) {
     VkDebugUtilsMessengerCreateInfoEXT debugInfo = DebugUtilMessengerCI();
-    debugInfo.pUserData = this;
+    debugInfo.pUserData                          = this;
 
     // For some reason, this segfaults Android, sigh ... We get relevant output in logcat anyways.
     if (vkCreateDebugUtilsMessengerEXT)
@@ -446,6 +442,8 @@ bool Context::CreateDevice() {
     if (m_customQInfo.familyIndices[i] != VK_QUEUE_FAMILY_IGNORED) {
       vkGetDeviceQueue(m_device, m_customQInfo.familyIndices[i], m_qIndices[i],
                        &m_customQInfo.queues[i]);
+      spd::info("Queue: {}, family index: {}, queue index: {}", QUEUE_NAMES[i],
+                m_customQInfo.familyIndices[i], m_qIndices[i]);
     } else {
       m_customQInfo.queues[i] = VK_NULL_HANDLE;
     }
@@ -481,6 +479,10 @@ bool CreateContext(const ContextCreateInfo& ctxInfo, Context* ctx) {
     spd::critical("Failed to create vulkan device");
     return false;
   }
+
+  DebugUtil::Get().SetObjectName(ctx->m_surface, "surface");
+  DebugUtil::Get().SetObjectName(ctx->m_device, "device");
+
   return true;
 }
 Context::~Context() {

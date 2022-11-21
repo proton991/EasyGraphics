@@ -16,6 +16,13 @@ namespace ezg::vk {
 //void GetDeviceProcAddr(VkDevice device, T& out_ptr, const char* func_name) {
 //  out_ptr = reinterpret_cast<T>(Context::DeviceFuncLoader()(device, func_name));
 //}
+#define VULKAN_NON_COPIABLE(ClassName)             \
+  ClassName(const ClassName&) = delete;            \
+  ClassName(ClassName&&)      = delete;            \
+  ClassName& operator=(const ClassName&) = delete; \
+  ClassName& operator=(ClassName&&) = delete;
+
+static const char* QUEUE_NAMES[] = {"Graphics", "Compute", "transfer", "video_decode"};
 
 enum QueueIndices {
   QUEUE_INDEX_GRAPHICS,
