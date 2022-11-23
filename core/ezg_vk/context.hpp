@@ -12,6 +12,7 @@
 #endif
 #include <Windows.h>
 #include "common.hpp"
+#include "wsi.hpp"
 #include "debug.hpp"
 #endif  // _WIN32
 
@@ -143,7 +144,7 @@ struct ContextCreateInfo {
   uint32_t enabledDeviceExtCount{0};
   const char** ppEnabledDeviceExts{nullptr};
 
-  SDL_Window* window;
+  wsi::Platform* platform;
 
   const std::vector<VkBaseOutStructure*> pNexts;
 };
@@ -209,8 +210,9 @@ private:
   uint32_t m_qIndices[QUEUE_INDEX_COUNT] = {};
   std::vector<std::vector<float>> m_qPriorities;
 
+  wsi::Platform* m_sdl2Platform{nullptr};
   VkSurfaceKHR m_surface{VK_NULL_HANDLE};
-  SDL_Window* m_window{nullptr};
+//  SDL_Window* m_window{nullptr};
 
   friend bool CreateContext(const ContextCreateInfo& contextCreateInfo, Context* ctx);
 };

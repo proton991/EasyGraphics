@@ -11,14 +11,16 @@ int main(int argc, char* argv[]) {
   }
   vk::Context ctx;
   SDL_Init(SDL_INIT_VIDEO);
+  wsi::SDL2WindowConfig config{};
+  config.flags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN);
+  config.height = 600;
+  config.width = 800;
 
-  auto windowFlags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN);
+  auto* platform = new wsi::SDL2Platform();
+  platform->Init(config);
 
-  SDL_Window* window = SDL_CreateWindow("EZGEngine", SDL_WINDOWPOS_UNDEFINED,
-                                        SDL_WINDOWPOS_UNDEFINED, 800, 600, windowFlags);
   vk::ContextCreateInfo ctxInfo{};
-  ctxInfo.window = window;
+  ctxInfo.platform = platform;
   vk::CreateContext(ctxInfo, &ctx);
-  SDL_DestroyWindow(window);
   return 0;
 }
