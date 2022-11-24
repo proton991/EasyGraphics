@@ -308,9 +308,6 @@ void Context::SelectGPU() {
   if (m_gpu != VK_NULL_HANDLE) {
     vkGetPhysicalDeviceProperties(m_gpu, &m_gpuProps);
     vkGetPhysicalDeviceMemoryProperties(m_gpu, &m_gpuMemProps);
-    spd::info("Using GPU: {}", m_gpuProps.deviceName);
-    spd::info("The GPU has a minimum buffer alignment of {}",
-              m_gpuProps.limits.minUniformBufferOffsetAlignment);
   } else {
     spd::critical("No Vulkan GPU found!");
   }
@@ -362,7 +359,7 @@ bool Context::PopulateQueueInfo() {
     return false;
   };
   if (!find_vacant_queue(m_customQInfo.familyIndices[QUEUE_INDEX_GRAPHICS],
-                         m_qIndices[QUEUE_INDEX_GRAPHICS],
+                         m_customQInfo.qIndices[QUEUE_INDEX_GRAPHICS],
                          VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, 0, 0.5f)) {
     spd::error("Could not find suitable graphics queue.");
     return false;
@@ -370,28 +367,28 @@ bool Context::PopulateQueueInfo() {
   // Prefer another graphics queue since we can do async graphics that way.
   // The compute queue is to be treated as high priority since we also do async graphics on it.
   if (!find_vacant_queue(m_customQInfo.familyIndices[QUEUE_INDEX_COMPUTE],
-                         m_qIndices[QUEUE_INDEX_COMPUTE],
+                         m_customQInfo.qIndices[QUEUE_INDEX_COMPUTE],
                          VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, 0, 1.0f) &&
       !find_vacant_queue(m_customQInfo.familyIndices[QUEUE_INDEX_COMPUTE],
-                         m_qIndices[QUEUE_INDEX_COMPUTE], VK_QUEUE_COMPUTE_BIT, 0, 1.0f)) {
+                         m_customQInfo.qIndices[QUEUE_INDEX_COMPUTE], VK_QUEUE_COMPUTE_BIT, 0, 1.0f)) {
     // Fallback to the graphics queue if we must.
     m_customQInfo.familyIndices[QUEUE_INDEX_COMPUTE] =
         m_customQInfo.familyIndices[QUEUE_INDEX_GRAPHICS];
-    m_qIndices[QUEUE_INDEX_COMPUTE] = m_qIndices[QUEUE_INDEX_GRAPHICS];
+    m_customQInfo.qIndices[QUEUE_INDEX_COMPUTE] = m_customQInfo.qIndices[QUEUE_INDEX_GRAPHICS];
   }
 
   // For transfer, try to find a queue which only supports transfer, e.g. DMA queue.
   // If not, fallback to a dedicated compute queue.
   // Finally, fallback to same queue as compute.
   if (!find_vacant_queue(m_customQInfo.familyIndices[QUEUE_INDEX_TRANSFER],
-                         m_qIndices[QUEUE_INDEX_TRANSFER], VK_QUEUE_TRANSFER_BIT,
+                         m_customQInfo.qIndices[QUEUE_INDEX_TRANSFER], VK_QUEUE_TRANSFER_BIT,
                          VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, 0.5f) &&
       !find_vacant_queue(m_customQInfo.familyIndices[QUEUE_INDEX_TRANSFER],
-                         m_qIndices[QUEUE_INDEX_TRANSFER], VK_QUEUE_COMPUTE_BIT,
+                         m_customQInfo.qIndices[QUEUE_INDEX_TRANSFER], VK_QUEUE_COMPUTE_BIT,
                          VK_QUEUE_GRAPHICS_BIT, 0.5f)) {
     m_customQInfo.familyIndices[QUEUE_INDEX_TRANSFER] =
         m_customQInfo.familyIndices[QUEUE_INDEX_COMPUTE];
-    m_qIndices[QUEUE_INDEX_TRANSFER] = m_qIndices[QUEUE_INDEX_COMPUTE];
+    m_customQInfo.qIndices[QUEUE_INDEX_TRANSFER] = m_customQInfo.qIndices[QUEUE_INDEX_COMPUTE];
   }
 
   std::vector<float> defaultPriorities = std::vector<float>{1.0f};
@@ -440,10 +437,8 @@ bool Context::CreateDevice() {
   volkLoadDevice(m_device);
   for (int i = 0; i < QUEUE_INDEX_COUNT; i++) {
     if (m_customQInfo.familyIndices[i] != VK_QUEUE_FAMILY_IGNORED) {
-      vkGetDeviceQueue(m_device, m_customQInfo.familyIndices[i], m_qIndices[i],
+      vkGetDeviceQueue(m_device, m_customQInfo.familyIndices[i], m_customQInfo.qIndices[i],
                        &m_customQInfo.queues[i]);
-      spd::info("Queue: {}, family index: {}, queue index: {}", QUEUE_NAMES[i],
-                m_customQInfo.familyIndices[i], m_qIndices[i]);
     } else {
       m_customQInfo.queues[i] = VK_NULL_HANDLE;
     }

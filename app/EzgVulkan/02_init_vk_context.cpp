@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
 #include <ezg_vk/context.hpp>
+#include <ezg_vk/device.hpp>
 #include <iostream>
 #include <vector>
 
@@ -22,5 +23,9 @@ int main(int argc, char* argv[]) {
   vk::ContextCreateInfo ctxInfo{};
   ctxInfo.platform = platform;
   vk::CreateContext(ctxInfo, &ctx);
+
+  vk::Device device;
+  device.SetContext(ctx);
+  device.DisplayInfo();
   return 0;
 }

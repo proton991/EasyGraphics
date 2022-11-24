@@ -128,12 +128,6 @@ private:
   VkInstance m_instance{VK_NULL_HANDLE};
 };
 
-class Device {
-public:
-private:
-  VkPhysicalDevice m_physicalDevice{VK_NULL_HANDLE};
-  VkDevice m_device{VK_NULL_HANDLE};
-};
 struct ContextCreateInfo {
   uint32_t enabledLayerCount{0};
   const char** ppEnabledInstLayers{nullptr};
@@ -154,8 +148,9 @@ struct CustomQueueInfo {
     for (auto& index : familyIndices)
       index = VK_QUEUE_FAMILY_IGNORED;
   }
-  VkQueue queues[QUEUE_INDEX_COUNT]         = {};
-  uint32_t familyIndices[QUEUE_INDEX_COUNT] = {};
+  VkQueue queues[QUEUE_INDEX_COUNT]{};
+  uint32_t familyIndices[QUEUE_INDEX_COUNT]{};
+  uint32_t qIndices[QUEUE_INDEX_COUNT]{};
 };
 
 bool CreateContext(const ContextCreateInfo& contextCreateInfo, Context* ctx);
@@ -173,8 +168,6 @@ public:
     m_enableValidation = false;
     return *this;
   }
-
-  //  bool InitInstance()
 
   bool CreateInstance();
   bool CreateDevice();
@@ -197,7 +190,7 @@ private:
   bool m_enableValidation = true;
   VkDebugUtilsMessengerEXT m_debugMessenger{VK_NULL_HANDLE};
 
-  VolkDeviceTable deviceTable{};
+//  VolkDeviceTable deviceTable{};
   VkInstance m_instance{VK_NULL_HANDLE};
   VkPhysicalDevice m_gpu{VK_NULL_HANDLE};
   VkPhysicalDeviceProperties m_gpuProps{};
@@ -207,14 +200,13 @@ private:
 
   std::vector<VkDeviceQueueCreateInfo> m_qCreateInfos;
   CustomQueueInfo m_customQInfo;
-  uint32_t m_qIndices[QUEUE_INDEX_COUNT] = {};
   std::vector<std::vector<float>> m_qPriorities;
 
   wsi::Platform* m_sdl2Platform{nullptr};
   VkSurfaceKHR m_surface{VK_NULL_HANDLE};
-//  SDL_Window* m_window{nullptr};
 
   friend bool CreateContext(const ContextCreateInfo& contextCreateInfo, Context* ctx);
+  friend class Device;
 };
 
 }  // namespace ezg::vk
