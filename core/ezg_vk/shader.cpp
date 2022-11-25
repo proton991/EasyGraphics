@@ -39,6 +39,10 @@ Shader::Shader(Shader&& other) noexcept {
   m_name       = std::move(other.m_name);
 }
 
+Shader::~Shader() {
+  vkDestroyShaderModule(m_device->Handle(), m_module, nullptr);
+}
+
 VkShaderStageFlagBits Shader::Stage() const {
   return m_stage;
 }

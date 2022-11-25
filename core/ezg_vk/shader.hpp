@@ -15,6 +15,8 @@ public:
 
   Shader(Shader&&) noexcept;
 
+  ~Shader();
+
   Shader& operator=(Shader&&) = delete;
   [[nodiscard]] VkShaderStageFlagBits Stage() const;
   [[nodiscard]] const std::string& Name() const;
