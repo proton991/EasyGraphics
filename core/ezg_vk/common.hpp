@@ -2,7 +2,7 @@
 #define COMMON_HPP
 
 #include <spdlog/spdlog.h>
-#include <vulkan/vulkan.h>
+#include <volk.h>
 
 namespace spd = spdlog;
 namespace ezg::vk {
