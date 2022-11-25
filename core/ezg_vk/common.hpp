@@ -17,9 +17,17 @@ namespace ezg::vk {
 //  out_ptr = reinterpret_cast<T>(Context::DeviceFuncLoader()(device, func_name));
 //}
 #define VULKAN_NON_COPIABLE(ClassName)             \
-  ClassName(const ClassName&) = delete;            \
-  ClassName(ClassName&&)      = delete;            \
+  ClassName(const ClassName&)            = delete; \
+  ClassName(ClassName&&)                 = delete; \
   ClassName& operator=(const ClassName&) = delete; \
+  ClassName& operator=(ClassName&&)      = delete;
+
+#define NO_COPY(ClassName)                         \
+  ClassName(const ClassName&)            = delete; \
+  ClassName& operator=(const ClassName&) = delete;
+
+#define NO_MOVE(ClassName)                    \
+  ClassName(ClassName&&)            = delete; \
   ClassName& operator=(ClassName&&) = delete;
 
 static const char* QUEUE_NAMES[] = {"Graphics", "Compute", "transfer", "video_decode"};
