@@ -51,5 +51,7 @@ Other progress:
 
 1. Implement `WSI` abstraction layer that manages things like window creation, surface creation, frame operations...
     > **Note** For now just implemented a simple WSI abstraction which is responsible for surface creation and destruction - 2022.11.23
-2. Implement `Device` class which includes operation about `VkDevice`.
-3. Implement asset-loader.
+2. Implement `RenderPass` abstraction layer
+3. Implement `Device` class which includes operation about `VkDevice`. 
+   > It's the largest part, for it will include functionalities related to VkDevice. Build this part step by step
+4. Implement asset-loader. (lower priority)
