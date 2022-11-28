@@ -58,7 +58,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_util_messenger_cb(
   if (log_object_names) {
     for (uint32_t i = 0; i < pCallbackData->objectCount; i++) {
       auto* name = pCallbackData->pObjects[i].pObjectName;
-      spd::info("  Object {}: {}", i, name ? name : "N/A");
+      spd::error("  Object {}: {}", i, name ? name : "N/A");
     }
   }
 
@@ -191,26 +191,6 @@ bool Context::CreateInstance() {
     instanceExts.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     ext.supports_debug_utils = true;
   }
-  //  instanceExts.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
-  //#if defined(_WIN32)
-  //  instanceExts.push_back("VK_KHR_win32_surface");
-  //#elif defined(VK_USE_PLATFORM_ANDROID_KHR)
-  //  instanceExtensions.push_back(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
-  //#elif defined(_DIRECT2DISPLAY)
-  //  instanceExtensions.push_back(VK_KHR_DISPLAY_EXTENSION_NAME);
-  //#elif defined(VK_USE_PLATFORM_DIRECTFB_EXT)
-  //  instanceExtensions.push_back(VK_EXT_DIRECTFB_SURFACE_EXTENSION_NAME);
-  //#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
-  //  instanceExtensions.push_back(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME);
-  //#elif defined(VK_USE_PLATFORM_XCB_KHR)
-  //  instanceExtensions.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
-  //#elif defined(VK_USE_PLATFORM_IOS_MVK)
-  //  instanceExtensions.push_back(VK_MVK_IOS_SURFACE_EXTENSION_NAME);
-  //#elif defined(VK_USE_PLATFORM_MACOS_MVK)
-  //  instanceExtensions.push_back(VK_MVK_MACOS_SURFACE_EXTENSION_NAME);
-  //#elif defined(VK_USE_PLATFORM_HEADLESS_EXT)
-  //  instanceExtensions.push_back(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
-  //#endif
 
   if (m_enableValidation && has_layer("VK_LAYER_KHRONOS_validation")) {
     instanceLayers.push_back("VK_LAYER_KHRONOS_validation");
@@ -338,15 +318,6 @@ bool Context::PopulateQueueInfo() {
       if ((qProps[familyIndex].queueFlags & ignore_flags) != 0)
         continue;
 
-      // A graphics queue candidate must support present for us to select it.
-      if ((required & VK_QUEUE_GRAPHICS_BIT) != 0 && m_surface != VK_NULL_HANDLE) {
-        VkBool32 supported = VK_FALSE;
-        if (vkGetPhysicalDeviceSurfaceSupportKHR(m_gpu, familyIndex, m_surface, &supported) !=
-                VK_SUCCESS ||
-            !supported)
-          continue;
-      }
-
       if (qProps[familyIndex].queueCount &&
           (qProps[familyIndex].queueFlags & required) == required) {
         family = familyIndex;
@@ -448,7 +419,6 @@ bool Context::CreateDevice() {
 }
 
 bool CreateContext(const ContextCreateInfo& ctxInfo, Context* ctx) {
-  ctx->m_sdl2Platform = ctxInfo.platform;
   for (int i = 0; i < ctxInfo.enabledLayerCount; ++i) {
     ctx->m_requiredInstLayers.push_back(ctxInfo.ppEnabledInstLayers[i]);
   }
@@ -461,25 +431,17 @@ bool CreateContext(const ContextCreateInfo& ctxInfo, Context* ctx) {
   for (auto& pNext : ctxInfo.pNexts) {
     ctx->m_pNextChain.push_back(pNext);
   }
-  std::vector<const char*> instExts   = ctxInfo.platform->GetInstanceExtensions();
-  std::vector<const char*> deviceExts = ctxInfo.platform->getDeviceExtensions();
-  ctx->m_requiredInstExts.insert(ctx->m_requiredInstExts.end(), instExts.begin(), instExts.end());
-  ctx->m_requiredDeviceExts.insert(ctx->m_requiredDeviceExts.end(), deviceExts.begin(),
-                                   deviceExts.end());
 
   if (!ctx->CreateInstance()) {
     spd::critical("Failed to create vulkan instance");
     return false;
   }
 
-  ctx->m_surface = ctx->m_sdl2Platform->CreateSurface(ctx->m_instance);
-
   if (!ctx->CreateDevice()) {
     spd::critical("Failed to create vulkan device");
     return false;
   }
 
-  DebugUtil::Get().SetObjectName(ctx->m_surface, "surface");
   DebugUtil::Get().SetObjectName(ctx->m_device, "device");
 
   return true;
@@ -491,9 +453,9 @@ void Context::Destroy() {
   if (m_device != VK_NULL_HANDLE) {
     vkDeviceWaitIdle(m_device);
   }
-  if (m_surface != VK_NULL_HANDLE) {
-    vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
-  }
+//  if (m_surface != VK_NULL_HANDLE) {
+//    vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+//  }
   if (m_debugMessenger != VK_NULL_HANDLE) {
     vkDestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
     m_debugMessenger = VK_NULL_HANDLE;

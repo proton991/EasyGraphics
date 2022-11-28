@@ -3,3 +3,6 @@ target_link_libraries(01_init_vk_instance ezg_vk)
 
 add_executable(02_init_vk_context 02_init_vk_context.cpp)
 target_link_libraries(02_init_vk_context ezg_vk)
+
+add_executable(03_create_swapchain 03_create_swapchain.cpp)
+target_link_libraries(03_create_swapchain ezg_vk)

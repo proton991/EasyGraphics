@@ -138,7 +138,7 @@ struct ContextCreateInfo {
   uint32_t enabledDeviceExtCount{0};
   const char** ppEnabledDeviceExts{nullptr};
 
-  wsi::Platform* platform;
+//  wsi::Platform* platform;
 
   const std::vector<VkBaseOutStructure*> pNexts;
 };
@@ -202,8 +202,8 @@ private:
   CustomQueueInfo m_customQInfo;
   std::vector<std::vector<float>> m_qPriorities;
 
-  wsi::Platform* m_sdl2Platform{nullptr};
-  VkSurfaceKHR m_surface{VK_NULL_HANDLE};
+
+//  VkSurfaceKHR m_surface{VK_NULL_HANDLE};
 
   friend bool CreateContext(const ContextCreateInfo& contextCreateInfo, Context* ctx);
   friend class Device;

@@ -2,6 +2,7 @@
 #include <SDL2/SDL_vulkan.h>
 #include <ezg_vk/context.hpp>
 #include <ezg_vk/device.hpp>
+#include <ezg_vk/swapchain.hpp>
 #include <iostream>
 #include <vector>
 
@@ -21,7 +22,7 @@ int main(int argc, char* argv[]) {
   platform->Init(config);
 
   vk::ContextCreateInfo ctxInfo{};
-//  ctxInfo.platform = platform;
+  //  ctxInfo.platform = platform;
   std::vector<const char*> instExts = platform->GetInstanceExtensions();
   std::vector<const char*> deviceExts = platform->GetDeviceExtensions();
   ctxInfo.enabledInstExtCount = instExts.size();
@@ -33,5 +34,7 @@ int main(int argc, char* argv[]) {
   vk::Device device;
   device.SetContext(ctx);
   device.DisplayInfo();
+
+  vk::Swapchain swapchain{platform, ctx.GetVkInstance(), &device, 800, 600, true};
   return 0;
 }

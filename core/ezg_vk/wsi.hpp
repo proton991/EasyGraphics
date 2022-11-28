@@ -18,14 +18,13 @@ class Platform {
 public:
   virtual ~Platform() = default;
 
-  virtual VkSurfaceKHR CreateSurface(VkInstance instance) = 0;
+  virtual VkSurfaceKHR CreateSurface(VkInstance instance) const = 0 ;
 
   virtual void DestroySurface(VkInstance instance, VkSurfaceKHR surface);
 
   virtual std::vector<const char*> GetInstanceExtensions() = 0;
 
-  virtual std::vector<const char*> getDeviceExtensions() { return {"VK_KHR_swapchain"}; }
-
+  virtual std::vector<const char*> GetDeviceExtensions() { return {"VK_KHR_swapchain"}; }
 };
 
 class SDL2Platform : public Platform {
@@ -34,12 +33,17 @@ public:
 
   ~SDL2Platform() override;
 
-  VkSurfaceKHR CreateSurface(VkInstance instance) override;
+  VkSurfaceKHR CreateSurface(VkInstance instance) const override;
 
   std::vector<const char*> GetInstanceExtensions() override;
 
+  [[nodiscard]] int GetWidth() const { return m_width; }
+  [[nodiscard]] int GetHeight() const { return m_height; }
+
 private:
   SDL_Window* m_window{nullptr};
+  int m_width;
+  int m_height;
 };
 }  // namespace ezg::wsi
 

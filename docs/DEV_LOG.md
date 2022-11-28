@@ -48,10 +48,14 @@ Other progress:
 2. Integrated [volk ](https://github.com/gnuradio/volk)to load Vulkan functions dynamically.
 
 #### Next:
-
+**New:**
 1. Implement `WSI` abstraction layer that manages things like window creation, surface creation, frame operations...
     > **Note** For now just implemented a simple WSI abstraction which is responsible for surface creation and destruction - 2022.11.23
-2. Implement `RenderPass` abstraction layer
-3. Implement `Device` class which includes operation about `VkDevice`. 
+2. Implement `Swaphchain` abstraction
+3. Implement `RenderPass` abstraction layer
+4. Implement `Device` class which includes operation about `VkDevice`. 
    > It's the largest part, for it will include functionalities related to VkDevice. Build this part step by step
-4. Implement asset-loader. (lower priority)
+5. Implement asset-loader. (lower priority)
+
+**Refactor**:
+1. Remove `VkSurfaceKHR` dependency when initializing `vk::Context`, check present support when building swapchain

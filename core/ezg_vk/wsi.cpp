@@ -8,8 +8,10 @@ void Platform::DestroySurface(VkInstance instance, VkSurfaceKHR surface) {
 void SDL2Platform::Init(const SDL2WindowConfig& config) {
   m_window = SDL_CreateWindow(config.title, config.posX, config.posY, config.width, config.height,
                               config.flags);
+  m_width = config.width;
+  m_height = config.height;
 }
-VkSurfaceKHR SDL2Platform::CreateSurface(VkInstance instance) {
+VkSurfaceKHR SDL2Platform::CreateSurface(VkInstance instance) const {
   VkSurfaceKHR surface;
   SDL_Vulkan_CreateSurface(m_window, instance, &surface);
   return surface;

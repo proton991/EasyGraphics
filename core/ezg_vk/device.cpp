@@ -3,6 +3,7 @@
 namespace ezg::vk {
 
 void Device::SetContext(const Context& ctx) {
+  m_instance    = ctx.m_instance;
   m_device      = ctx.m_device;
   m_gpu         = ctx.m_gpu;
   m_gpuFeats    = ctx.ext;
