@@ -14,15 +14,11 @@ public:
   [[nodiscard]] VkPhysicalDevice GPU() const { return m_gpu; }
   void DisplayInfo();
 
-  VkQueue GetQueue(QueueIndices qIndex) {
-    assert(qIndex < QUEUE_INDEX_COUNT);
-    return m_customQInfo.queues[qIndex];
-  }
-
-  uint32_t GetQFamilyIndex(QueueIndices qIndex) {
-    assert(qIndex < QUEUE_INDEX_COUNT);
-    return m_customQInfo.familyIndices[qIndex];
-  }
+  VkQueue PresentQueue() const { return m_presentQueue; }
+  VkQueue GraphicsQueue() const { return m_customQInfo.queues[QUEUE_INDEX_GRAPHICS]; }
+  VkQueue ComputeQueue() const { return m_customQInfo.queues[QUEUE_INDEX_COMPUTE]; }
+  VkQueue TransferQueue() const { return m_customQInfo.queues[QUEUE_INDEX_TRANSFER]; }
+  uint32_t GraphicsQFIndex() const { return m_customQInfo.familyIndices[QUEUE_INDEX_GRAPHICS]; }
 
 private:
   VkInstance m_instance{VK_NULL_HANDLE};
@@ -32,6 +28,7 @@ private:
   VkPhysicalDeviceMemoryProperties m_gpuMemProps{};
   VkPhysicalDeviceProperties m_gpuProps{};
   DeviceFeatures m_gpuFeats{};
+  VkQueue m_presentQueue{VK_NULL_HANDLE};
 };
 }  // namespace ezg::vk
 #endif  //EASYGRAPHICS_DEVICE_HPP

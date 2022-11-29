@@ -30,6 +30,8 @@ public:
 
   void Recreate(uint32_t windowWidth, uint32_t windowHeight);
 
+  void QueuePresent(uint32_t imageIndex, VkSemaphore waitSemaphore = VK_NULL_HANDLE);
+
 private:
   void Setup(VkSwapchainKHR oldSwapchain, uint32_t width, uint32_t height);
   void QuerySwapchainSupport();

@@ -277,4 +277,18 @@ void Swapchain::Setup(VkSwapchainKHR oldSwapchain, uint32_t width, uint32_t heig
   }
 }
 
+void Swapchain::QueuePresent(uint32_t imageIndex, VkSemaphore waitSemaphore) {
+  VkPresentInfoKHR presentInfo{
+      .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+      .pNext = nullptr,
+      .swapchainCount = 1,
+      .pSwapchains = &m_swapchain,
+      .pImageIndices = &imageIndex
+  };
+  if (waitSemaphore != VK_NULL_HANDLE) {
+    presentInfo.pWaitSemaphores = &waitSemaphore;
+    presentInfo.waitSemaphoreCount = 1;
+  }
+  Check(vkQueuePresentKHR(m_device->PresentQueue(), &presentInfo), "queue present");
+}
 }  // namespace ezg::vk

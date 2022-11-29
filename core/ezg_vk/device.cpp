@@ -10,6 +10,8 @@ void Device::SetContext(const Context& ctx) {
   m_gpuProps    = ctx.m_gpuProps;
   m_gpuMemProps = ctx.m_gpuMemProps;
   m_customQInfo = ctx.m_customQInfo;
+
+  m_presentQueue = m_customQInfo.queues[QUEUE_INDEX_GRAPHICS];
 }
 
 void Device::DisplayInfo() {
