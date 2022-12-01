@@ -12,6 +12,7 @@ void Device::SetContext(const Context& ctx) {
   m_customQInfo = ctx.m_customQInfo;
 
   m_presentQueue = m_customQInfo.queues[QUEUE_INDEX_GRAPHICS];
+  InitVMA();
 }
 
 void Device::DisplayInfo() {
@@ -26,4 +27,25 @@ void Device::DisplayInfo() {
   }
 }
 
+Device::~Device() {
+  vmaDestroyAllocator(m_allocator);
+}
+
+void Device::InitVMA() {
+  VmaAllocatorCreateInfo allocatorInfo{};
+  allocatorInfo.physicalDevice = m_gpu;
+  allocatorInfo.device         = m_device;
+  allocatorInfo.instance       = m_instance;
+  // let VMA fetch vulkan function pointers dynamically
+  VmaVulkanFunctions vmaVulkanFunctions{};
+  vmaVulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+  vmaVulkanFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
+
+  allocatorInfo.pVulkanFunctions = &vmaVulkanFunctions;
+  Check(vmaCreateAllocator(&allocatorInfo, &m_allocator), "initialize vma");
+}
+
+VmaAllocator Device::Allocator() const {
+  return m_allocator;
+}
 }  // namespace ezg::vk
