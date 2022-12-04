@@ -32,6 +32,10 @@ public:
 
   void QueuePresent(uint32_t imageIndex, VkSemaphore waitSemaphore = VK_NULL_HANDLE);
 
+  [[nodiscard]] VkImageView GetImageViewAt(uint32_t index) const { return m_imageViews[index]; }
+
+  [[nodiscard]] VkFormat GetFormat() const { return m_surfaceFormat.format; }
+
 private:
   void Setup(VkSwapchainKHR oldSwapchain, uint32_t width, uint32_t height);
   void QuerySwapchainSupport();
