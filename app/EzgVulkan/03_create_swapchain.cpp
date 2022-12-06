@@ -1,31 +1,29 @@
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_vulkan.h>
 #include <ezg_vk/context.hpp>
 #include <ezg_vk/device.hpp>
 #include <ezg_vk/swapchain.hpp>
 #include <ezg_vk/image.hpp>
+#include <ezg_vk/window.hpp>
 #include <iostream>
 #include <vector>
 
 using namespace ezg;
 int main(int argc, char* argv[]) {
+  spd::set_level(spd::level::trace);
+  vk::WindowConfig windowConfig = {
+      .title     = "Window Test",
+      .resizable = true,
+      .width     = 800,
+      .height    = 600,
+  };
+  vk::Window window {windowConfig};
   if (!vk::Context::InitLoader()) {
     std::cerr << "Failed to init loader\n";
   }
   vk::Context ctx;
-  SDL_Init(SDL_INIT_VIDEO);
-  wsi::SDL2WindowConfig config{};
-  config.flags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN);
-  config.height = 600;
-  config.width = 800;
-
-  auto* platform = new wsi::SDL2Platform();
-  platform->Init(config);
 
   vk::ContextCreateInfo ctxInfo{};
-  //  ctxInfo.platform = platform;
-  std::vector<const char*> instExts = platform->GetInstanceExtensions();
-  std::vector<const char*> deviceExts = platform->GetDeviceExtensions();
+  std::vector<const char*> instExts = window.GetInstanceExtensions();
+  std::vector<const char*> deviceExts = window.GetDeviceExtensions();
   ctxInfo.enabledInstExtCount = instExts.size();
   ctxInfo.ppEnabledInstExts = instExts.data();
   ctxInfo.enabledDeviceExtCount = deviceExts.size();
@@ -35,8 +33,8 @@ int main(int argc, char* argv[]) {
   vk::Device device;
   device.SetContext(ctx);
   device.DisplayInfo();
-
-  vk::Swapchain swapchain{platform, ctx.GetVkInstance(), &device, 800, 600, true};
+  vk::WindowSurface surface{ctx.GetVkInstance(), window.Handle()};
+  vk::Swapchain swapchain{&device, surface, 800, 600, true};
   vk::ImageCreateInfo imageInfo = {
       .format = VK_FORMAT_D32_SFLOAT,
       .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,

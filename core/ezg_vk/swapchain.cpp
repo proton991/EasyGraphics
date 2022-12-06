@@ -1,13 +1,13 @@
 #include "swapchain.hpp"
 #include "device.hpp"
+#include "window.hpp"
 
 namespace ezg::vk {
-Swapchain::Swapchain(const wsi::Platform* platform, VkInstance instance, const Device* device,
-                     uint32_t width, uint32_t height, bool enableVsync)
-    : m_device(device), m_sdl2Platform(platform), m_vsyncEnabled(enableVsync) {
+Swapchain::Swapchain(const Device* device, const WindowSurface& surface, uint32_t width,
+                     uint32_t height, bool enableVsync)
+    : m_device(device), m_surface(surface), m_vsyncEnabled(enableVsync) {
   assert(m_device->Handle());
-  m_surface = m_sdl2Platform->CreateSurface(instance);
-  DebugUtil::Get().SetObjectName(m_surface, "surface");
+  DebugUtil::Get().SetObjectName(m_surface.Handle(), "surface");
   QuerySwapchainSupport();
   Setup(VK_NULL_HANDLE, width, height);
 }
@@ -19,9 +19,9 @@ Swapchain::~Swapchain() {
   for (auto& imageView : m_imageViews) {
     vkDestroyImageView(m_device->Handle(), imageView, nullptr);
   }
-  if (m_surface != nullptr) {
-    vkDestroySurfaceKHR(m_device->Instance(), m_surface, nullptr);
-  }
+  //  if (m_surface != nullptr) {
+  //    vkDestroySurfaceKHR(m_device->Instance(), m_surface, nullptr);
+  //  }
 }
 
 uint32_t Swapchain::AcquireNextImage(VkSemaphore semaphore) {
@@ -278,15 +278,13 @@ void Swapchain::Setup(VkSwapchainKHR oldSwapchain, uint32_t width, uint32_t heig
 }
 
 void Swapchain::QueuePresent(uint32_t imageIndex, VkSemaphore waitSemaphore) {
-  VkPresentInfoKHR presentInfo{
-      .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-      .pNext = nullptr,
-      .swapchainCount = 1,
-      .pSwapchains = &m_swapchain,
-      .pImageIndices = &imageIndex
-  };
+  VkPresentInfoKHR presentInfo{.sType          = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+                               .pNext          = nullptr,
+                               .swapchainCount = 1,
+                               .pSwapchains    = &m_swapchain,
+                               .pImageIndices  = &imageIndex};
   if (waitSemaphore != VK_NULL_HANDLE) {
-    presentInfo.pWaitSemaphores = &waitSemaphore;
+    presentInfo.pWaitSemaphores    = &waitSemaphore;
     presentInfo.waitSemaphoreCount = 1;
   }
   Check(vkQueuePresentKHR(m_device->PresentQueue(), &presentInfo), "queue present");

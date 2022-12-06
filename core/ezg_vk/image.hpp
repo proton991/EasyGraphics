@@ -28,7 +28,7 @@ public:
 
   [[nodiscard]] VkImage Handle() const { return m_image; }
 
-  [[nodiscard]] VkImageView View() const { return m_view; }
+  [[nodiscard]] VkImageView GetView() const { return m_view; }
 
 private:
   const Device& m_device;

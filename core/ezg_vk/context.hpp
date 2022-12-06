@@ -12,7 +12,6 @@
 #endif
 #include <Windows.h>
 #include "common.hpp"
-#include "wsi.hpp"
 #include "debug.hpp"
 #endif  // _WIN32
 

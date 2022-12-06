@@ -51,6 +51,8 @@ public:
   WindowSurface(const VkInstance& instance, SDL_Window* window);
   ~WindowSurface();
 
+  operator const VkSurfaceKHR &() const { return m_surface; }
+
   [[nodiscard]] VkSurfaceKHR Handle() const { return m_surface; }
 private:
   const VkInstance& m_instance;
