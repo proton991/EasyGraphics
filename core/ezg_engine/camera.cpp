@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
+#include "input_controller.hpp"
 namespace ezg {
 Camera::Camera(glm::vec3 eye, glm::vec3 target, float fov, float aspect, float near, float far)
     : m_position{eye}, m_aspect{aspect}, m_fovY{fov}, m_near{near}, m_far{far} {
@@ -32,45 +33,41 @@ void Camera::SetProjectionMatrix() {
   m_projMatrix[1][1] *= -1;
 }
 
-void Camera::ProcessInputEvent(float velocity) {
-  const Uint8* currentKeyStates = SDL_GetKeyboardState(nullptr);
+void Camera::UpdatePosition(float velocity) {
   if (m_dirty) {
-    if (currentKeyStates[SDL_SCANCODE_UP] || currentKeyStates[SDL_SCANCODE_W]) {
+    if (CameraController::Get().MoveForward()) {
       m_position += m_front * velocity;
-    } else if (currentKeyStates[SDL_SCANCODE_DOWN] || currentKeyStates[SDL_SCANCODE_S]) {
+    }
+    if (CameraController::Get().MoveBackWard()) {
       m_position -= m_front * velocity;
-    } else if (currentKeyStates[SDL_SCANCODE_LEFT] || currentKeyStates[SDL_SCANCODE_A]) {
+    }
+    if (CameraController::Get().MoveLeft()) {
       m_position -= m_right * velocity;
-    } else if (currentKeyStates[SDL_SCANCODE_RIGHT] || currentKeyStates[SDL_SCANCODE_D]) {
+    }
+    if (CameraController::Get().MoveRight()) {
       m_position += m_right * velocity;
-    } else if (currentKeyStates[SDL_SCANCODE_SPACE]) {
+    }
+    if (CameraController::Get().MoveUp()) {
       m_position += m_worldUp * velocity;
-    } else if (currentKeyStates[SDL_SCANCODE_LCTRL]) {
+    }
+    if (CameraController::Get().MoveDown()) {
       m_position -= m_worldUp * velocity;
     }
-    // process mouse movements
-    int xPos, yPos;
-    SDL_GetMouseState(&xPos, &yPos);
-    if (m_firstMouse) {
-      m_mousePosX  = xPos;
-      m_mousePosY  = yPos;
-      m_firstMouse = false;
-    }
-    const auto xOffset = (m_mousePosX - xPos) * m_sensitivity;
-    const auto yOffset = -1 * (m_mousePosY - yPos) * m_sensitivity;
-
-    m_mousePosX = xPos;
-    m_mousePosY = yPos;
-
-    m_yaw += static_cast<float>(xOffset);
-    m_pitch += static_cast<float>(yOffset);
-    m_pitch = std::clamp(m_pitch, -89.0f, 89.0f);
   }
 }
 
+void Camera::UpdateView() {
+  auto mouseMove = CameraController::Get().GetMouseMove();
+  m_yaw += mouseMove.first * m_sensitivity;
+  m_pitch += mouseMove.second * m_sensitivity;
+  m_pitch = std::clamp(m_pitch, -89.0f, 89.0f);
+}
+
 void Camera::Update(float deltaTime) {
+  CameraController::Get().Update();
   const float velocity = m_speed * deltaTime;
-  ProcessInputEvent(velocity);
+  UpdatePosition(velocity);
+  UpdateView();
   UpdateBaseVectors();
 }
 

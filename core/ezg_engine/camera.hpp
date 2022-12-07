@@ -12,13 +12,13 @@ public:
   glm::mat4 GetViewMatrix();
   glm::mat4 GetProjectionMatrix();
 
-  void ProcessInputEvent(float velocity);
   void Update(float deltaTime);
 
 private:
   void SetProjectionMatrix();
   void UpdateBaseVectors();
-
+  void UpdatePosition(float velocity);
+  void UpdateView();
   // camera attributes
   glm::vec3 m_position{};
   glm::vec3 m_front;
@@ -43,10 +43,6 @@ private:
 
   // should we update camera
   bool m_dirty{true};
-  // mouse positions
-  bool m_firstMouse{true};
-  double m_mousePosX{};
-  double m_mousePosY{};
 };
 }  // namespace ezg
 
