@@ -19,6 +19,7 @@ void Device::DisplayInfo() {
   spd::info("Using GPU: {}", m_gpuProps.deviceName);
   spd::info("The GPU has a minimum buffer alignment of {}",
             m_gpuProps.limits.minUniformBufferOffsetAlignment);
+  spd::info("Max number of attachments: {}", m_gpuProps.limits.maxColorAttachments);
   for (int i = 0; i < QUEUE_INDEX_COUNT; i++) {
     if (m_customQInfo.familyIndices[i] != VK_QUEUE_FAMILY_IGNORED) {
       spd::info("Queue: {}, family index: {}, queue index: {}", QUEUE_NAMES[i],
