@@ -13,6 +13,7 @@ public:
   static void clear();
 
   static void draw_vertices(const std::shared_ptr<BaseVAO>& vao, uint32_t num_vertices);
+  static void draw_indices(const std::shared_ptr<BaseVAO>& vao, uint32_t num_indices);
 };
 
 }

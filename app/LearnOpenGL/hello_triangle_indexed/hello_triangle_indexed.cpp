@@ -10,8 +10,8 @@ int main()
 {
   Window window{Window::default_config()};
   std::vector<ShaderStage> stages = {
-      {"../shaders/gl/hello_triangle.vs", "vertex"},
-      {"../shaders/gl/hello_triangle.fs", "fragment"},
+      {"../shaders/gl/hello_triangle_indexed.vs.glsl", "vertex"},
+      {"../shaders/gl/hello_triangle_indexed.fs.glsl", "fragment"},
   };
   ShaderProgramCreateInfo shader_program_info {"hello triangle", stages};
   auto shader_program = ShaderProgramFactory::create_shader_program(shader_program_info);
@@ -22,24 +22,28 @@ int main()
   // set up vertex data (and buffer(s)) and configure vertex attributes
   // ------------------------------------------------------------------
   float vertices[] = {
-      // positions         // colors
-      0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  // bottom right
-      -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  // bottom left
-      0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f   // top
+      0.5f,  0.5f, 0.0f,  // top right
+      0.5f, -0.5f, 0.0f,  // bottom right
+      -0.5f, -0.5f, 0.0f,  // bottom left
+      -0.5f,  0.5f, 0.0f   // top left
+  };
+  unsigned int indices[] = {  // note that we start from 0!
+      0, 1, 3,  // first Triangle
+      1, 2, 3   // second Triangle
   };
 
-  auto vao = SimpleVAO::create();
-//  std::shared_ptr<BaseVAO> vao = std::make_shared<SimpleVAO>();
+  auto vao = SimpleIndexVAO::create();
+//  std::shared_ptr<SimpleIndexVAO> vao = std::make_shared<SimpleIndexVAO>();
   vao->bind();
   vao->attach_buffer(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-  vao->enable_attribute(0, 3, 6 * sizeof(float), 0);
-  vao->enable_attribute(1, 3, 6 * sizeof(float), 3 * sizeof(float));
+  vao->attach_buffer(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+  vao->enable_attribute(0, 3, 3 * sizeof(float), 0);
 
   while (!window.should_close()) {
     RenderAPI::set_clear_color({0.2f, 0.3f, 0.3f, 1.0f});
     RenderAPI::clear();
     shader_program->use();
-    RenderAPI::draw_vertices(vao, 3);
+    RenderAPI::draw_indices(vao, 6);
 
     window.swap_buffers();
     window.update();

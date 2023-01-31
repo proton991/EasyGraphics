@@ -15,4 +15,9 @@ void RenderAPI::draw_vertices(const std::shared_ptr<BaseVAO>& vao, uint32_t num_
   vao->bind();
   glDrawArrays(GL_TRIANGLES, 0, num_vertices);
 }
+
+void RenderAPI::draw_indices(const std::shared_ptr<BaseVAO>& vao, uint32_t num_indices) {
+  vao->bind();
+  glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_INT, nullptr);
 }
+}  // namespace ezg::gl

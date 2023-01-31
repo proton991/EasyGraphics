@@ -2,6 +2,7 @@
 #define EASYGRAPHICS_VERTEX_ARRAY_HPP
 
 #include <glad/glad.h>
+#include <memory>
 #include <vector>
 
 namespace ezg::gl {
@@ -26,7 +27,7 @@ public:
   void unbind();
   void enable_attribute(GLuint index, GLint size, int stride, size_t offset);
   virtual void attach_buffer(GLenum type, size_t size, const void* data, GLenum usage) = 0;
-//  virtual void draw() const = 0;
+  //  virtual void draw() const = 0;
 
 protected:
   BaseVAO();
@@ -37,12 +38,14 @@ protected:
   bool m_allocated{false};
 };
 
+using VaoPtr = std::shared_ptr<BaseVAO>;
 class SimpleVAO : public BaseVAO {
 public:
   SimpleVAO() = default;
   ~SimpleVAO() override;
-//  void draw() const override;
+  //  void draw() const override;
   void attach_buffer(GLenum type, size_t size, const void* data, GLenum usage) override;
+  static VaoPtr create() { return std::make_shared<SimpleVAO>(); }
 
 private:
   GLuint m_vbo{0};
@@ -52,8 +55,9 @@ class SimpleIndexVAO : public BaseVAO {
 public:
   SimpleIndexVAO() = default;
   ~SimpleIndexVAO() override;
-//  void draw() const override;
+  //  void draw() const override;
   void attach_buffer(GLenum type, size_t size, const void* data, GLenum usage) override;
+  static VaoPtr create() { return std::make_shared<SimpleIndexVAO>(); }
 
 private:
   GLuint m_vbo{0};

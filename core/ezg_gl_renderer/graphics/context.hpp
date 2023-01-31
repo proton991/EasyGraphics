@@ -15,12 +15,12 @@ public:
     if (!status) {
       spdlog::error("Failed to initialize glad!");
     }
-    spdlog::info("OpenGL Info:");
-    spdlog::info("  Vendor: {}",
+    spdlog::trace("Displaying OpenGL Info:");
+    spdlog::info("Vendor: {}",
                  std::string(reinterpret_cast<const char*>(glGetString(GL_VENDOR))));
-    spdlog::info("  Renderer: {}",
+    spdlog::info("Renderer: {}",
                  std::string(reinterpret_cast<const char*>(glGetString(GL_RENDERER))));
-    spdlog::info("  Version: {}",
+    spdlog::info("Version: {}",
                  std::string(reinterpret_cast<const char*>(glGetString(GL_VERSION))));
   }
 
