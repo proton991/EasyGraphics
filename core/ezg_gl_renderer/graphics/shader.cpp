@@ -39,7 +39,7 @@ bool link_program(GLuint id) {
   if (success == GL_FALSE) {
     glGetProgramiv(id, GL_INFO_LOG_LENGTH, &log_len);
     std::vector<GLchar> info_log(log_len);
-    glGetShaderInfoLog(id, log_len, nullptr, info_log.data());
+    glGetProgramInfoLog(id, log_len, nullptr, info_log.data());
     spd::error("Failed to link program: {}", std::string(info_log.begin(), info_log.end()));
     return false;
   }
@@ -50,7 +50,7 @@ bool link_program(GLuint id) {
   if (success == GL_FALSE) {
     glGetProgramiv(id, GL_INFO_LOG_LENGTH, &log_len);
     std::vector<GLchar> info_log(log_len);
-    glGetShaderInfoLog(id, log_len, nullptr, info_log.data());
+    glGetProgramInfoLog(id, log_len, nullptr, info_log.data());
     spd::error("Failed to valid program: {}", std::string(info_log.begin(), info_log.end()));
     return false;
   }

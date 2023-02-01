@@ -13,7 +13,7 @@ static void glfw_error_call_back(int code, const char* msg) {
 WindowConfig Window::default_config() {
   WindowConfig config{};
   config.width         = 800;
-  config.height        = 600;
+  config.height        = 800;
   config.major_version = 3;
   config.minor_version = 3;
   config.resizable     = GL_FALSE;
@@ -96,8 +96,11 @@ Window::Window(const WindowConfig& config) {
   m_context = std::make_unique<gl::Context>(m_window);
 
   glfwSetWindowUserPointer(m_window, &m_data);
+
+  center_window();
   // setup input callbacks
   set_glfw_callbacks();
+  disable_cursor();
 }
 
 void Window::wait_for_focus() {
@@ -144,6 +147,71 @@ void Window::update() {
     glfwSetWindowShouldClose(m_window, GL_TRUE);
   }
 }
+
+bool Window::center_window() {
+  int sx = 0, sy = 0;
+  int px = 0, py = 0;
+  int mx = 0, my = 0;
+  int monitor_count = 0;
+  int best_area     = 0;
+  int final_x = 0, final_y = 0;
+
+  glfwGetWindowSize(m_window, &sx, &sy);
+  glfwGetWindowPos(m_window, &px, &py);
+
+  // Iterate throug all monitors
+  GLFWmonitor** m = glfwGetMonitors(&monitor_count);
+  if (!m)
+    return false;
+
+  for (int j = 0; j < monitor_count; ++j) {
+
+    glfwGetMonitorPos(m[j], &mx, &my);
+    const GLFWvidmode* mode = glfwGetVideoMode(m[j]);
+    if (!mode)
+      continue;
+
+    // Get intersection of two rectangles - screen and window
+    int minX = std::max(mx, px);
+    int minY = std::max(my, py);
+
+    int maxX = std::min(mx + mode->width, px + sx);
+    int maxY = std::min(my + mode->height, py + sy);
+
+    // Calculate area of the intersection
+    int area = std::max(maxX - minX, 0) * std::max(maxY - minY, 0);
+
+    // If its bigger than actual (window covers more space on this monitor)
+    if (area > best_area) {
+      // Calculate proper position in this monitor
+      final_x = mx + (mode->width - sx) / 2;
+      final_y = my + (mode->height - sy) / 2;
+
+      best_area = area;
+    }
+  }
+
+  // We found something
+  if (best_area)
+    glfwSetWindowPos(m_window, final_x, final_y);
+
+  // Something is wrong - current window has NOT any intersection with any monitors. Move it to the default one.
+  else {
+    GLFWmonitor* primary = glfwGetPrimaryMonitor();
+    if (primary) {
+      const GLFWvidmode* desktop = glfwGetVideoMode(primary);
+
+      if (desktop)
+        glfwSetWindowPos(m_window, (desktop->width - sx) / 2, (desktop->height - sy) / 2);
+      else
+        return false;
+    } else
+      return false;
+  }
+
+  return true;
+}
+
 void Window::destroy() {
   glfwDestroyWindow(m_window);
   glfwTerminate();

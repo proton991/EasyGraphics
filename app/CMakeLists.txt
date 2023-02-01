@@ -36,6 +36,7 @@ set(GL_APPS
   hello_triangle
   hello_triangle_indexed
   hello_triangle_textured
+  camera_class
 )
 
 file(GLOB DLLS "${CMAKE_SOURCE_DIR}/third_party/dlls/*.dll")

@@ -46,6 +46,7 @@ public:
   [[nodiscard]] auto should_close() const { return m_data.should_close; }
 
 private:
+  bool center_window();
   void destroy();
 
   GLFWwindow* m_window{nullptr};

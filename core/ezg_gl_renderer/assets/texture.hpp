@@ -19,6 +19,7 @@ public:
 
   void bind(GLenum slot) const;
 
+  uint32_t get_id() const { return m_id; }
 private:
   uint32_t m_id{0};
   int m_width;

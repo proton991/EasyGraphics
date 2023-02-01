@@ -2,7 +2,7 @@
 #define EASYGRAPHICS_INPUT_SYSTEM_HPP
 #include <array>
 #include <shared_mutex>
-#include "GLFW/glfw3.h"
+#include <GLFW/glfw3.h>
 
 namespace ezg::system {
 class KeyboardMouseInput {
@@ -81,6 +81,7 @@ private:
   std::array<bool, GLFW_MOUSE_BUTTON_LAST> m_mouse_button_pressed{false};
   bool m_keyboard_updated{false};
   bool m_mouse_buttons_updated{false};
+  bool m_first_mouse{true};
   mutable std::shared_mutex m_input_mutex;
 };
 }  // namespace ezg::system

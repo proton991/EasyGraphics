@@ -10,8 +10,8 @@ int main()
 {
   Window window{Window::default_config()};
   std::vector<ShaderStage> stages = {
-      {"../shaders/gl/hello_triangle.vs", "vertex"},
-      {"../shaders/gl/hello_triangle.fs", "fragment"},
+      {"../resources/shaders/hello_triangle.vs", "vertex"},
+      {"../resources/shaders/hello_triangle.fs", "fragment"},
   };
   ShaderProgramCreateInfo shader_program_info {"hello triangle", stages};
   auto shader_program = ShaderProgramFactory::create_shader_program(shader_program_info);

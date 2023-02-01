@@ -10,7 +10,7 @@ namespace ezg::gl {
 
 class ResourceManager {
 public:
-  static auto& Instance() {
+  static auto& GetInstance() {
     static ResourceManager resource_manager;
     return resource_manager;
   }

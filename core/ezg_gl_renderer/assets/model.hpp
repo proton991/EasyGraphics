@@ -12,6 +12,7 @@ public:
         const std::vector<GLuint>& indices);
 
   Model(const std::string& name, const std::vector<Vertex>& vertices);
+  [[nodiscard]] const std::vector<Mesh>& get_meshes() const { return m_meshes; };
 
 private:
   const std::string& m_name;

@@ -17,8 +17,8 @@ int main()
   config.title         = "OpenGL Renderer";
   Window window{config};
   std::vector<ShaderStage> stages = {
-      {"../shaders/gl/hello_triangle_textured.vs.glsl", "vertex"},
-      {"../shaders/gl/hello_triangle_textured.fs.glsl", "fragment"},
+      {"../resources/shaders/hello_triangle_textured.vs.glsl", "vertex"},
+      {"../resources/shaders/hello_triangle_textured.fs.glsl", "fragment"},
   };
   ShaderProgramCreateInfo shader_program_info {"hello triangle", stages};
   auto shader_program = ShaderProgramFactory::create_shader_program(shader_program_info);
@@ -50,7 +50,7 @@ int main()
   vao->enable_attribute(1, 2, 5 * sizeof(float), 3 * sizeof(float));
 
   // load texture
-  auto container_texture = Texture2D::create("../assets/textures/container.jpg");
+  auto container_texture = Texture2D::create("../resources/textures/container.jpg");
   while (!window.should_close()) {
     RenderAPI::set_clear_color({0.2f, 0.3f, 0.3f, 1.0f});
     RenderAPI::clear();
