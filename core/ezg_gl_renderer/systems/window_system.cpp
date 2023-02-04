@@ -14,8 +14,8 @@ WindowConfig Window::default_config() {
   WindowConfig config{};
   config.width         = 800;
   config.height        = 800;
-  config.major_version = 3;
-  config.minor_version = 3;
+  config.major_version = 4;
+  config.minor_version = 5;
   config.resizable     = GL_FALSE;
   config.title         = "OpenGL Renderer";
 

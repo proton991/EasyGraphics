@@ -38,7 +38,6 @@ SimpleVAO::~SimpleVAO() {
   glDeleteVertexArrays(1, &m_id);
 }
 
-
 void SimpleVAO::attach_buffer(GLenum type, size_t size, const void* data, GLenum usage) {
   glGenBuffers(1, &m_vbo);
   glBindBuffer(type, m_vbo);
@@ -66,7 +65,7 @@ void SimpleIndexVAO::attach_buffer(GLenum type, size_t size, const void* data, G
       glBindBuffer(type, m_vbo);
       glBufferData(type, size, data, usage);
       m_allocated = true;
-      break ;
+      break;
     case GL_ELEMENT_ARRAY_BUFFER:
       glGenBuffers(1, &m_ebo);
       glBindBuffer(type, m_ebo);
@@ -75,8 +74,44 @@ void SimpleIndexVAO::attach_buffer(GLenum type, size_t size, const void* data, G
       break;
     default:
       spd::error("attaching invalid buffer type");
-      break ;
+      break;
   };
 }
 
+VertexArrayObject::VertexArrayObject() {
+  glCreateVertexArrays(1, &m_id);
+}
+
+VertexArrayObject::~VertexArrayObject() {
+  glDeleteVertexArrays(1, &m_id);
+}
+
+void VertexArrayObject::bind() const {
+  glBindVertexArray(m_id);
+}
+
+void VertexArrayObject::unbind() const {
+  glBindVertexArray(0);
+}
+
+void VertexArrayObject::attach_vertex_buffer(const VertexBufferPtr& vertex_buffer) {
+  assert(!vertex_buffer->get_buffer_view().get_elements().empty());
+  glBindVertexArray(m_id);
+  vertex_buffer->bind();
+  const auto& view     = vertex_buffer->get_buffer_view();
+  const auto& elements = view.get_elements();
+  for (int i = 0; i < elements.size(); ++i) {
+    glEnableVertexAttribArray(i);
+    // only support floats/vecNf for now
+    glVertexAttribPointer(i, elements[i].count, GL_FLOAT, GL_FALSE, view.get_stride(),
+                          reinterpret_cast<void*>(elements[i].offset));
+  }
+  m_vertex_buffers.push_back(vertex_buffer);
+}
+
+void VertexArrayObject::attach_index_buffer(const IndexBufferPtr& index_buffer) {
+  glBindVertexArray(m_id);
+  index_buffer->bind();
+  m_index_buffer = index_buffer;
+}
 }  // namespace ezg::gl

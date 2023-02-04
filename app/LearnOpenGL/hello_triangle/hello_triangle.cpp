@@ -27,13 +27,13 @@ int main()
       -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  // bottom left
       0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f   // top
   };
-
-  auto vao = SimpleVAO::create();
-//  std::shared_ptr<BaseVAO> vao = std::make_shared<SimpleVAO>();
-  vao->bind();
-  vao->attach_buffer(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-  vao->enable_attribute(0, 3, 6 * sizeof(float), 0);
-  vao->enable_attribute(1, 3, 6 * sizeof(float), 3 * sizeof(float));
+  auto vbo = VertexBuffer::Create(sizeof(vertices), vertices);
+  vbo->set_buffer_view({
+      {"aPos", BufferDataType::Vec3f},
+      {"aColor", BufferDataType::Vec3f}
+  });
+  auto vao = VertexArrayObject::Create();
+  vao->attach_vertex_buffer(vbo);
 
   while (!window.should_close()) {
     RenderAPI::set_clear_color({0.2f, 0.3f, 0.3f, 1.0f});

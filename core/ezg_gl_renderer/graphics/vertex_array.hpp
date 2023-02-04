@@ -4,6 +4,7 @@
 #include <glad/glad.h>
 #include <memory>
 #include <vector>
+#include "buffer.hpp"
 
 namespace ezg::gl {
 enum BufferType : int { Array = GL_ARRAY_BUFFER, Element = GL_ELEMENT_ARRAY_BUFFER };
@@ -62,6 +63,29 @@ public:
 private:
   GLuint m_vbo{0};
   GLuint m_ebo{0};
+};
+
+class VertexArrayObject;
+using VertexArrayObjectPtr = std::shared_ptr<VertexArrayObject>;
+class VertexArrayObject {
+public:
+  static VertexArrayObjectPtr Create() {
+    return std::make_shared<VertexArrayObject>();
+  }
+  VertexArrayObject();
+  virtual ~VertexArrayObject();
+
+  void bind() const;
+  void unbind() const;
+
+  void attach_vertex_buffer(const VertexBufferPtr& vertex_buffer);
+  void attach_index_buffer(const IndexBufferPtr& index_buffer);
+
+  const IndexBufferPtr& get_index_buffer() const { return m_index_buffer; }
+private:
+  uint32_t m_id{0};
+  std::vector<VertexBufferPtr> m_vertex_buffers;
+  IndexBufferPtr m_index_buffer;
 };
 }  // namespace ezg::gl
 

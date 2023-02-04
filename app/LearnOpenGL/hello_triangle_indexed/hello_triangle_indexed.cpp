@@ -31,19 +31,20 @@ int main()
       0, 1, 3,  // first Triangle
       1, 2, 3   // second Triangle
   };
-
-  auto vao = SimpleIndexVAO::create();
-//  std::shared_ptr<SimpleIndexVAO> vao = std::make_shared<SimpleIndexVAO>();
-  vao->bind();
-  vao->attach_buffer(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-  vao->attach_buffer(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-  vao->enable_attribute(0, 3, 3 * sizeof(float), 0);
+  auto vbo = VertexBuffer::Create(sizeof(vertices), vertices);
+  vbo->set_buffer_view({
+      {"aPos", BufferDataType::Vec3f},
+  });
+  auto ibo = IndexBuffer::Create(sizeof(indices)/sizeof(uint32_t), indices);
+  auto vao = VertexArrayObject::Create();
+  vao->attach_vertex_buffer(vbo);
+  vao->attach_index_buffer(ibo);
 
   while (!window.should_close()) {
     RenderAPI::set_clear_color({0.2f, 0.3f, 0.3f, 1.0f});
     RenderAPI::clear();
     shader_program->use();
-    RenderAPI::draw_indices(vao, 6);
+    RenderAPI::draw_indices(vao);
 
     window.swap_buffers();
     window.update();

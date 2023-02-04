@@ -36,18 +36,20 @@ int main()
       -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, // bottom left
       -0.5f,  0.5f, 0.0f,   0.0f, 1.0f  // top left
   };
-  unsigned int indices[] = {  // note that we start from 0!
+  uint32_t indices[] = {  // note that we start from 0!
       0, 1, 3,  // first Triangle
       1, 2, 3   // second Triangle
   };
 
-  auto vao = SimpleIndexVAO::create();
-  //  std::shared_ptr<SimpleIndexVAO> vao = std::make_shared<SimpleIndexVAO>();
-  vao->bind();
-  vao->attach_buffer(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-  vao->attach_buffer(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-  vao->enable_attribute(0, 3, 5 * sizeof(float), 0);
-  vao->enable_attribute(1, 2, 5 * sizeof(float), 3 * sizeof(float));
+  auto vbo = VertexBuffer::Create(sizeof(vertices), vertices);
+  vbo->set_buffer_view({
+      {"aPos", BufferDataType::Vec3f},
+      {"aTexCoords", BufferDataType::Vec2f}
+  });
+  auto ibo = IndexBuffer::Create(sizeof(indices)/sizeof(uint32_t), indices);
+  auto vao = VertexArrayObject::Create();
+  vao->attach_vertex_buffer(vbo);
+  vao->attach_index_buffer(ibo);
 
   // load texture
   auto container_texture = Texture2D::create("../resources/textures/container.jpg");
@@ -60,8 +62,8 @@ int main()
 
     shader_program->use();
 
-    RenderAPI::draw_indices(vao, 6);
-
+    RenderAPI::draw_indices(vao);
+    //    RenderAPI::draw_vertices(vao, 4);
     window.swap_buffers();
     window.update();
   }
