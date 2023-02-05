@@ -21,6 +21,7 @@ public:
 
   ModelPtr get_model(const std::string& name);
 
+  ModelPtr load_gltf_model(const std::string& name, const std::string& path);
 
 private:
   ResourceManager() = default;

@@ -20,25 +20,26 @@ struct Vertex {
   Vertex(const vec3& position, const vec2& texture_coords, const vec3& normal)
       : position(position), uv(texture_coords), normal(normal) {}
 
-  Vertex(const vec3& position, const vec2& uv, const vec3& normal, const vec3& tangent)
-      : position(position), uv(uv), normal(normal), tangent(tangent) {}
+//  Vertex(const vec3& position, const vec2& uv, const vec3& normal, const vec3& tangent)
+//      : position(position), uv(uv), normal(normal), tangent(tangent) {}
 
   vec3 position;
   vec2 uv;
   vec3 normal;
-  vec3 tangent;
+//  vec3 tangent;
 };
 
 struct Mesh {
-  Mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices);
+  Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
   explicit Mesh(const std::vector<Vertex>& vertices);
 
   const GLsizei num_vertices;
   const GLsizei num_indices;
-  std::unique_ptr<BaseVAO> vao;
+//  std::unique_ptr<BaseVAO> vao;
+  VertexArrayObjectPtr vao;
 
 private:
-  void setup(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices);
+  void setup(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
   void setup(const std::vector<Vertex>& vertices);
 };
 

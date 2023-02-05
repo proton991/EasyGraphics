@@ -1,6 +1,7 @@
 #include "camera_system.hpp"
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
+#include <iostream>
 #include "systems/input_system.hpp"
 namespace ezg::system {
 Camera Camera::CreateDefault() {
@@ -42,6 +43,12 @@ void Camera::SetProjectionMatrix() {
 
 void Camera::UpdatePosition(float velocity) {
   if (m_dirty) {
+    if (KeyboardMouseInput::GetInstance().was_key_pressed_once(GLFW_KEY_UP)) {
+      m_speed *= 2;
+    }
+    if (KeyboardMouseInput::GetInstance().was_key_pressed_once(GLFW_KEY_DOWN)) {
+      m_speed /= 2;
+    }
     if (KeyboardMouseInput::GetInstance().is_key_pressed(GLFW_KEY_SPACE)) {
       // reset position
       m_position = {0.0f, 0.0f, -5.0f};
