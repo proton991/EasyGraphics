@@ -1,12 +1,12 @@
 #ifndef EASYGRAPHICS_CAMERA_SYSTEM_HPP
 #define EASYGRAPHICS_CAMERA_SYSTEM_HPP
 #include <glm/glm.hpp>
-
+#include <memory>
 namespace ezg::system {
-
 class Camera {
 public:
   static Camera CreateDefault();
+  static Camera CreateBasedOnBBox(const glm::vec3& bbox_min, const glm::vec3& bbox_max);
   Camera(glm::vec3 eye, glm::vec3 target, float fov, float aspect, float near, float far);
   glm::mat4 GetViewMatrix();
   glm::mat4 GetProjectionMatrix();
@@ -37,7 +37,7 @@ private:
   glm::mat4 m_projMatrix{1.f};
   glm::mat4 m_viewMatrix{1.f};
 
-  float m_speed{10.f};
+  float m_speed{2.f};
   const float m_sensitivity{0.2f};
 
   // should we update camera

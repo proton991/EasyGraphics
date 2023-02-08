@@ -8,12 +8,13 @@
 #include "systems/profile_system.hpp"
 #include "systems/window_system.hpp"
 
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 using namespace ezg::system;
 using namespace ezg::gl;
 int main()
 {
   WindowConfig config{};
-  config.width         = 1200;
+  config.width         = 800;
   config.height        = 800;
   config.major_version = 4;
   config.minor_version = 5;
@@ -32,8 +33,10 @@ int main()
   }
 
   auto helmet = ResourceManager::GetInstance().load_gltf_model("helmet", "../resources/models/FlightHelmet/FlightHelmet.gltf");
+//  auto helmet = ResourceManager::GetInstance().load_gltf_model("helmet", "C:/Dev/Code/ComputerGraphics/glTF-Sample-Models-master/2.0/ToyCar/glTF/ToyCar.gltf");
+//  auto helmet = ResourceManager::GetInstance().load_gltf_model("helmet", "C:/Dev/Code/ComputerGraphics/glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf");
 
-  auto camera = Camera::CreateDefault();
+  auto camera = Camera::CreateBasedOnBBox(helmet->get_aabb().bbx_min, helmet->get_aabb().bbx_max);
 
   StopWatch stop_watch;
   // render the loaded model
@@ -50,11 +53,11 @@ int main()
     camera.Update(stop_watch.time_step());
 
     shader_program->use();
-    shader_program->set_uniform("u_model", model_mat);
+//    shader_program->set_uniform("u_model", model_mat);
     shader_program->set_uniform("u_view", camera.GetViewMatrix());
     shader_program->set_uniform("u_projection", camera.GetProjectionMatrix());
 
-    renderer.render_model(helmet);
+    renderer.render_model(helmet, shader_program.value());
     window.swap_buffers();
     window.update();
   }

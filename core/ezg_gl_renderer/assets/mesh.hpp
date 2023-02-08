@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <vector>
+#include "glm/ext/matrix_float4x4.hpp"
 #include "glm/vec2.hpp"
 #include "glm/vec3.hpp"
 #include "graphics/vertex_array.hpp"
@@ -37,6 +38,7 @@ struct Mesh {
   const GLsizei num_indices;
 //  std::unique_ptr<BaseVAO> vao;
   VertexArrayObjectPtr vao;
+  glm::mat4 m_model_matrix{1.0f};
 
 private:
   void setup(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);

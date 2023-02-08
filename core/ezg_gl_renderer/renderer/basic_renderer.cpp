@@ -2,13 +2,10 @@
 #include "render_api.hpp"
 namespace ezg::gl {
 
-void BasicRenderer::render_models(const std::vector<ModelPtr>& models) {
-  for (const auto& model : models) {
-    RenderAPI::draw_model(model);
+void BasicRenderer::render_model(const ModelPtr& model, ShaderProgram& shader_program) {
+  for (const auto& mesh : model->get_meshes()) {
+    shader_program.set_uniform("u_model", mesh.m_model_matrix);
+    RenderAPI::draw_mesh(mesh);
   }
-}
-
-void BasicRenderer::render_model(const ModelPtr& model) {
-  RenderAPI::draw_model(model);
 }
 }

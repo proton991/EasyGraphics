@@ -1,17 +1,11 @@
 #include "resource_manager.hpp"
 #include <spdlog/spdlog.h>
-#include <tiny_obj_loader.h>
 #include <tiny_gltf.h>
+#include <tiny_obj_loader.h>
 #include <fstream>
+#include "utils/gltf_utils.hpp"
 
 namespace ezg::gl {
-void extract_gltf_indices(tinygltf::Primitive& primitive, tinygltf::Model& model,
-                          std::vector<uint32_t>& indices);
-void extract_gltf_vertices(tinygltf::Primitive& primitive, tinygltf::Model& model,
-                           std::vector<Vertex>& vertices);
-void unpack_gltf_buffer(tinygltf::Model& model, const tinygltf::Accessor& accessor,
-                        std::vector<uint8_t>& out_buffer);
-
 std::string ResourceManager::load_shader_source(const std::filesystem::path& path) {
   std::ifstream in(path, std::ios::in);
   in.exceptions(std::ifstream::failbit | std::ifstream::badbit);
@@ -115,164 +109,6 @@ void ResourceManager::load_model(const std::string& name, const std::string& pat
   m_model_cache.try_emplace(name, std::make_shared<Model>(name, vertices, indices));
 }
 
-void unpack_gltf_buffer(tinygltf::Model& model, const tinygltf::Accessor& accessor,
-                        std::vector<uint8_t>& out_buffer) {
-  tinygltf::BufferView& buffer_view = model.bufferViews[accessor.bufferView];
-  tinygltf::Buffer& buffer          = model.buffers[buffer_view.buffer];
-
-  uint8_t* data_ptr = buffer.data.data() + accessor.byteOffset + buffer_view.byteOffset;
-
-  size_t element_size = tinygltf::GetComponentSizeInBytes(accessor.componentType) *
-                        tinygltf::GetNumComponentsInType(accessor.type);
-  size_t stride = buffer_view.byteStride;
-  if (stride == 0) {
-    stride = element_size;
-  }
-  out_buffer.resize(accessor.count * element_size);
-
-  for (int i = 0; i < accessor.count; i++) {
-    uint8_t* src = data_ptr + stride * i;
-    uint8_t* dst = out_buffer.data() + element_size * i;
-    memcpy(dst, src, element_size);
-  }
-}
-
-void extract_gltf_indices(tinygltf::Primitive& primitive, tinygltf::Model& model,
-                          std::vector<uint32_t>& indices) {
-  int accessor_index       = primitive.indices;
-  const auto& accessor     = model.accessors[accessor_index];
-  const int component_type = accessor.componentType;
-  std::vector<uint8_t> unpacked_indices;
-  unpack_gltf_buffer(model, accessor, unpacked_indices);
-  for (int i = 0; i < accessor.count; i++) {
-    uint32_t index;
-    switch (component_type) {
-      case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: {
-        auto* buf = reinterpret_cast<uint16_t*>(unpacked_indices.data());
-        index     = *(buf + i);
-        break;
-      }
-      case TINYGLTF_COMPONENT_TYPE_SHORT: {
-        auto* buf = reinterpret_cast<int16_t*>(unpacked_indices.data());
-        index     = *(buf + i);
-        break;
-      }
-      case TINYGLTF_COMPONENT_TYPE_INT: {
-        auto* buf = reinterpret_cast<int32_t*>(unpacked_indices.data());
-        index     = *(buf + i);
-        break;
-      }
-      case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT: {
-        auto* buf = reinterpret_cast<uint32_t*>(unpacked_indices.data());
-        index     = *(buf + i);
-        break;
-      }
-      default: {
-        spdlog::error("Invalid component type for indices");
-        assert(false);
-      }
-    }
-    indices.push_back(index);
-  }
-  // flip the triangle
-  for (int i = 0; i < indices.size() / 3; ++i) {
-    std::swap(indices[i * 3 + 1], indices[i * 3 + 2]);
-  }
-}
-void extract_gltf_vertices(tinygltf::Primitive& primitive, tinygltf::Model& model,
-                           std::vector<Vertex>& vertices) {
-  tinygltf::Accessor& pos_accessor = model.accessors[primitive.attributes["POSITION"]];
-
-  vertices.resize(pos_accessor.count);
-
-  std::vector<uint8_t> pos_data;
-  unpack_gltf_buffer(model, pos_accessor, pos_data);
-
-  for (int i = 0; i < vertices.size(); i++) {
-    if (pos_accessor.type == TINYGLTF_TYPE_VEC3) {
-      if (pos_accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT) {
-        float* dtf = (float*)pos_data.data();
-
-        //vec3f
-        vertices[i].position[0] = *(dtf + (i * 3) + 0);
-        vertices[i].position[1] = *(dtf + (i * 3) + 1);
-        vertices[i].position[2] = *(dtf + (i * 3) + 2);
-      } else {
-        assert(false);
-      }
-    } else {
-      assert(false);
-    }
-  }
-
-  tinygltf::Accessor& uv_accessor = model.accessors[primitive.attributes["TEXCOORD_0"]];
-
-  std::vector<uint8_t> uv_data;
-  unpack_gltf_buffer(model, uv_accessor, uv_data);
-
-  for (int i = 0; i < vertices.size(); i++) {
-    if (uv_accessor.type == TINYGLTF_TYPE_VEC2) {
-      if (uv_accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT) {
-        float* dtf = (float*)uv_data.data();
-
-        //vec3f
-        vertices[i].uv[0] = *(dtf + (i * 2) + 0);
-        vertices[i].uv[1] = *(dtf + (i * 2) + 1);
-      } else {
-        assert(false);
-      }
-    } else {
-      assert(false);
-    }
-  }
-
-  tinygltf::Accessor& normal_accessor = model.accessors[primitive.attributes["NORMAL"]];
-
-  std::vector<uint8_t> normal_data;
-  unpack_gltf_buffer(model, normal_accessor, normal_data);
-
-  for (int i = 0; i < vertices.size(); i++) {
-    if (normal_accessor.type == TINYGLTF_TYPE_VEC3) {
-      if (normal_accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT) {
-        float* dtf = (float*)normal_data.data();
-        //vec3f
-        vertices[i].normal[0] = *(dtf + (i * 3) + 0);
-        vertices[i].normal[1] = *(dtf + (i * 3) + 1);
-        vertices[i].normal[2] = *(dtf + (i * 3) + 2);
-
-        //        _vertices[i].color[0] = *(dtf + (i * 3) + 0);
-        //        _vertices[i].color[1] = *(dtf + (i * 3) + 1);
-        //        _vertices[i].color[2] = *(dtf + (i * 3) + 2);
-      } else {
-        assert(false);
-      }
-    } else {
-      assert(false);
-    }
-  }
-
-  tinygltf::Accessor& tangent_accessor = model.accessors[primitive.attributes["TANGENT"]];
-
-  std::vector<uint8_t> tangent_data;
-  unpack_gltf_buffer(model, tangent_accessor, tangent_data);
-
-//  for (int i = 0; i < vertices.size(); i++) {
-//    if (tangent_accessor.type == TINYGLTF_TYPE_VEC3) {
-//      if (tangent_accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT) {
-//        float* dtf = (float*)tangent_data.data();
-//        //vec3f
-//        vertices[i].tangent[0] = *(dtf + (i * 3) + 0);
-//        vertices[i].tangent[1] = *(dtf + (i * 3) + 1);
-//        vertices[i].tangent[2] = *(dtf + (i * 3) + 2);
-//      } else {
-//        assert(false);
-//      }
-//    } else {
-//      assert(false);
-//    }
-//  }
-}
-
 ModelPtr ResourceManager::load_gltf_model(const std::string& name, const std::string& path) {
   tinygltf::Model gltf_model;
   tinygltf::TinyGLTF loader;
@@ -289,7 +125,26 @@ ModelPtr ResourceManager::load_gltf_model(const std::string& name, const std::st
     spdlog::error("Failed to parse glTF");
     return nullptr;
   }
+  std::unordered_map<int, glm::mat4> mesh_matrices;
+  const std::function<void(int, const glm::mat4&)> extract_node_matrices =
+      [&](int node_idx, const glm::mat4& parent_matrix) {
+        const auto& node = gltf_model.nodes[node_idx];
+        // get world matrix
+        const glm::mat4 model_matrix = getLocalToWorldMatrix(node, parent_matrix);
+        if (node.mesh >= 0) {
+          mesh_matrices[node.mesh] = model_matrix;
+        }
+        for (const auto child : node.children) {
+          extract_node_matrices(child, model_matrix);
+        }
+      };
+  if (gltf_model.defaultScene >= 0) {
+    for (const auto node_idx : gltf_model.scenes[gltf_model.defaultScene].nodes) {
+      extract_node_matrices(node_idx, glm::mat4(1.0f));
+    }
+  }
   auto model = Model::Create(name);
+  spdlog::info("Model {} mesh size : {}", name, gltf_model.meshes.size());
   for (auto mesh_idx = 0; mesh_idx < gltf_model.meshes.size(); mesh_idx++) {
     auto& gl_mesh = gltf_model.meshes[mesh_idx];
     std::vector<Vertex> vertices;
@@ -301,9 +156,18 @@ ModelPtr ResourceManager::load_gltf_model(const std::string& name, const std::st
       extract_gltf_vertices(primitive, gltf_model, vertices);
       extract_gltf_indices(primitive, gltf_model, indices);
       Mesh mesh{vertices, indices};
+      if (mesh_matrices.find(mesh_idx) != mesh_matrices.end()) {
+        mesh.m_model_matrix = mesh_matrices[mesh_idx];
+      }
       model->attach_mesh(mesh);
     }
   }
+
+  glm::vec3 bbox_min, bbox_max;
+  // compute boundary
+  computeSceneBounds(gltf_model, bbox_min, bbox_max);
+  AABB aabb{bbox_min, bbox_max};
+  model->set_aabb(aabb);
   m_model_cache[name] = model;
   return model;
 }

@@ -5,15 +5,26 @@
 #include "systems/input_system.hpp"
 namespace ezg::system {
 Camera Camera::CreateDefault() {
-  glm::vec3 eye = {0.0f, 0.0f, -5.0f};
+  glm::vec3 eye    = {0.0f, 0.0f, -5.0f};
   glm::vec3 target = {0.0f, 0.0f, 0.0f};
-  float fov = 70.0f;
-  float near = 1.0f;
-  float far = 100.0f;
+  float fov        = 70.0f;
+  float near       = 1.0f;
+  float far        = 100.0f;
 
   return {eye, target, fov, 1.0f, near, far};
 }
 
+Camera Camera::CreateBasedOnBBox(const glm::vec3& bbox_min, const glm::vec3& bbox_max) {
+  const auto diag   = bbox_max - bbox_min;
+  auto max_distance = glm::length(diag);
+  float near        = 0.001f * max_distance;
+  float far         = 5.f * max_distance;
+  float fov         = 70.0f;
+  const auto center = 0.5f * (bbox_max + bbox_min);
+  const auto up     = glm::vec3(0, 1, 0);
+  const auto eye    = diag.z > 0 ? center + diag : center + 2.f * glm::cross(diag, up);
+  return {eye, center, fov, 1.0f, near, far};
+}
 Camera::Camera(glm::vec3 eye, glm::vec3 target, float fov, float aspect, float near, float far)
     : m_position{eye}, m_aspect{aspect}, m_fov{fov}, m_near{near}, m_far{far} {
   glm::vec3 direction = glm::normalize(target - m_position);
@@ -79,7 +90,6 @@ void Camera::UpdateView() {
   m_yaw += delta[0] * m_sensitivity;
   m_pitch += delta[1] * m_sensitivity;
   m_pitch = std::clamp(m_pitch, -89.0f, 89.0f);
-
 }
 
 void Camera::Update(float deltaTime) {

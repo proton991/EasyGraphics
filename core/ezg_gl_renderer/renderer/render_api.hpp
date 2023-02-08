@@ -22,7 +22,7 @@ public:
   static void draw_vertices(const std::shared_ptr<BaseVAO>& vao, uint32_t num_vertices);
   static void draw_indices(const std::shared_ptr<BaseVAO>& vao, uint32_t num_indices);
   static void draw_meshes(const std::vector<Mesh>& meshes);
-  static void draw_model(const std::shared_ptr<Model>& model);
+  static void draw_mesh(const Mesh& mesh);
 };
 
 }

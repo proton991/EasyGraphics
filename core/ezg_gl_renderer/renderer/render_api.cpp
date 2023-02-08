@@ -43,10 +43,8 @@ void RenderAPI::draw_meshes(const std::vector<Mesh>& meshes) {
   }
 }
 
-void RenderAPI::draw_model(const ModelPtr& model) {
-  for (const auto& mesh : model->get_meshes()) {
-    mesh.vao->bind();
-    glDrawElements(GL_TRIANGLES, mesh.num_indices, GL_UNSIGNED_INT, nullptr);
-  }
+void RenderAPI::draw_mesh(const Mesh& mesh) {
+  mesh.vao->bind();
+  glDrawElements(GL_TRIANGLES, mesh.num_indices, GL_UNSIGNED_INT, nullptr);
 }
 }  // namespace ezg::gl
