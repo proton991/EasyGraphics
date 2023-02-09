@@ -48,7 +48,7 @@ int main()
   RenderAPI::enable_depth_testing();
   while (!window.should_close()) {
     RenderAPI::set_clear_color({0.2f, 0.3f, 0.3f, 1.0f});
-    RenderAPI::clear();
+    RenderAPI::clear_color_and_depth();
 
     camera.Update(stop_watch.time_step());
 

@@ -37,7 +37,7 @@ int main()
 
   while (!window.should_close()) {
     RenderAPI::set_clear_color({0.2f, 0.3f, 0.3f, 1.0f});
-    RenderAPI::clear();
+    RenderAPI::clear_color_and_depth();
     shader_program->use();
     RenderAPI::draw_vertices(vao, 3);
 

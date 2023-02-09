@@ -55,7 +55,7 @@ int main()
   auto container_texture = Texture2D::create("../resources/textures/container.jpg");
   while (!window.should_close()) {
     RenderAPI::set_clear_color({0.2f, 0.3f, 0.3f, 1.0f});
-    RenderAPI::clear();
+    RenderAPI::clear_color_and_depth();
 
     // bind texture
     container_texture->bind(0);

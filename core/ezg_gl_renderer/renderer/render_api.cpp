@@ -9,12 +9,20 @@ void RenderAPI::set_clear_color(const glm::vec4& color) {
   glClearColor(color.r, color.g, color.b, color.a);
 }
 
-void RenderAPI::clear() {
+void RenderAPI::clear_color_and_depth() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void RenderAPI::clear_color() {
+  glClear(GL_COLOR_BUFFER_BIT);
 }
 
 void RenderAPI::enable_depth_testing() {
   glEnable(GL_DEPTH_TEST);
+}
+
+void RenderAPI::disable_depth_testing() {
+  glDisable(GL_DEPTH_TEST);
 }
 
 void RenderAPI::draw_vertices(const std::shared_ptr<VertexArrayObject>& vao,
