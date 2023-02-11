@@ -1,4 +1,5 @@
 #include "assets/model.hpp"
+#include "graphics/uniform_buffer.hpp"
 #include "graphics/shader.hpp"
 #include "managers/resource_manager.hpp"
 #include "renderer/basic_renderer.hpp"
@@ -11,6 +12,11 @@
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 using namespace ezg::system;
 using namespace ezg::gl;
+struct CameraData {
+  glm::mat4 proj_view;
+  glm::mat4 view;
+  glm::mat4 projection;
+};
 int main()
 {
   WindowConfig config{};
@@ -22,8 +28,8 @@ int main()
   config.title         = "OpenGL Renderer";
   Window window{config};
   std::vector<ShaderStage> stages1 = {
-      {"../resources/shaders/using_framebuffer/model_loading.vs.glsl", "vertex"},
-      {"../resources/shaders/using_framebuffer/model_loading.fs.glsl", "fragment"},
+      {"../resources/shaders/using_ubo/model_loading.vs.glsl", "vertex"},
+      {"../resources/shaders/using_ubo/model_loading.fs.glsl", "fragment"},
   };
   ShaderProgramCreateInfo info1 {"ModelShader", stages1};
 
@@ -65,8 +71,8 @@ int main()
   quad_vao->attach_vertex_buffer(vbo);
 
   auto helmet = ResourceManager::GetInstance().load_gltf_model("helmet", "../resources/models/FlightHelmet/FlightHelmet.gltf");
-//  auto helmet = ResourceManager::GetInstance().load_gltf_model("helmet", "../../glTF-Sample-Models/2.0/ToyCar/glTF/ToyCar.gltf");
-//  auto helmet = ResourceManager::GetInstance().load_gltf_model("helmet", "../../glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
+  //  auto helmet = ResourceManager::GetInstance().load_gltf_model("helmet", "../../glTF-Sample-Models/2.0/ToyCar/glTF/ToyCar.gltf");
+  //  auto helmet = ResourceManager::GetInstance().load_gltf_model("helmet", "../../glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
 
   auto camera = Camera::CreateBasedOnBBox(helmet->get_aabb().bbx_min, helmet->get_aabb().bbx_max);
 
@@ -81,7 +87,10 @@ int main()
   StopWatch stop_watch;
 
   BasicRenderer renderer;
+  CameraData camera_ubo_data{};
 
+
+  auto camera_ubo = UniformBuffer::Create(sizeof(CameraData), 0);
   while (!window.should_close()) {
     g_buffer->bind();
     RenderAPI::enable_depth_testing();
@@ -90,10 +99,15 @@ int main()
     RenderAPI::clear_color_and_depth();
 
     shader_program->use();
-    shader_program->set_uniform("u_view", camera.get_view_matrix());
-    shader_program->set_uniform("u_projection", camera.get_projection_matrix());
 
-    renderer.render_model(helmet, shader_program.value());
+    camera_ubo_data.view = camera.get_view_matrix();
+    camera_ubo_data.projection = camera.get_projection_matrix();
+    camera_ubo_data.proj_view = camera_ubo_data.projection * camera_ubo_data.view;
+    camera_ubo->set_data(&camera_ubo_data, sizeof(CameraData), offsetof(CameraData, proj_view));
+    camera_ubo->set_data(&camera_ubo_data, sizeof(CameraData), offsetof(CameraData, view));
+    camera_ubo->set_data(&camera_ubo_data, sizeof(CameraData), offsetof(CameraData, projection));
+
+    renderer.render_model(helmet);
 
     g_buffer->unbind();
     RenderAPI::disable_depth_testing();

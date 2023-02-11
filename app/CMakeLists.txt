@@ -39,6 +39,7 @@ set(GL_APPS
   camera_class
   load_gltf_model
   using_framebuffer
+  using_ubo
 )
 
 file(GLOB DLLS "${CMAKE_SOURCE_DIR}/third_party/dlls/*.dll")
