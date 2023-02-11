@@ -32,7 +32,7 @@ int main()
       {"aPos", BufferDataType::Vec3f},
       {"aColor", BufferDataType::Vec3f}
   });
-  auto vao = VertexArrayObject::Create();
+  auto vao = VertexArray::Create();
   vao->attach_vertex_buffer(vbo);
 
   while (!window.should_close()) {

@@ -12,7 +12,7 @@ Mesh::Mesh(const std::vector<Vertex>& vertices) : num_vertices(vertices.size()),
 
 void Mesh::setup(const std::vector<Vertex>& vertices) {
 //  vao = std::make_unique<SimpleVAO>();
-  vao = VertexArrayObject::Create();
+  vao = VertexArray::Create();
   vao->bind();
   auto vbo = VertexBuffer::Create(vertices.size() * sizeof(Vertex), vertices.data());
   vbo->set_buffer_view({
@@ -24,7 +24,7 @@ void Mesh::setup(const std::vector<Vertex>& vertices) {
 }
 
 void Mesh::setup(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices) {
-  vao = VertexArrayObject::Create();
+  vao = VertexArray::Create();
   vao->bind();
   auto vbo = VertexBuffer::Create(vertices.size() * sizeof(Vertex), vertices.data());
   vbo->set_buffer_view({

@@ -6,10 +6,9 @@
 #include <vector>
 
 namespace ezg::gl {
-class BaseVAO;
 class Model;
 struct Mesh;
-class VertexArrayObject;
+class VertexArray;
 class RenderAPI {
 public:
   static void set_clear_color(const glm::vec4& color);
@@ -18,11 +17,9 @@ public:
   static void enable_depth_testing();
   static void disable_depth_testing();
 
-  static void draw_vertices(const std::shared_ptr<VertexArrayObject>& vao, uint32_t num_vertices);
-  static void draw_indices(const std::shared_ptr<VertexArrayObject>& vao);
+  static void draw_vertices(const std::shared_ptr<VertexArray>& vao, uint32_t num_vertices);
+  static void draw_indices(const std::shared_ptr<VertexArray>& vao);
 
-  static void draw_vertices(const std::shared_ptr<BaseVAO>& vao, uint32_t num_vertices);
-  static void draw_indices(const std::shared_ptr<BaseVAO>& vao, uint32_t num_indices);
   static void draw_meshes(const std::vector<Mesh>& meshes);
   static void draw_mesh(const Mesh& mesh);
 };

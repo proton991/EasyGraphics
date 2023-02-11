@@ -7,17 +7,18 @@ class Camera {
 public:
   static Camera CreateDefault();
   static Camera CreateBasedOnBBox(const glm::vec3& bbox_min, const glm::vec3& bbox_max);
-  Camera(glm::vec3 eye, glm::vec3 target, float fov, float aspect, float near, float far);
-  glm::mat4 GetViewMatrix();
-  glm::mat4 GetProjectionMatrix();
+  Camera(glm::vec3 eye, glm::vec3 target, float fov, float aspect, float near, float far, float speed=2.0f);
+  glm::mat4 get_view_matrix();
+  glm::mat4 get_projection_matrix();
 
-  void Update(float deltaTime);
+  void set_speed(float speed) { m_speed = speed; }
+  void update(float deltaTime);
 
 private:
-  void SetProjectionMatrix();
-  void UpdateBaseVectors();
-  void UpdatePosition(float velocity);
-  void UpdateView();
+  void set_projection_matrix();
+  void update_base_vectors();
+  void update_position(float velocity);
+  void update_view();
   // camera attributes
   glm::vec3 m_position{0.0f, 0.0f, 0.0f};
   glm::vec3 m_front{0.0f, 0.0f, 1.0f};

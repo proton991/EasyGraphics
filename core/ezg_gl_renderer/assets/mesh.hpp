@@ -37,7 +37,7 @@ struct Mesh {
   const GLsizei num_vertices;
   const GLsizei num_indices;
 //  std::unique_ptr<BaseVAO> vao;
-  VertexArrayObjectPtr vao;
+  VertexArrayPtr vao;
   glm::mat4 m_model_matrix{1.0f};
 
 private:

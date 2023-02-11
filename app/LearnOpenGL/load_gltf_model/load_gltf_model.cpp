@@ -50,12 +50,12 @@ int main()
     RenderAPI::set_clear_color({0.2f, 0.3f, 0.3f, 1.0f});
     RenderAPI::clear_color_and_depth();
 
-    camera.Update(stop_watch.time_step());
+    camera.update(stop_watch.time_step());
 
     shader_program->use();
 //    shader_program->set_uniform("u_model", model_mat);
-    shader_program->set_uniform("u_view", camera.GetViewMatrix());
-    shader_program->set_uniform("u_projection", camera.GetProjectionMatrix());
+    shader_program->set_uniform("u_view", camera.get_view_matrix());
+    shader_program->set_uniform("u_projection", camera.get_projection_matrix());
 
     renderer.render_model(helmet, shader_program.value());
     window.swap_buffers();

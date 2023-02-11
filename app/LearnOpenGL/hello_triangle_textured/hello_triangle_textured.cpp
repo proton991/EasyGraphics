@@ -47,7 +47,7 @@ int main()
       {"aTexCoords", BufferDataType::Vec2f}
   });
   auto ibo = IndexBuffer::Create(sizeof(indices)/sizeof(uint32_t), indices);
-  auto vao = VertexArrayObject::Create();
+  auto vao = VertexArray::Create();
   vao->attach_vertex_buffer(vbo);
   vao->attach_index_buffer(ibo);
 

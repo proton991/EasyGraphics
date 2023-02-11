@@ -56,7 +56,7 @@ int main()
       1.0f,  1.0f,  1.0f, 1.0f
   };
 
-  auto quad_vao = VertexArrayObject::Create();
+  auto quad_vao = VertexArray::Create();
   quad_vao->bind();
   auto vbo = VertexBuffer::Create(sizeof(quadVertices), quadVertices);
   vbo->set_buffer_view({
@@ -66,8 +66,8 @@ int main()
   quad_vao->attach_vertex_buffer(vbo);
 
   auto helmet = ResourceManager::GetInstance().load_gltf_model("helmet", "../resources/models/FlightHelmet/FlightHelmet.gltf");
-  //  auto helmet = ResourceManager::GetInstance().load_gltf_model("helmet", "C:/Dev/Code/ComputerGraphics/glTF-Sample-Models-master/2.0/ToyCar/glTF/ToyCar.gltf");
-//    auto helmet = ResourceManager::GetInstance().load_gltf_model("helmet", "C:/Dev/Code/ComputerGraphics/glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf");
+//  auto helmet = ResourceManager::GetInstance().load_gltf_model("helmet", "../../glTF-Sample-Models/2.0/ToyCar/glTF/ToyCar.gltf");
+//  auto helmet = ResourceManager::GetInstance().load_gltf_model("helmet", "../../glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
 
   auto camera = Camera::CreateBasedOnBBox(helmet->get_aabb().bbx_min, helmet->get_aabb().bbx_max);
 
@@ -91,8 +91,8 @@ int main()
     RenderAPI::clear_color_and_depth();
 
     shader_program->use();
-    shader_program->set_uniform("u_view", camera.GetViewMatrix());
-    shader_program->set_uniform("u_projection", camera.GetProjectionMatrix());
+    shader_program->set_uniform("u_view", camera.get_view_matrix());
+    shader_program->set_uniform("u_projection", camera.get_projection_matrix());
 
     renderer.render_model(helmet, shader_program.value());
 
@@ -105,7 +105,7 @@ int main()
 
     RenderAPI::draw_vertices(quad_vao, 6);
 
-    camera.Update(stop_watch.time_step());
+    camera.update(stop_watch.time_step());
     window.swap_buffers();
     window.update();
   }

@@ -90,7 +90,7 @@ int main()
       {"aPos", BufferDataType::Vec3f},
       {"aTexCoords", BufferDataType::Vec2f}
   });
-  auto vao = VertexArrayObject::Create();
+  auto vao = VertexArray::Create();
   vao->attach_vertex_buffer(vbo);
 
   // load texture
@@ -129,10 +129,10 @@ int main()
 
       RenderAPI::draw_vertices(vao, 36);
     }
-    shader_program->set_uniform("u_view", camera.GetViewMatrix());
-    shader_program->set_uniform("u_projection", camera.GetProjectionMatrix());
+    shader_program->set_uniform("u_view", camera.get_view_matrix());
+    shader_program->set_uniform("u_projection", camera.get_projection_matrix());
 
-    camera.Update(stop_watch.time_step());
+    camera.update(stop_watch.time_step());
     window.swap_buffers();
     window.update();
   }
