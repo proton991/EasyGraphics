@@ -8,6 +8,8 @@
 #include "systems/profile_system.hpp"
 #include "systems/window_system.hpp"
 #include "graphics/render_target.hpp"
+#include "assets/texture.hpp"
+#include "renderer/frame_info.hpp"
 
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 using namespace ezg::system;
@@ -70,9 +72,9 @@ int main()
   });
   quad_vao->attach_vertex_buffer(vbo);
 
-  auto helmet = ResourceManager::GetInstance().load_gltf_model("helmet", "../resources/models/FlightHelmet/FlightHelmet.gltf");
-  //  auto helmet = ResourceManager::GetInstance().load_gltf_model("helmet", "../../glTF-Sample-Models/2.0/ToyCar/glTF/ToyCar.gltf");
-  //  auto helmet = ResourceManager::GetInstance().load_gltf_model("helmet", "../../glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
+  auto helmet = ResourceManager::GetInstance().load_gltf_model("helmet", "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
+//    auto helmet = ResourceManager::GetInstance().load_gltf_model("helmet", "../../glTF-Sample-Models/2.0/ToyCar/glTF/ToyCar.gltf");
+//    auto helmet = ResourceManager::GetInstance().load_gltf_model("helmet", "../../glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
 
   auto camera = Camera::CreateBasedOnBBox(helmet->get_aabb().bbx_min, helmet->get_aabb().bbx_max);
 
@@ -89,7 +91,6 @@ int main()
   BasicRenderer renderer;
   CameraData camera_ubo_data{};
 
-
   auto camera_ubo = UniformBuffer::Create(sizeof(CameraData), 0);
   while (!window.should_close()) {
     g_buffer->bind();
@@ -100,6 +101,11 @@ int main()
 
     shader_program->use();
 
+    FrameInfo frame_info {
+        shader_program.value(),
+        *helmet
+    };
+
     camera_ubo_data.view = camera.get_view_matrix();
     camera_ubo_data.projection = camera.get_projection_matrix();
     camera_ubo_data.proj_view = camera_ubo_data.projection * camera_ubo_data.view;
@@ -107,7 +113,8 @@ int main()
     camera_ubo->set_data(&camera_ubo_data, sizeof(CameraData), offsetof(CameraData, view));
     camera_ubo->set_data(&camera_ubo_data, sizeof(CameraData), offsetof(CameraData, projection));
 
-    renderer.render_model(helmet);
+//    renderer.render_model(helmet);
+    renderer.render_frame(frame_info);
 
     g_buffer->unbind();
     RenderAPI::disable_depth_testing();

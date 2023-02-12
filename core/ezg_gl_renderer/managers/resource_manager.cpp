@@ -125,6 +125,82 @@ ModelPtr ResourceManager::load_gltf_model(const std::string& name, const std::st
     spdlog::error("Failed to parse glTF");
     return nullptr;
   }
+  const auto load_textures = [&](const tinygltf::Model& model) {
+    tinygltf::Sampler defaultSampler;
+    defaultSampler.minFilter = GL_LINEAR;
+    defaultSampler.magFilter = GL_LINEAR;
+    defaultSampler.wrapS     = GL_REPEAT;
+    defaultSampler.wrapT     = GL_REPEAT;
+    for (size_t i = 0; i < model.textures.size(); i++) {
+      const auto& texture = model.textures[i];
+      const auto& image   = model.images[texture.source];
+      const auto& sampler = texture.sampler >= 0 ? model.samplers[texture.sampler] : defaultSampler;
+      TextureInfo info{image.width,       image.height,  sampler.minFilter,
+                       sampler.magFilter, sampler.wrapS, sampler.wrapT};
+      if (sampler.minFilter == GL_NEAREST_MIPMAP_NEAREST ||
+          sampler.minFilter == GL_NEAREST_MIPMAP_LINEAR ||
+          sampler.minFilter == GL_LINEAR_MIPMAP_NEAREST ||
+          sampler.minFilter == GL_LINEAR_MIPMAP_LINEAR) {
+        info.generate_mipmap = true;
+      }
+      m_texture_cache.emplace_back(Texture2D::Create(info, image.image.data()));
+    }
+  };
+
+  const auto bind_material = [&](const auto materialIndex, Mesh& mesh) {
+    PBRMaterial mesh_material{};
+    if (materialIndex >= 0) {
+      const tinygltf::Material& material = gltf_model.materials[materialIndex];
+
+      const auto& pbrMetallicRoughness = material.pbrMetallicRoughness;
+      mesh_material.base_color_factor  = {(float)pbrMetallicRoughness.baseColorFactor[0],
+                                         (float)pbrMetallicRoughness.baseColorFactor[1],
+                                         (float)pbrMetallicRoughness.baseColorFactor[2],
+                                         (float)pbrMetallicRoughness.baseColorFactor[3]};
+      if (pbrMetallicRoughness.baseColorTexture.index >= 0) {
+        const auto& baseColorTexture =
+            gltf_model.textures[pbrMetallicRoughness.baseColorTexture.index];
+        if (baseColorTexture.source >= 0) {
+          mesh_material.textures[PBRComponent::BaseColor] =
+              m_texture_cache[baseColorTexture.source];
+        }
+      }
+
+      if (pbrMetallicRoughness.metallicRoughnessTexture.index >= 0) {
+        const auto& metallicRoughnessTexture =
+            gltf_model.textures[pbrMetallicRoughness.metallicRoughnessTexture.index];
+        if (metallicRoughnessTexture.source >= 0) {
+          mesh_material.textures[PBRComponent::MetallicRoughness] =
+              m_texture_cache[metallicRoughnessTexture.source];
+        }
+      }
+
+      if (material.emissiveTexture.index >= 0) {
+        const auto& emissiveTexture = gltf_model.textures[material.emissiveTexture.index];
+        if (emissiveTexture.source >= 0) {
+          mesh_material.textures[PBRComponent::Emissive] = m_texture_cache[emissiveTexture.source];
+        }
+      }
+
+      if (material.occlusionTexture.index >= 0) {
+        const auto& occlusionTexture = gltf_model.textures[material.occlusionTexture.index];
+        if (occlusionTexture.source >= 0) {
+          mesh_material.textures[PBRComponent::Occlusion] =
+              m_texture_cache[occlusionTexture.source];
+        }
+      }
+
+    } else {
+      // Apply default material
+      // Defined here:
+      // https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#reference-material
+      // https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#reference-pbrmetallicroughness3
+
+      mesh_material.textures[PBRComponent::BaseColor] = m_white_texture;
+    }
+    mesh.material = std::move(mesh_material);
+  };
+  load_textures(gltf_model);
   std::unordered_map<int, glm::mat4> mesh_matrices;
   const std::function<void(int, const glm::mat4&)> extract_node_matrices =
       [&](int node_idx, const glm::mat4& parent_matrix) {
@@ -157,8 +233,9 @@ ModelPtr ResourceManager::load_gltf_model(const std::string& name, const std::st
       extract_gltf_indices(primitive, gltf_model, indices);
       Mesh mesh{vertices, indices};
       if (mesh_matrices.find(mesh_idx) != mesh_matrices.end()) {
-        mesh.m_model_matrix = mesh_matrices[mesh_idx];
+        mesh.model_matrix = mesh_matrices[mesh_idx];
       }
+      bind_material(primitive.material, mesh);
       model->attach_mesh(mesh);
     }
   }

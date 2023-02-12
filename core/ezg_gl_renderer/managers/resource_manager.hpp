@@ -5,6 +5,7 @@
 #include <string>
 #include <unordered_map>
 #include "assets/model.hpp"
+#include "assets/texture.hpp"
 
 namespace ezg::gl {
 
@@ -24,10 +25,14 @@ public:
   ModelPtr load_gltf_model(const std::string& name, const std::string& path);
 
 private:
-  ResourceManager() = default;
+  ResourceManager() {
+      m_white_texture = Texture2D::CreateDefaultWhite();
+  };
   void release_all();
 
   std::unordered_map<std::string, ModelPtr> m_model_cache;
+  std::vector<TexturePtr> m_texture_cache;
+  TexturePtr m_white_texture;
 
 };
 }  // namespace ezg::gl

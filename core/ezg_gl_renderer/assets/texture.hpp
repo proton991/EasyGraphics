@@ -7,14 +7,29 @@
 namespace ezg::gl {
 class Texture2D;
 using TexturePtr = std::shared_ptr<Texture2D>;
-
+struct TextureInfo {
+  int width{0};
+  int height{0};
+  int min_filter{GL_LINEAR};
+  int mag_filter{GL_LINEAR};
+  int wrap_s{GL_REPEAT};
+  int wrap_t{GL_REPEAT};
+  bool generate_mipmap{false};
+};
 class Texture2D {
 public:
   static TexturePtr create(const std::string& path) {
     return std::make_shared<Texture2D>(path);
   }
 
+  static TexturePtr Create(const TextureInfo& info, const void* data) {
+    return std::make_shared<Texture2D>(info, data);
+  }
+
+  static TexturePtr CreateDefaultWhite();
+
   explicit Texture2D(const std::string& path);
+  Texture2D(const TextureInfo& info, const void* data);
   ~Texture2D();
 
   void bind(GLenum slot) const;
