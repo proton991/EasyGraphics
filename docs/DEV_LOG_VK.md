@@ -1,4 +1,4 @@
-# Dev Log
+# Dev Log (ezg_vk)
 
 ## 2022.11.16
 
@@ -59,3 +59,8 @@ Other progress:
 
 **Refactor**:
 1. Remove `VkSurfaceKHR` dependency when initializing `vk::Context`, check present support when building swapchain
+
+
+
+
+
