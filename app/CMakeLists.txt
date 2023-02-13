@@ -37,9 +37,7 @@ set(GL_APPS
   hello_triangle_indexed
   hello_triangle_textured
   camera_class
-  load_gltf_model
-  using_framebuffer
-  using_ubo
+  simple_renderer
 )
 
 file(GLOB DLLS "${CMAKE_SOURCE_DIR}/third_party/dlls/*.dll")

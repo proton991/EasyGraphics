@@ -102,11 +102,11 @@ void Camera::update(float deltaTime) {
   update_base_vectors();
 }
 
-glm::mat4 Camera::get_view_matrix() {
+glm::mat4 Camera::get_view_matrix() const {
   return glm::lookAt(m_position, m_position + m_front, m_up);
 }
 
-glm::mat4 Camera::get_projection_matrix() {
+glm::mat4 Camera::get_projection_matrix() const {
   return m_projMatrix;
 }
 }  // namespace ezg::system

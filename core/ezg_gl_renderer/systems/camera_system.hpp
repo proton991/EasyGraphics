@@ -8,8 +8,8 @@ public:
   static Camera CreateDefault();
   static Camera CreateBasedOnBBox(const glm::vec3& bbox_min, const glm::vec3& bbox_max);
   Camera(glm::vec3 eye, glm::vec3 target, float fov, float aspect, float near, float far, float speed=2.0f);
-  glm::mat4 get_view_matrix();
-  glm::mat4 get_projection_matrix();
+  glm::mat4 get_view_matrix() const;
+  glm::mat4 get_projection_matrix() const;
 
   void set_speed(float speed) { m_speed = speed; }
   void update(float deltaTime);

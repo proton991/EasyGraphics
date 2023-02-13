@@ -11,8 +11,8 @@ struct Extend2D {
 };
 
 struct WindowConfig {
-  int width;
-  int height;
+  unsigned int width;
+  unsigned int height;
   int resizable;
   const char* title;
   int major_version;

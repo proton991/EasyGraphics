@@ -32,9 +32,9 @@ struct RTAttachmentInfo {
 };
 
 struct RenderTargetInfo {
-  int width{500};
-  int height{500};
-  int samples{1};
+  uint32_t width{500};
+  uint32_t height{500};
+  uint32_t samples{1};
   std::vector<RTAttachmentInfo> color_attachment_infos;
   bool has_depth{true};
 };
