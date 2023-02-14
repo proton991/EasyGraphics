@@ -11,6 +11,19 @@ struct AABB {
   AABB(const glm::vec3& _min, const glm::vec3& _max) : bbx_min(_min), bbx_max(_max) {
     diag = bbx_max - bbx_min;
   }
+
+  [[nodiscard]] glm::vec3 get_center() const {
+    return (bbx_min + bbx_max) * 0.5f;
+  }
+
+  // translate the center of the bbx to target_pos
+  void translate(const glm::vec3& pos) {
+    glm::vec3 delta = pos - get_center();
+    bbx_min += delta;
+    bbx_max += delta;
+    auto new_center = get_center();
+  }
+
   glm::vec3 bbx_min;
   glm::vec3 bbx_max;
   glm::vec3 diag;
@@ -40,6 +53,10 @@ public:
   [[nodiscard]] const AABB& get_aabb() const {
     return m_aabb;
   }
+
+  void translate(const glm::vec3& target_pos);
+
+  auto get_mesh_size() const { return m_meshes.size(); }
 private:
   std::string m_name;
   std::vector<Mesh> m_meshes;

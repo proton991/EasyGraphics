@@ -7,6 +7,7 @@
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 using namespace ezg::system;
 using namespace ezg::gl;
+using namespace ezg::app;
 
 int main() {
   WindowConfig config{};
@@ -31,11 +32,13 @@ int main() {
 
   std::vector<std::string> model_paths{
       "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf",
+      "../../glTF-Sample-Models/2.0/ToyCar/glTF/ToyCar.gltf",
       "../../glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf"};
 
-  ResourceManager::GetInstance().load_gltf_model("helmet", model_paths[1]);
+  ResourceManager::GetInstance().load_gltf_model("helmet", model_paths[2]);
 
   auto scene = std::make_shared<CustomScene>("demo");
+  scene->init();
 
   auto camera = Camera::CreateBasedOnBBox(scene->get_aabb().bbx_min, scene->get_aabb().bbx_max);
 

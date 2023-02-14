@@ -220,7 +220,6 @@ ModelPtr ResourceManager::load_gltf_model(const std::string& name, const std::st
     }
   }
   auto model = Model::Create(name);
-  spdlog::info("Model {} mesh size : {}", name, gltf_model.meshes.size());
   for (auto mesh_idx = 0; mesh_idx < gltf_model.meshes.size(); mesh_idx++) {
     auto& gl_mesh = gltf_model.meshes[mesh_idx];
     std::vector<Vertex> vertices;
@@ -246,6 +245,7 @@ ModelPtr ResourceManager::load_gltf_model(const std::string& name, const std::st
   AABB aabb{bbox_min, bbox_max};
   model->set_aabb(aabb);
   m_model_cache[name] = model;
+  spdlog::info("Model {} mesh size : {}", name, model->get_mesh_size());
   return model;
 }
 

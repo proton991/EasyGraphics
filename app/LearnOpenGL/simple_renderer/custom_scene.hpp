@@ -4,13 +4,13 @@
 #include "renderer/scene.hpp"
 using namespace ezg::gl;
 
+namespace ezg::app {
 class CustomScene : public BaseScene {
 public:
-  explicit CustomScene(std::string_view name) : BaseScene(name) {
-    CustomScene::init();
-  }
-  void init() override {
-    add_model("helmet");
-  }
+  explicit CustomScene(std::string_view name) : BaseScene(name) {}
+
+  void init() override;
 };
+}
+
 #endif  //CUSTOM_SCENE_HPP

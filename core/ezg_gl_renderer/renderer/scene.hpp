@@ -14,6 +14,7 @@ public:
 
   virtual void init() = 0;
   void add_model(const std::string& model_name);
+  void add_model(const ModelPtr & model);
 
   [[nodiscard]] AABB get_aabb() const;
 
