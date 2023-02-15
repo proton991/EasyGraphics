@@ -25,6 +25,12 @@ void RenderAPI::disable_depth_testing() {
   glDisable(GL_DEPTH_TEST);
 }
 
+void RenderAPI::draw_line(const std::shared_ptr<VertexArray>& vao, uint32_t num_vertices) {
+  vao->bind();
+  glLineWidth(2.0f);
+  glDrawArrays(GL_LINES, 0, num_vertices);
+}
+
 void RenderAPI::draw_vertices(const std::shared_ptr<VertexArray>& vao,
                               uint32_t num_vertices) {
   vao->bind();

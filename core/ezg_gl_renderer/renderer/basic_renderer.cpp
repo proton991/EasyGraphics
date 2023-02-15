@@ -8,6 +8,7 @@ BasicRenderer::BasicRenderer(const BasicRenderer::Config& config)
   setup_ubos();
   setup_screen_quad();
   setup_framebuffers(m_width, m_height);
+  setup_coordinate_axis();
 }
 
 void BasicRenderer::compile_shaders(
@@ -54,6 +55,35 @@ void BasicRenderer::setup_framebuffers(uint32_t width, uint32_t height) {
   rt_info.has_depth              = true;
   rt_info.color_attachment_infos = {RTAttachmentFormat::RGBA8};
   m_gbuffer                      = RenderTarget::Create(rt_info);
+}
+
+void BasicRenderer::setup_coordinate_axis() {
+  std::vector<ShaderStage> stages = {
+      {"../resources/shaders/simple_renderer/coords_axis.vs.glsl", "vertex"},
+      {"../resources/shaders/simple_renderer/coords_axis.fs.glsl", "fragment"},
+  };
+  ShaderProgramCreateInfo info{"coords_axis", stages};
+  m_shader_cache.try_emplace(info.name, ShaderProgramFactory::create_shader_program(info).value());
+  m_axis_data.line_vertices = {
+      // x axis
+      {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)},
+      {glm::vec3(100.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)},
+      // y axis
+      {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f)},
+      {glm::vec3(0.0f, 100.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f)},
+      // z axis
+      {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)},
+      {glm::vec3(0.0f, 0.0f, 100.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)},
+  };
+  auto vbo = VertexBuffer::Create(m_axis_data.line_vertices.size() * sizeof(LineVertex),
+                                  m_axis_data.line_vertices.data());
+  vbo->set_buffer_view({
+      {"aPosition", BufferDataType::Vec3f},
+      {"aColor", BufferDataType::Vec4f},
+  });
+  m_axis_data.vao = VertexArray::Create();
+  m_axis_data.vao->bind();
+  m_axis_data.vao->attach_vertex_buffer(vbo);
 }
 
 void BasicRenderer::render_model(const ModelPtr& model, ShaderProgram& shader_program) {
@@ -107,15 +137,17 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
 
       RenderAPI::draw_mesh(mesh);
     }
-    m_gbuffer->unbind();
-
-    RenderAPI::disable_depth_testing();
-    RenderAPI::set_clear_color({0.1f, 0.1f, 0.1f, 1.0f});
-    RenderAPI::clear_color();
-
-    auto& screen_shader = m_shader_cache.at("screen");
-    screen_shader.use();
-    RenderAPI::draw_vertices(m_quad_vao, 6);
   }
+  m_shader_cache.at("coords_axis").use();
+  RenderAPI::draw_line(m_axis_data.vao, 6);
+  m_gbuffer->unbind();
+
+  RenderAPI::disable_depth_testing();
+  RenderAPI::set_clear_color({0.1f, 0.1f, 0.1f, 1.0f});
+  RenderAPI::clear_color();
+
+  auto& screen_shader = m_shader_cache.at("screen");
+  screen_shader.use();
+  RenderAPI::draw_vertices(m_quad_vao, 6);
 }
 }  // namespace ezg::gl

@@ -17,6 +17,7 @@ public:
   static void enable_depth_testing();
   static void disable_depth_testing();
 
+  static void draw_line(const std::shared_ptr<VertexArray>& vao, uint32_t num_vertices);
   static void draw_vertices(const std::shared_ptr<VertexArray>& vao, uint32_t num_vertices);
   static void draw_indices(const std::shared_ptr<VertexArray>& vao);
 

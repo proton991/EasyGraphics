@@ -8,6 +8,8 @@
 #include "graphics/shader.hpp"
 #include "graphics/uniform_buffer.hpp"
 #include "graphics/vertex_array.hpp"
+#include "renderer_data.hpp"
+
 namespace ezg::gl {
 class BaseScene;
 class BasicRenderer {
@@ -29,6 +31,7 @@ private:
   void setup_ubos();
   void setup_screen_quad();
   void setup_framebuffers(uint32_t width, uint32_t height);
+  void setup_coordinate_axis();
 
   void update(const system::Camera& camera);
 
@@ -45,6 +48,8 @@ private:
 
   VertexArrayPtr m_quad_vao;
   std::unordered_map<std::string, ShaderProgram> m_shader_cache;
+
+  CoordinateAxisData m_axis_data;
 };
 }  // namespace ezg::gl
 #endif  //EASYGRAPHICS_BASIC_RENDERER_HPP
