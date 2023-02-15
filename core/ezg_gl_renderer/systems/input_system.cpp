@@ -84,4 +84,9 @@ std::array<double, 2> KeyboardMouseInput::calculate_cursor_position_delta() {
 
   return m_cursor_pos_delta;
 }
+
+void KeyboardMouseInput::resume() {
+  m_current_cursor_pos = m_previous_cursor_pos;
+  m_first_mouse = true;
+}
 }  // namespace ezg::system

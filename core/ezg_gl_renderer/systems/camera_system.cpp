@@ -56,35 +56,33 @@ void Camera::set_projection_matrix() {
 }
 
 void Camera::update_position(float velocity) {
-  if (m_dirty) {
-    if (KeyboardMouseInput::GetInstance().was_key_pressed_once(GLFW_KEY_UP)) {
-      m_speed *= 2;
-    }
-    if (KeyboardMouseInput::GetInstance().was_key_pressed_once(GLFW_KEY_DOWN)) {
-      m_speed /= 2;
-    }
-    if (KeyboardMouseInput::GetInstance().is_key_pressed(GLFW_KEY_SPACE)) {
-      // reset position
-      m_position = {0.0f, 0.0f, 0.0f};
-    }
-    if (KeyboardMouseInput::GetInstance().is_key_pressed(GLFW_KEY_W)) {
-      m_position += m_front * velocity;
-    }
-    if (KeyboardMouseInput::GetInstance().is_key_pressed(GLFW_KEY_S)) {
-      m_position -= m_front * velocity;
-    }
-    if (KeyboardMouseInput::GetInstance().is_key_pressed(GLFW_KEY_A)) {
-      m_position -= m_right * velocity;
-    }
-    if (KeyboardMouseInput::GetInstance().is_key_pressed(GLFW_KEY_D)) {
-      m_position += m_right * velocity;
-    }
-    if (KeyboardMouseInput::GetInstance().is_key_pressed(GLFW_KEY_LEFT_SHIFT)) {
-      m_position += m_world_up * velocity;
-    }
-    if (KeyboardMouseInput::GetInstance().is_key_pressed(GLFW_KEY_LEFT_CONTROL)) {
-      m_position -= m_world_up * velocity;
-    }
+  if (KeyboardMouseInput::GetInstance().was_key_pressed_once(GLFW_KEY_UP)) {
+    m_speed *= 2;
+  }
+  if (KeyboardMouseInput::GetInstance().was_key_pressed_once(GLFW_KEY_DOWN)) {
+    m_speed /= 2;
+  }
+  if (KeyboardMouseInput::GetInstance().is_key_pressed(GLFW_KEY_SPACE)) {
+    // reset position
+    m_position = {0.0f, 0.0f, 0.0f};
+  }
+  if (KeyboardMouseInput::GetInstance().is_key_pressed(GLFW_KEY_W)) {
+    m_position += m_front * velocity;
+  }
+  if (KeyboardMouseInput::GetInstance().is_key_pressed(GLFW_KEY_S)) {
+    m_position -= m_front * velocity;
+  }
+  if (KeyboardMouseInput::GetInstance().is_key_pressed(GLFW_KEY_A)) {
+    m_position -= m_right * velocity;
+  }
+  if (KeyboardMouseInput::GetInstance().is_key_pressed(GLFW_KEY_D)) {
+    m_position += m_right * velocity;
+  }
+  if (KeyboardMouseInput::GetInstance().is_key_pressed(GLFW_KEY_LEFT_SHIFT)) {
+    m_position += m_world_up * velocity;
+  }
+  if (KeyboardMouseInput::GetInstance().is_key_pressed(GLFW_KEY_LEFT_CONTROL)) {
+    m_position -= m_world_up * velocity;
   }
 }
 
@@ -96,10 +94,19 @@ void Camera::update_view() {
 }
 
 void Camera::update(float deltaTime) {
-  const float velocity = m_speed * deltaTime;
-  update_position(velocity);
-  update_view();
-  update_base_vectors();
+  if (KeyboardMouseInput::GetInstance().was_key_pressed_once(GLFW_KEY_TAB)) {
+    m_dirty = !m_dirty;
+    if (m_dirty) {
+      KeyboardMouseInput::GetInstance().resume();
+    }
+  }
+  if (m_dirty) {
+    const float velocity = m_speed * deltaTime;
+    update_position(velocity);
+    update_view();
+    update_base_vectors();
+  }
+
 }
 
 glm::mat4 Camera::get_view_matrix() const {

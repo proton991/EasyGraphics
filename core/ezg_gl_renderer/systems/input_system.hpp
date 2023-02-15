@@ -73,6 +73,8 @@ public:
   /// in index 1
   [[nodiscard]] std::array<double, 2> calculate_cursor_position_delta();
 
+  void resume();
+
 private:
   KeyboardMouseInput() = default;
   std::array<std::int64_t, 2> m_previous_cursor_pos{0, 0};  // [x, y]
