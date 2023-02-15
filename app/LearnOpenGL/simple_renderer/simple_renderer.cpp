@@ -19,14 +19,14 @@ int main() {
   config.title         = "OpenGL Renderer";
   Window window{config};
   std::vector<ShaderStage> stages1 = {
-      {"../resources/shaders/using_ubo/model_loading.vs.glsl", "vertex"},
-      {"../resources/shaders/using_ubo/model_loading.fs.glsl", "fragment"},
+      {"../resources/shaders/simple_renderer/forward.vs.glsl", "vertex"},
+      {"../resources/shaders/simple_renderer/forward.fs.glsl", "fragment"},
   };
   ShaderProgramCreateInfo info1{"forward", stages1};
 
   std::vector<ShaderStage> stages2 = {
-      {"../resources/shaders/using_framebuffer/framebuffers_screen.vs.glsl", "vertex"},
-      {"../resources/shaders/using_framebuffer/framebuffers_screen.fs.glsl", "fragment"},
+      {"../resources/shaders/simple_renderer/framebuffers_screen.vs.glsl", "vertex"},
+      {"../resources/shaders/simple_renderer/framebuffers_screen.fs.glsl", "fragment"},
   };
   ShaderProgramCreateInfo info2{"screen", stages2};
 

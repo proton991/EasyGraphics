@@ -98,7 +98,7 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
   for (const auto& model : info.scene->m_models) {
     for (const auto& mesh : model->get_meshes()) {
 
-      forward_shader.set_uniform("u_baseColorFactor", mesh.material.base_color_factor);
+      forward_shader.set_uniform("uBaseColorFactor", mesh.material.base_color_factor);
       // bind textures
       mesh.material.bind_all_textures();
       // model ubo

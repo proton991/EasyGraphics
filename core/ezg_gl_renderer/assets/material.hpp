@@ -11,8 +11,8 @@ enum class PBRComponent {
   BaseColor = 0,
   MetallicRoughness,
   Normal,
-  Occlusion,
   Emissive,
+  Occlusion,
 };
 struct PBRMaterial {
   void bind_all_textures() const;

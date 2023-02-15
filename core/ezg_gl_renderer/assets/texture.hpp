@@ -14,6 +14,7 @@ struct TextureInfo {
   int mag_filter{GL_LINEAR};
   int wrap_s{GL_REPEAT};
   int wrap_t{GL_REPEAT};
+  int wrap_r{GL_REPEAT};
   bool generate_mipmap{false};
 };
 class Texture2D {

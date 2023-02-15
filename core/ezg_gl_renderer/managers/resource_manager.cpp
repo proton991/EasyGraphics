@@ -131,12 +131,20 @@ ModelPtr ResourceManager::load_gltf_model(const std::string& name, const std::st
     defaultSampler.magFilter = GL_LINEAR;
     defaultSampler.wrapS     = GL_REPEAT;
     defaultSampler.wrapT     = GL_REPEAT;
+    defaultSampler.wrapR     = GL_REPEAT;
     for (size_t i = 0; i < model.textures.size(); i++) {
       const auto& texture = model.textures[i];
       const auto& image   = model.images[texture.source];
       const auto& sampler = texture.sampler >= 0 ? model.samplers[texture.sampler] : defaultSampler;
-      TextureInfo info{image.width,       image.height,  sampler.minFilter,
-                       sampler.magFilter, sampler.wrapS, sampler.wrapT};
+      TextureInfo info{};
+      info.min_filter = sampler.minFilter != -1 ? sampler.minFilter : GL_LINEAR;
+      info.mag_filter = sampler.magFilter != -1 ? sampler.minFilter : GL_LINEAR;
+      info.width      = image.width;
+      info.height     = image.height;
+      info.wrap_r     = sampler.wrapR;
+      info.wrap_s     = sampler.wrapS;
+      info.wrap_t     = sampler.wrapT;
+
       if (sampler.minFilter == GL_NEAREST_MIPMAP_NEAREST ||
           sampler.minFilter == GL_NEAREST_MIPMAP_LINEAR ||
           sampler.minFilter == GL_LINEAR_MIPMAP_NEAREST ||
@@ -157,39 +165,38 @@ ModelPtr ResourceManager::load_gltf_model(const std::string& name, const std::st
                                          (float)pbrMetallicRoughness.baseColorFactor[1],
                                          (float)pbrMetallicRoughness.baseColorFactor[2],
                                          (float)pbrMetallicRoughness.baseColorFactor[3]};
-      if (pbrMetallicRoughness.baseColorTexture.index >= 0) {
-        const auto& baseColorTexture =
-            gltf_model.textures[pbrMetallicRoughness.baseColorTexture.index];
-        if (baseColorTexture.source >= 0) {
-          mesh_material.textures[PBRComponent::BaseColor] =
-              m_texture_cache[baseColorTexture.source];
-        }
+
+      const auto baseColorTextureId = std::max(0, pbrMetallicRoughness.baseColorTexture.index);
+      mesh_material.textures[PBRComponent::BaseColor] = m_texture_cache[baseColorTextureId];
+
+      const auto metallicRoughnessTextureId = pbrMetallicRoughness.metallicRoughnessTexture.index;
+      if (metallicRoughnessTextureId >= 0) {
+        mesh_material.textures[PBRComponent::MetallicRoughness] =
+            m_texture_cache[metallicRoughnessTextureId];
+      }
+      mesh_material.metallicFactor  = pbrMetallicRoughness.metallicFactor;
+      mesh_material.roughnessFactor = pbrMetallicRoughness.roughnessFactor;
+
+      const auto normalTextureId = material.normalTexture.index;
+      if (normalTextureId >= 0) {
+        mesh_material.textures[PBRComponent::Normal] = m_texture_cache[normalTextureId];
       }
 
-      if (pbrMetallicRoughness.metallicRoughnessTexture.index >= 0) {
-        const auto& metallicRoughnessTexture =
-            gltf_model.textures[pbrMetallicRoughness.metallicRoughnessTexture.index];
-        if (metallicRoughnessTexture.source >= 0) {
-          mesh_material.textures[PBRComponent::MetallicRoughness] =
-              m_texture_cache[metallicRoughnessTexture.source];
-        }
+      const auto emissiveTextureId = material.emissiveTexture.index;
+      if (emissiveTextureId >= 0) {
+        mesh_material.textures[PBRComponent::Emissive] = m_texture_cache[emissiveTextureId];
       }
+      mesh_material.emissive_factor = {
+          (float)material.emissiveFactor[0],
+          (float)material.emissiveFactor[1],
+          (float)material.emissiveFactor[2],
+      };
 
-      if (material.emissiveTexture.index >= 0) {
-        const auto& emissiveTexture = gltf_model.textures[material.emissiveTexture.index];
-        if (emissiveTexture.source >= 0) {
-          mesh_material.textures[PBRComponent::Emissive] = m_texture_cache[emissiveTexture.source];
-        }
+      const auto occlusionTextureId = material.occlusionTexture.index;
+      if (occlusionTextureId >= 0) {
+        mesh_material.textures[PBRComponent::Occlusion] = m_texture_cache[occlusionTextureId];
       }
-
-      if (material.occlusionTexture.index >= 0) {
-        const auto& occlusionTexture = gltf_model.textures[material.occlusionTexture.index];
-        if (occlusionTexture.source >= 0) {
-          mesh_material.textures[PBRComponent::Occlusion] =
-              m_texture_cache[occlusionTexture.source];
-        }
-      }
-
+      mesh_material.occlusion_strength = material.occlusionTexture.strength;
     } else {
       // Apply default material
       // Defined here:
