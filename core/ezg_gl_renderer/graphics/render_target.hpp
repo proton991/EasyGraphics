@@ -3,6 +3,7 @@
 
 #include <glad/glad.h>
 #include <memory>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 namespace ezg::gl {
