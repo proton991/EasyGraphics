@@ -5,7 +5,6 @@
 #include <memory>
 #include <vector>
 namespace ezg::gl {
-struct Texture;
 class RenderTarget;
 using RenderTargetPtr = std::shared_ptr<RenderTarget>;
 enum class RTAttachmentType : decltype(GL_COLOR_ATTACHMENT0) {
@@ -54,7 +53,6 @@ public:
 private:
   void attach_color_texture(GLuint id, GLint internal_format, GLenum format, int index) const;
   void attach_depth_texture(uint32_t id, GLint format) const;
-  void bind_texture(GLuint id);
   void create_textures(GLuint* ids, int count);
 
   GLuint m_id{0};

@@ -8,6 +8,11 @@
 using namespace ezg::system;
 using namespace ezg::gl;
 using namespace ezg::app;
+// choose discrete GPU, (Windows NVIDIA)
+extern "C"
+{
+__declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+}
 
 int main() {
   WindowConfig config{};
