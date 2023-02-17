@@ -45,10 +45,6 @@ void RenderTarget::resize(int width, int height) {
   invalidate();
 }
 
-void RenderTarget::create_textures(GLuint* ids, int count) {
-  glCreateTextures(m_texture_target, count, ids);
-}
-
 void RenderTarget::attach_color_texture(GLuint id, GLint internal_format, GLenum format,
                                         int index) const {
   if (m_multi_sampled) {
@@ -99,6 +95,7 @@ void RenderTarget::invalidate() {
     buffers.reserve(num_color_attachments);
     glCreateTextures(m_texture_target, m_color_attachments.size(), m_color_attachments.data());
     for (size_t i = 0; i < num_color_attachments; i++) {
+      m_name2index.try_emplace(m_info.color_attachment_infos[i].name, i);
       attach_color_texture(m_color_attachments[i], GL_RGBA8, GL_RGBA, GL_COLOR_ATTACHMENT0 + i);
       buffers.push_back(GL_COLOR_ATTACHMENT0 + i);
     }
@@ -120,4 +117,8 @@ void RenderTarget::invalidate() {
   }
 }
 
+void RenderTarget::bind_texture(std::string_view name) {
+  const auto slot = m_name2index[name];
+  glBindTextureUnit(slot, m_color_attachments[slot]);
+}
 }  // namespace ezg::gl

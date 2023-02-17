@@ -53,7 +53,7 @@ void BasicRenderer::setup_framebuffers(uint32_t width, uint32_t height) {
   rt_info.width                  = width;
   rt_info.samples                = 1;
   rt_info.has_depth              = true;
-  rt_info.color_attachment_infos = {RTAttachmentFormat::RGBA8};
+  rt_info.color_attachment_infos = {{"color", RTAttachmentFormat::RGBA8}};
   m_gbuffer                      = RenderTarget::Create(rt_info);
 }
 
@@ -148,6 +148,7 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
 
   auto& screen_shader = m_shader_cache.at("screen");
   screen_shader.use();
+  m_gbuffer->bind_texture("color");
   RenderAPI::draw_vertices(m_quad_vao, 6);
 }
 }  // namespace ezg::gl

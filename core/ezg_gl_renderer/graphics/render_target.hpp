@@ -3,6 +3,7 @@
 
 #include <glad/glad.h>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 namespace ezg::gl {
 class RenderTarget;
@@ -26,14 +27,17 @@ enum class RTAttachmentFormat {
 
 struct RTAttachmentInfo {
   RTAttachmentInfo() = default;
-  RTAttachmentInfo(RTAttachmentFormat format_) : format(format_) {}
+  RTAttachmentInfo(std::string_view name_, RTAttachmentFormat format_)
+      : format(format_), name(name_) {}
   RTAttachmentFormat format;
+  std::string_view name;
 };
 
 struct RenderTargetInfo {
   uint32_t width{500};
   uint32_t height{500};
   uint32_t samples{1};
+  // the index of attachment is used for texture unit when binding textures
   std::vector<RTAttachmentInfo> color_attachment_infos;
   bool has_depth{true};
 };
@@ -50,10 +54,11 @@ public:
   void resize(int width, int height);
   void invalidate();
 
+  void bind_texture(std::string_view name);
+
 private:
   void attach_color_texture(GLuint id, GLint internal_format, GLenum format, int index) const;
   void attach_depth_texture(uint32_t id, GLint format) const;
-  void create_textures(GLuint* ids, int count);
 
   GLuint m_id{0};
   RenderTargetInfo m_info;
@@ -61,6 +66,7 @@ private:
   GLuint m_depth_attachment{0};
   bool m_multi_sampled{false};
   GLenum m_texture_target;
+  std::unordered_map<std::string_view, int> m_name2index;
 };
 }  // namespace ezg::gl
 #endif  //EASYGRAPHICS_RENDER_TARGET_HPP
