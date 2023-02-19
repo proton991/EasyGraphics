@@ -174,8 +174,8 @@ ModelPtr ResourceManager::load_gltf_model(const std::string& name, const std::st
         mesh_material.textures[PBRComponent::MetallicRoughness] =
             m_texture_cache[metallicRoughnessTextureId];
       }
-      mesh_material.metallicFactor  = pbrMetallicRoughness.metallicFactor;
-      mesh_material.roughnessFactor = pbrMetallicRoughness.roughnessFactor;
+      mesh_material.metallic_factor  = pbrMetallicRoughness.metallicFactor;
+      mesh_material.roughness_factor = pbrMetallicRoughness.roughnessFactor;
 
       const auto normalTextureId = material.normalTexture.index;
       if (normalTextureId >= 0) {

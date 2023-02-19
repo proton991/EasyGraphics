@@ -10,7 +10,9 @@ class Model;
 class BaseScene;
 
 struct ModelData {
-  glm::mat4 model_matrix;
+  glm::mat4 mvp_matrix;
+  glm::mat4 mv_matrix;
+  glm::mat4 normal_matrix;
 };
 
 struct CameraData {

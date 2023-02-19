@@ -25,7 +25,7 @@ int main() {
   Window window{config};
   std::vector<ShaderStage> stages1 = {
       {"../resources/shaders/simple_renderer/forward.vs.glsl", "vertex"},
-      {"../resources/shaders/simple_renderer/forward.fs.glsl", "fragment"},
+      {"../resources/shaders/simple_renderer/pbr_directional_light.fs.glsl", "fragment"},
   };
   ShaderProgramCreateInfo info1{"forward", stages1};
 
@@ -38,9 +38,10 @@ int main() {
   std::vector<std::string> model_paths{
       "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf",
       "../../glTF-Sample-Models/2.0/ToyCar/glTF/ToyCar.gltf",
-      "../../glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf"};
+      "../../glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf",
+      "../../glTF-Sample-Models/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf"};
 
-  ResourceManager::GetInstance().load_gltf_model("helmet", model_paths[2]);
+  ResourceManager::GetInstance().load_gltf_model("helmet", model_paths[0]);
 
   auto scene = std::make_shared<CustomScene>("demo");
   scene->init();

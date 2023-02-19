@@ -86,32 +86,13 @@ void BasicRenderer::setup_coordinate_axis() {
   m_axis_data.vao->attach_vertex_buffer(vbo);
 }
 
-void BasicRenderer::render_model(const ModelPtr& model, ShaderProgram& shader_program) {
-  for (const auto& mesh : model->get_meshes()) {
-    shader_program.set_uniform("u_model", mesh.model_matrix);
-    RenderAPI::draw_mesh(mesh);
-  }
-}
-
-void BasicRenderer::render_model(const ModelPtr& model) {
-  for (const auto& mesh : model->get_meshes()) {
-    mesh.material.bind_all_textures();
-    m_model_data.model_matrix = mesh.model_matrix;
-    m_model_ubo->set_data(&m_model_data.model_matrix, sizeof(ModelData));
-    RenderAPI::draw_mesh(mesh);
-  }
-}
-
 void BasicRenderer::update(const system::Camera& camera) {
   // camera ubo
   m_camera_data.view       = camera.get_view_matrix();
   m_camera_data.projection = camera.get_projection_matrix();
   m_camera_data.proj_view  = m_camera_data.projection * m_camera_data.view;
-  m_camera_ubo->set_data(&m_camera_data.proj_view, sizeof(CameraData),
-                         offsetof(CameraData, proj_view));
-  m_camera_ubo->set_data(&m_camera_data.view, sizeof(CameraData), offsetof(CameraData, view));
-  m_camera_ubo->set_data(&m_camera_data.projection, sizeof(CameraData),
-                         offsetof(CameraData, projection));
+
+  m_camera_ubo->set_data(&m_camera_data, sizeof(CameraData));
 }
 
 void BasicRenderer::render_frame(const FrameInfo& info) {
@@ -122,19 +103,27 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
   // forward pass
   auto& forward_shader = m_shader_cache.at("forward");
   forward_shader.use();
+  forward_shader.set_uniform("uApplyOcclusion", true);
+  forward_shader.set_uniform("uLightIntensity", info.scene->get_light_intensity());
+  forward_shader.set_uniform("uLightDirection", info.scene->get_light_pos());
 
   update(info.camera);
   // render models
   for (const auto& model : info.scene->m_models) {
     for (const auto& mesh : model->get_meshes()) {
-
-      forward_shader.set_uniform("uBaseColorFactor", mesh.material.base_color_factor);
       // bind textures
       mesh.material.bind_all_textures();
       // model ubo
-      m_model_data.model_matrix = mesh.model_matrix;
+      m_model_data.mvp_matrix    = m_camera_data.proj_view * mesh.model_matrix;
+      m_model_data.mv_matrix     = m_camera_data.view * mesh.model_matrix;
+      m_model_data.normal_matrix = glm::transpose(glm::inverse(m_model_data.mv_matrix));
       m_model_ubo->set_data(&m_model_data, sizeof(ModelData));
 
+      forward_shader.set_uniform("uBaseColorFactor", mesh.material.base_color_factor);
+      forward_shader.set_uniform("uMetallicFactor", (float)mesh.material.metallic_factor);
+      forward_shader.set_uniform("uRoughnessFactor", (float)mesh.material.roughness_factor);
+      forward_shader.set_uniform("uEmissiveFactor", mesh.material.emissive_factor);
+      forward_shader.set_uniform("uOcclusionStrength", (float)mesh.material.occlusion_strength);
       RenderAPI::draw_mesh(mesh);
     }
   }

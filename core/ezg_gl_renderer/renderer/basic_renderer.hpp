@@ -22,8 +22,6 @@ public:
 
   explicit BasicRenderer(const Config& config);
 
-  void render_model(const ModelPtr& model, ShaderProgram& shader_program);
-  void render_model(const ModelPtr& model);
   void render_frame(const FrameInfo& info);
 
 private:

@@ -51,11 +51,11 @@ void RenderTarget::attach_color_texture(GLuint id, GLint internal_format, GLenum
     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, m_info.samples, internal_format,
                             m_info.width, m_info.height, GL_FALSE);
   } else {
-    glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(id, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTextureStorage2D(id, 1, internal_format, m_info.width, m_info.height);
     glTextureSubImage2D(m_id, 0, 0, 0, m_info.width, m_info.height, format, GL_UNSIGNED_BYTE,
                         nullptr);
@@ -68,11 +68,11 @@ void RenderTarget::attach_depth_texture(uint32_t id, GLint format) const {
     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, m_info.samples, format, m_info.width,
                             m_info.height, GL_FALSE);
   } else {
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(id, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTextureStorage2D(id, 1, format, m_info.width, m_info.height);
   }
   glNamedFramebufferTexture(m_id, GL_DEPTH_STENCIL_ATTACHMENT, id, 0);
