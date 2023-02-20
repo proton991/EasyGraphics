@@ -34,6 +34,11 @@ private:
   std::vector<TexturePtr> m_texture_cache;
   TexturePtr m_white_texture;
 
+  const std::unordered_map<std::string, int> c_AlphaModeValue = {
+      {"OPAQUE", 0},
+      {"BLEND", 1},
+      {"MASK", 2},
+  };
 };
 }  // namespace ezg::gl
 #endif  //EASYGRAPHICS_RESOURCE_SYSTEM_HPP

@@ -78,6 +78,5 @@ Texture2D::~Texture2D() {
 }
 void Texture2D::bind(GLenum slot) const {
   glBindTextureUnit(slot, m_id);
-//  glBindTexture(GL_TEXTURE_2D, m_id);
 }
 }  // namespace ezg::gl

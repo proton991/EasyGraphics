@@ -159,15 +159,19 @@ ModelPtr ResourceManager::load_gltf_model(const std::string& name, const std::st
     PBRMaterial mesh_material{};
     if (materialIndex >= 0) {
       const tinygltf::Material& material = gltf_model.materials[materialIndex];
-
+      mesh_material.name = material.name;
+      mesh_material.alpha_cutoff = material.alphaCutoff;
+      mesh_material.alpha_mode = c_AlphaModeValue.at(material.alphaMode);
       const auto& pbrMetallicRoughness = material.pbrMetallicRoughness;
       mesh_material.base_color_factor  = {(float)pbrMetallicRoughness.baseColorFactor[0],
                                          (float)pbrMetallicRoughness.baseColorFactor[1],
                                          (float)pbrMetallicRoughness.baseColorFactor[2],
                                          (float)pbrMetallicRoughness.baseColorFactor[3]};
 
-      const auto baseColorTextureId = std::max(0, pbrMetallicRoughness.baseColorTexture.index);
-      mesh_material.textures[PBRComponent::BaseColor] = m_texture_cache[baseColorTextureId];
+      const auto baseColorTextureId = pbrMetallicRoughness.baseColorTexture.index;
+      if (baseColorTextureId >= 0) {
+        mesh_material.textures[PBRComponent::BaseColor] = m_texture_cache[baseColorTextureId];
+      }
 
       const auto metallicRoughnessTextureId = pbrMetallicRoughness.metallicRoughnessTexture.index;
       if (metallicRoughnessTextureId >= 0) {

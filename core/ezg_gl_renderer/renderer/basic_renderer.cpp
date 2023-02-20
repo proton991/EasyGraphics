@@ -28,13 +28,13 @@ void BasicRenderer::setup_ubos() {
 void BasicRenderer::setup_screen_quad() {
   float quadVertices[] = {
       // positions   // texCoords
-      -1.0f,  1.0f,  0.0f, 1.0f,
-      -1.0f, -1.0f,  0.0f, 0.0f,
-      1.0f, -1.0f,  1.0f, 0.0f,
+      -1.0f, 1.0f,  0.0f, 1.0f,  //
+      -1.0f, -1.0f, 0.0f, 0.0f,  //
+      1.0f,  -1.0f, 1.0f, 0.0f,  //
 
-      -1.0f,  1.0f,  0.0f, 1.0f,
-      1.0f, -1.0f,  1.0f, 0.0f,
-      1.0f,  1.0f,  1.0f, 1.0f
+      -1.0f, 1.0f,  0.0f, 1.0f,  //
+      1.0f,  -1.0f, 1.0f, 0.0f,  //
+      1.0f,  1.0f,  1.0f, 1.0f   //
   };
   m_quad_vao = VertexArray::Create();
   m_quad_vao->bind();
@@ -97,13 +97,13 @@ void BasicRenderer::update(const system::Camera& camera) {
 
 void BasicRenderer::render_frame(const FrameInfo& info) {
   m_gbuffer->bind();
+  RenderAPI::enable_blending(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   RenderAPI::enable_depth_testing();
   RenderAPI::set_clear_color({0.1f, 0.1f, 0.1f, 1.0f});
   RenderAPI::clear_color_and_depth();
   // forward pass
   auto& forward_shader = m_shader_cache.at("forward");
   forward_shader.use();
-  forward_shader.set_uniform("uApplyOcclusion", true);
   forward_shader.set_uniform("uLightIntensity", info.scene->get_light_intensity());
   forward_shader.set_uniform("uLightDirection", info.scene->get_light_pos());
 
@@ -111,19 +111,14 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
   // render models
   for (const auto& model : info.scene->m_models) {
     for (const auto& mesh : model->get_meshes()) {
-      // bind textures
-      mesh.material.bind_all_textures();
       // model ubo
       m_model_data.mvp_matrix    = m_camera_data.proj_view * mesh.model_matrix;
       m_model_data.mv_matrix     = m_camera_data.view * mesh.model_matrix;
       m_model_data.normal_matrix = glm::transpose(glm::inverse(m_model_data.mv_matrix));
       m_model_ubo->set_data(&m_model_data, sizeof(ModelData));
-
-      forward_shader.set_uniform("uBaseColorFactor", mesh.material.base_color_factor);
-      forward_shader.set_uniform("uMetallicFactor", (float)mesh.material.metallic_factor);
-      forward_shader.set_uniform("uRoughnessFactor", (float)mesh.material.roughness_factor);
-      forward_shader.set_uniform("uEmissiveFactor", mesh.material.emissive_factor);
-      forward_shader.set_uniform("uOcclusionStrength", (float)mesh.material.occlusion_strength);
+      // bind textures
+      mesh.material.bind_all_textures(forward_shader);
+      // draw mesh
       RenderAPI::draw_mesh(mesh);
     }
   }

@@ -16,6 +16,7 @@ public:
   static void clear_color();
   static void enable_depth_testing();
   static void disable_depth_testing();
+  static void enable_blending(int sfactor, int dfactor);
 
   static void draw_line(const std::shared_ptr<VertexArray>& vao, uint32_t num_vertices);
   static void draw_vertices(const std::shared_ptr<VertexArray>& vao, uint32_t num_vertices);
@@ -25,5 +26,5 @@ public:
   static void draw_mesh(const Mesh& mesh);
 };
 
-}
+}  // namespace ezg::gl
 #endif  //EASYGRAPHICS_RENDER_API_HPP

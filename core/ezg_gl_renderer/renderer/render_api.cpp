@@ -4,7 +4,10 @@
 #include "graphics/vertex_array.hpp"
 
 namespace ezg::gl {
-
+void RenderAPI::enable_blending(int sfactor, int dfactor) {
+  glEnable(GL_BLEND);
+  glBlendFunc(sfactor, dfactor);
+}
 void RenderAPI::set_clear_color(const glm::vec4& color) {
   glClearColor(color.r, color.g, color.b, color.a);
 }
