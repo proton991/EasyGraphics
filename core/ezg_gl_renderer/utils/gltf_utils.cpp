@@ -37,24 +37,27 @@ void extract_gltf_vertices(tinygltf::Primitive& primitive, tinygltf::Model& mode
     }
   }
 
-  tinygltf::Accessor& uv_accessor = model.accessors[primitive.attributes["TEXCOORD_0"]];
+  const auto iterator = primitive.attributes.find("TEXCOORD_0");
+  if (iterator != primitive.attributes.end()) {
+    tinygltf::Accessor& uv_accessor = model.accessors[iterator->second];
 
-  std::vector<uint8_t> uv_data;
-  unpack_gltf_buffer(model, uv_accessor, uv_data);
+    std::vector<uint8_t> uv_data;
+    unpack_gltf_buffer(model, uv_accessor, uv_data);
 
-  for (int i = 0; i < vertices.size(); i++) {
-    if (uv_accessor.type == TINYGLTF_TYPE_VEC2) {
-      if (uv_accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT) {
-        float* dtf = (float*)uv_data.data();
+    for (int i = 0; i < vertices.size(); i++) {
+      if (uv_accessor.type == TINYGLTF_TYPE_VEC2) {
+        if (uv_accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT) {
+          float* dtf = (float*)uv_data.data();
 
-        //vec3f
-        vertices[i].uv[0] = *(dtf + (i * 2) + 0);
-        vertices[i].uv[1] = *(dtf + (i * 2) + 1);
+          //vec3f
+          vertices[i].uv[0] = *(dtf + (i * 2) + 0);
+          vertices[i].uv[1] = *(dtf + (i * 2) + 1);
+        } else {
+          assert(false);
+        }
       } else {
         assert(false);
       }
-    } else {
-      assert(false);
     }
   }
 
