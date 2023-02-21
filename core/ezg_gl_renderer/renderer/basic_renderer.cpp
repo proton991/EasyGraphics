@@ -97,6 +97,7 @@ void BasicRenderer::update(const system::Camera& camera) {
 
 void BasicRenderer::render_frame(const FrameInfo& info) {
   m_gbuffer->bind();
+  glEnable(GL_FRAMEBUFFER_SRGB);
   RenderAPI::enable_blending(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   RenderAPI::enable_depth_testing();
   RenderAPI::set_clear_color({0.1f, 0.1f, 0.1f, 1.0f});

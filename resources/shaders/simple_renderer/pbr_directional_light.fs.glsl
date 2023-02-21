@@ -81,7 +81,7 @@ void main()
 
 	vec4 baseColor = uBaseColorFactor;
 	float roughness = uRoughnessFactor;
-	vec3 metallic = vec3(uMetallicFactor, uMetallicFactor, uMetallicFactor);
+	float metallic = uMetallicFactor;
 	vec3 emissive = uEmissiveFactor;
 
 	if (uHasBaseColorMap) {
@@ -148,5 +148,5 @@ void main()
 		baseColor.a = 1.0;
 	}
 
-	fColor = vec4(linearTosRGB(color), baseColor.a);
+	fColor = vec4(color, baseColor.a);
 }
