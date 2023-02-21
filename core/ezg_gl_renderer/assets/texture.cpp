@@ -9,7 +9,7 @@ Texture2D::Texture2D(const std::string& path) {
   m_data_format     = GL_RGBA;
 
   int width, height, channels;
-  stbi_set_flip_vertically_on_load(1);
+//  stbi_set_flip_vertically_on_load(1);
   stbi_uc* data = nullptr;
   spdlog::trace("Loading texture at path {}", path);
   data = stbi_load(path.c_str(), &width, &height, &channels, 0);
@@ -63,11 +63,7 @@ Texture2D::Texture2D(const TextureInfo& info, const void* data) {
 }
 
 TexturePtr Texture2D::CreateDefaultWhite() {
-  TextureInfo info{};
-  info.width = 1;
-  info.height = 1;
-  float white[] = {1, 1, 1, 1};
-  return std::make_shared<Texture2D>(info, white);
+  return std::make_shared<Texture2D>("../resources/textures/white.png");
 }
 
 Texture2D::~Texture2D() {

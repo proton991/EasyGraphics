@@ -206,7 +206,7 @@ ModelPtr ResourceManager::load_gltf_model(const std::string& name, const std::st
       // Defined here:
       // https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#reference-material
       // https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#reference-pbrmetallicroughness3
-
+      spdlog::info("Using default white texture");
       mesh_material.textures[PBRComponent::BaseColor] = m_white_texture;
     }
     mesh.material = std::move(mesh_material);
