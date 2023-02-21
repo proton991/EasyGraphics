@@ -4,9 +4,15 @@
 1. Phase 0: OpenGL set up
 2. Phase 1: A render system
 3. Phase 2: PBR
-4. Phase 3: Render pipeline set up
-5. Phase 4: Integrating ImGUI.
+4. Phase 3: Image Based Lighting
+5. Phase 4: Render pipeline set up
+6. Phase 5: Integrating ImGUI.
+7. Phase 6: Support gltf features and extensions
 
+#### Long-term goals
+1. **read SIGGRAPH papers and try to implement them.**
+
+--------
 
 ## 2023.2.12
 
@@ -33,3 +39,21 @@ I have built a basic renderer using 2 render targets, first pass write color to 
 
 #### Next stage plan:
 load all materials and implement PBR.
+
+## 2023.2.21
+#### Struggling with color spaces
+**Read specification!!!**\
+**Final output**: FRAMEBUFFER_SRGB & sue GL_SGB8_ALPHA8 format color attachment for framebuffer
+> OpenGL 4.6 spec cor
+> 17.3.7 sRGB Conversion\
+> If FRAMEBUFFER_SRGB is enabled and the value of FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING for the framebuffer attachment corresponding to the destination buffer is SRGB
+
+**What about input?**
+Some say read texture as sRGB textures by setting the texture format to GL_SGB8_ALPHA8 (or GL_SGB8), which avoid manual linearization of values fetched from sRGB images. \
+**But** according to gltf specifications, baseColorTexture and emissiveTexture are encoded with the sRGB transfer function, while ohers are linear textures. So we can't convert them all using this method. \
+My solution is: read using linear RGBA textures, and apply sRGBToLinear on my own.
+
+#### Current Progress (Phase2 complete) 
+#### Next stage plan:
+1. Need to dive into PBR theories and figure out how it works.
+2. Start implementing IBL.
