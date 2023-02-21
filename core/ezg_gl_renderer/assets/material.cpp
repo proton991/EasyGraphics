@@ -37,5 +37,11 @@ void PBRMaterial::bind_all_textures(ShaderProgram& shader) const {
     shader.set_uniform("uHasOcclusionMap", false);
   }
 
+  if (textures.contains(PBRComponent::Normal)) {
+    textures.at(PBRComponent::Normal)->bind(6);
+    shader.set_uniform("uHasNormalMap", true);
+  } else {
+    shader.set_uniform("uHasNormalMap", false);
+  }
 }
 }  // namespace ezg::gl

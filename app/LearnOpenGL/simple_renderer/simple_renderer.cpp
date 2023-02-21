@@ -25,7 +25,7 @@ int main() {
   Window window{config};
   std::vector<ShaderStage> stages1 = {
       {"../resources/shaders/simple_renderer/forward.vs.glsl", "vertex"},
-      {"../resources/shaders/simple_renderer/pbr_directional_light.fs.glsl", "fragment"},
+      {"../resources/shaders/simple_renderer/microfacet_brdf.fs.glsl", "fragment"},
   };
   ShaderProgramCreateInfo info1{"forward", stages1};
 

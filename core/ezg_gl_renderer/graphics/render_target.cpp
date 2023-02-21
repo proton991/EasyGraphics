@@ -96,7 +96,7 @@ void RenderTarget::invalidate() {
     glCreateTextures(m_texture_target, m_color_attachments.size(), m_color_attachments.data());
     for (size_t i = 0; i < num_color_attachments; i++) {
       m_name2index.try_emplace(m_info.color_attachment_infos[i].name, i);
-      attach_color_texture(m_color_attachments[i], GL_RGBA8, GL_RGBA, GL_COLOR_ATTACHMENT0 + i);
+      attach_color_texture(m_color_attachments[i], GL_SRGB8_ALPHA8, GL_RGBA, GL_COLOR_ATTACHMENT0 + i);
       buffers.push_back(GL_COLOR_ATTACHMENT0 + i);
     }
   }
