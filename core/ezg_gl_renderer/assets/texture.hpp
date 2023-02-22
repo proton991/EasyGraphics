@@ -36,8 +36,11 @@ public:
   void bind(GLenum slot) const;
 
   uint32_t get_id() const { return m_id; }
+
+  GLuint64 get_handle() const { return m_handle; }
 private:
   uint32_t m_id{0};
+  GLuint64 m_handle{0};
   int m_width;
   int m_height;
   GLenum m_internal_format, m_data_format;

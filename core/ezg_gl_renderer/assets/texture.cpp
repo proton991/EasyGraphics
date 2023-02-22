@@ -1,7 +1,6 @@
-#include <stb_image.h>
 #include "texture.hpp"
 #include <spdlog/spdlog.h>
-
+#include <stb_image.h>
 
 namespace ezg::gl {
 Texture2D::Texture2D(const std::string& path) {
@@ -9,7 +8,7 @@ Texture2D::Texture2D(const std::string& path) {
   m_data_format     = GL_RGBA;
 
   int width, height, channels;
-//  stbi_set_flip_vertically_on_load(1);
+  //  stbi_set_flip_vertically_on_load(1);
   stbi_uc* data = nullptr;
   spdlog::trace("Loading texture at path {}", path);
   data = stbi_load(path.c_str(), &width, &height, &channels, 0);
@@ -32,7 +31,7 @@ Texture2D::Texture2D(const std::string& path) {
     glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glTextureSubImage2D(m_id, 0, 0, 0, m_width, m_height, m_data_format, GL_UNSIGNED_BYTE, data);
-//    glGenerateTextureMipmap(m_id);
+    //    glGenerateTextureMipmap(m_id);
 
     stbi_image_free(data);
   } else {
@@ -43,8 +42,8 @@ Texture2D::Texture2D(const std::string& path) {
 Texture2D::Texture2D(const TextureInfo& info, const void* data) {
   m_internal_format = GL_RGBA8;
   m_data_format     = GL_RGBA;
-  m_width  = info.width;
-  m_height = info.height;
+  m_width           = info.width;
+  m_height          = info.height;
 
   glCreateTextures(GL_TEXTURE_2D, 1, &m_id);
   glTextureStorage2D(m_id, 1, m_internal_format, m_width, m_height);
@@ -60,6 +59,8 @@ Texture2D::Texture2D(const TextureInfo& info, const void* data) {
     glGenerateTextureMipmap(m_id);
   }
 
+  m_handle = glGetTextureHandleARB(m_id);
+  glMakeTextureHandleResidentARB(m_handle);
 }
 
 TexturePtr Texture2D::CreateDefaultWhite() {
@@ -67,10 +68,13 @@ TexturePtr Texture2D::CreateDefaultWhite() {
 }
 
 Texture2D::~Texture2D() {
+  if (m_handle != 0) {
+    glMakeTextureHandleNonResidentARB(m_handle);
+    m_handle = 0;
+  }
   if (m_id != 0) {
     glDeleteTextures(1, &m_id);
   }
-
 }
 void Texture2D::bind(GLenum slot) const {
   glBindTextureUnit(slot, m_id);

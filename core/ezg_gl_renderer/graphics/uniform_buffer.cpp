@@ -15,4 +15,4 @@ UniformBuffer::~UniformBuffer() {
 void UniformBuffer::set_data(const void* data, uint32_t size, uint32_t offset) const {
   glNamedBufferSubData(m_id, offset, size, data);
 }
-}
+}  // namespace ezg::gl

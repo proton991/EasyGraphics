@@ -1,19 +1,23 @@
 #ifndef MATERIAL_HPP
 #define MATERIAL_HPP
 #include <array>
-#include <unordered_map>
-#include <glm/vec4.hpp>
 #include <glm/vec3.hpp>
-#include "texture.hpp"
+#include <glm/vec4.hpp>
 #include <string>
+#include <unordered_map>
 #include "graphics/shader.hpp"
+#include "texture.hpp"
 namespace ezg::gl {
+struct PBRSamplerData {
+  GLuint64 samplers[5];
+};
+
 enum class PBRComponent : decltype(0) {
-  BaseColor = 0,
+  BaseColor         = 0,
   MetallicRoughness = 1,
-  Emissive = 2,
-  Occlusion = 3,
-  Normal = 4,
+  Emissive          = 2,
+  Occlusion         = 3,
+  Normal            = 4,
 };
 
 struct MaterialFactors {
@@ -25,10 +29,10 @@ struct MaterialFactors {
 };
 
 struct PBRMaterial {
-  void bind_all_textures(ShaderProgram& shader) const;
+  void bind_all_textures(ShaderProgram& shader, PBRSamplerData& sampler_data) const;
 
   std::unordered_map<PBRComponent, TexturePtr> textures;
-  double metallic_factor{1.0};   // default 1
+  double metallic_factor{1.0};  // default 1
   double roughness_factor{1.0};
   glm::vec4 base_color_factor{1, 1, 1, 1};
   glm::vec3 emissive_factor{0, 0, 0};
@@ -38,7 +42,6 @@ struct PBRMaterial {
   int alpha_mode{0};
   float alpha_cutoff{0.5};
   std::string name;
-
 };
-}
+}  // namespace ezg::gl
 #endif  //MATERIAL_HPP

@@ -2,7 +2,8 @@
 * Reference
 * https://www.gsn-lib.org/index.html#projectName=ShadersMonthly09&graphName=MicrofacetBRDF
 */
-#version 450
+#version 450 core
+#extension GL_ARB_bindless_texture : require
 out vec4 fColor;
 
 in vec3 vViewSpacePosition;
@@ -27,12 +28,16 @@ uniform float uRoughnessFactor;
 uniform vec3 uEmissiveFactor;
 uniform float uOcclusionStrength;
 
-layout (binding = 2) uniform sampler2D uBaseColorSampler;
-layout (binding = 3) uniform sampler2D uMetallicRoughnessSampler;
-layout (binding = 4) uniform sampler2D uEmissiveSampler;
-layout (binding = 5) uniform sampler2D uOcclusionSampler;
-layout (binding = 6) uniform sampler2D uNormalSampler;
+// --------- bindless texture ---------------
+layout (binding = 2) uniform PBRSamplers {
+    sampler2D uPBRSamplers[5];
+};
 
+#define TEX_BASECOLOR_INDEX 0
+#define TEX_METALLICROUGHNESS_INDEX 1
+#define TEX_EMISSIVE_INDEX 2
+#define TEX_OCCLUSION_INDEX 3
+#define TEX_NORMAL_INDEX 4
 
 #define ALPHAMODE_OPAQUE 0
 #define ALPHAMODE_BLEND 1
@@ -70,7 +75,7 @@ mat3 cotangentFrame(in vec3 N, in vec3 p, in vec2 uv)
 
 vec3 applyNormalMap(in vec3 normal, in vec3 viewVec, in vec2 texcoord)
 {
-    vec3 highResNormal = texture(uNormalSampler, texcoord).xyz;
+    vec3 highResNormal = texture(uPBRSamplers[TEX_NORMAL_INDEX], texcoord).xyz;
     highResNormal = normalize(highResNormal * 2.0 - 1.0);
     mat3 TBN = cotangentFrame(normal, -viewVec, texcoord);
     return normalize(TBN * highResNormal);
@@ -153,14 +158,14 @@ void main() {
     vec3 radiance = uEmissiveFactor;
 
     if (uHasBaseColorMap) {
-        baseColor *= sRGBToLinear(texture(uBaseColorSampler, vTexCoords));
+        baseColor *= sRGBToLinear(texture(uPBRSamplers[TEX_BASECOLOR_INDEX], vTexCoords));
     }
 
     if (uHasMetallicRoughnessMap) {
         // https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#pbrmetallicroughnessmetallicroughnesstexture
         // "The metallic-roughness texture.The metalness values are sampled from the B
         // channel.The roughness values are sampled from the G channel."
-        vec4 metallicRougnessFromTexture = texture(uMetallicRoughnessSampler, vTexCoords);
+        vec4 metallicRougnessFromTexture = texture(uPBRSamplers[TEX_METALLICROUGHNESS_INDEX], vTexCoords);
         metallic *= metallicRougnessFromTexture.b;
         roughness *= metallicRougnessFromTexture.g;
     }
@@ -169,7 +174,7 @@ void main() {
     }
 
     if (uHasEmissiveMap) {
-        radiance *= sRGBToLinear(texture(uEmissiveSampler, vTexCoords)).rgb;
+        radiance *= sRGBToLinear(texture(uPBRSamplers[TEX_EMISSIVE_INDEX], vTexCoords)).rgb;
     }
 
 
@@ -182,7 +187,7 @@ void main() {
     }
 
     if (uHasOcclusionMap) {
-        float ao = texture(uOcclusionSampler, vTexCoords).r;
+        float ao = texture(uPBRSamplers[TEX_OCCLUSION_INDEX], vTexCoords).r;
         radiance = mix(radiance, radiance * ao, uOcclusionStrength);
     }
     if (uAlphaMode == ALPHAMODE_OPAQUE) {

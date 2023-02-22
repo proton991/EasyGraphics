@@ -21,8 +21,9 @@ void BasicRenderer::compile_shaders(
 }
 
 void BasicRenderer::setup_ubos() {
-  m_camera_ubo = UniformBuffer::Create(sizeof(CameraData), 0);
-  m_model_ubo  = UniformBuffer::Create(sizeof(ModelData), 1);
+  m_camera_ubo      = UniformBuffer::Create(sizeof(CameraData), 0);
+  m_model_ubo       = UniformBuffer::Create(sizeof(ModelData), 1);
+  m_pbr_sampler_ubo = UniformBuffer::Create(sizeof(ModelData), 2);
 }
 
 void BasicRenderer::setup_screen_quad() {
@@ -112,13 +113,15 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
   // render models
   for (const auto& model : info.scene->m_models) {
     for (const auto& mesh : model->get_meshes()) {
+      m_sampler_data = {};
       // model ubo
       m_model_data.mvp_matrix    = m_camera_data.proj_view * mesh.model_matrix;
       m_model_data.mv_matrix     = m_camera_data.view * mesh.model_matrix;
       m_model_data.normal_matrix = glm::transpose(glm::inverse(m_model_data.mv_matrix));
       m_model_ubo->set_data(&m_model_data, sizeof(ModelData));
-      // bind textures
-      mesh.material.bind_all_textures(forward_shader);
+      // bindless textures
+      mesh.material.bind_all_textures(forward_shader, m_sampler_data);
+      m_pbr_sampler_ubo->set_data(m_sampler_data.samplers, sizeof(PBRSamplerData));
       // draw mesh
       RenderAPI::draw_mesh(mesh);
     }

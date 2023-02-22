@@ -38,9 +38,11 @@ private:
 
   ModelData m_model_data{};
   CameraData m_camera_data{};
+  PBRSamplerData m_sampler_data{};
 
   UniformBufferPtr m_model_ubo;
   UniformBufferPtr m_camera_ubo;
+  UniformBufferPtr m_pbr_sampler_ubo;
 
   RenderTargetPtr m_gbuffer;
 
