@@ -40,8 +40,8 @@ Texture2D::Texture2D(const std::string& path) {
 }
 
 Texture2D::Texture2D(const TextureInfo& info, const void* data) {
-  m_internal_format = GL_RGBA8;
-  m_data_format     = GL_RGBA;
+  m_internal_format = info.internal_format;
+  m_data_format     = info.data_format;
   m_width           = info.width;
   m_height          = info.height;
 
@@ -50,11 +50,11 @@ Texture2D::Texture2D(const TextureInfo& info, const void* data) {
 
   glTextureParameteri(m_id, GL_TEXTURE_WRAP_S, info.wrap_s);
   glTextureParameteri(m_id, GL_TEXTURE_WRAP_T, info.wrap_t);
-  glTextureParameteri(m_id, GL_TEXTURE_WRAP_R, info.wrap_r);
+  //  glTextureParameteri(m_id, GL_TEXTURE_WRAP_R, info.wrap_r);
   glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, info.min_filter);
   glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, info.mag_filter);
 
-  glTextureSubImage2D(m_id, 0, 0, 0, m_width, m_height, m_data_format, GL_UNSIGNED_BYTE, data);
+  glTextureSubImage2D(m_id, 0, 0, 0, m_width, m_height, m_data_format, info.data_type, data);
   if (info.generate_mipmap) {
     glGenerateTextureMipmap(m_id);
   }
@@ -63,7 +63,7 @@ Texture2D::Texture2D(const TextureInfo& info, const void* data) {
   glMakeTextureHandleResidentARB(m_handle);
 }
 
-TexturePtr Texture2D::CreateDefaultWhite() {
+Texture2DPtr Texture2D::CreateDefaultWhite() {
   return std::make_shared<Texture2D>("../resources/textures/white.png");
 }
 
@@ -78,5 +78,53 @@ Texture2D::~Texture2D() {
 }
 void Texture2D::bind(GLenum slot) const {
   glBindTextureUnit(slot, m_id);
+}
+
+Ref<TextureCubeMap> TextureCubeMap::Create(const TextureInfo& info, std::array<unsigned char*, 6> face_data) {
+  return CreateRef<TextureCubeMap>(info, face_data);
+}
+
+TextureCubeMap::TextureCubeMap(const TextureInfo& info, const std::array<unsigned char*, 6>& face_data) {
+  glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &m_id);
+  glTextureStorage2D(m_id,
+                     1,                     // one level, no mipmaps
+                     info.internal_format,  // internal format
+                     info.width, info.height);
+
+  glTextureParameteri(m_id, GL_TEXTURE_WRAP_S, info.wrap_s);
+  glTextureParameteri(m_id, GL_TEXTURE_WRAP_T, info.wrap_t);
+  glTextureParameteri(m_id, GL_TEXTURE_WRAP_R, info.wrap_r);
+  glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, info.min_filter);
+  glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, info.mag_filter);
+
+  for (int face = 0; face < 6; ++face) {
+    // face:
+    // 0 = positive x face
+    // 1 = negative x face
+    // 2 = positive y face
+    // 3 = negative y face
+    // 4 = positive z face
+    // 5 = negative z face
+
+    glTextureSubImage3D(
+        m_id,
+        0,     // only 1 level in example
+        0,     // x offset
+        0,     // y offset
+        face,  // the offset to desired cubemap face, which offset goes to which face above
+        info.width, info.height,
+        1,  // depth how many faces to set, if this was 3 we'd set 3 cubemap faces at once
+        info.data_format, info.data_type, face_data[face]);
+  }
+}
+
+void TextureCubeMap::bind(GLenum slot) const {
+  glBindTextureUnit(slot, m_id);
+}
+
+TextureCubeMap::~TextureCubeMap() {
+  if (m_id != 0) {
+    glDeleteTextures(1, &m_id);
+  }
 }
 }  // namespace ezg::gl

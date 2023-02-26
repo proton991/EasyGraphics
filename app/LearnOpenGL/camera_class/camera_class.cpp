@@ -94,8 +94,8 @@ int main()
   vao->attach_vertex_buffer(vbo);
 
   // load texture
-  auto container_texture = Texture2D::create("../resources/textures/container.jpg");
-  auto face_texture = Texture2D::create("../resources/textures/awesomeface.png");
+  auto container_texture = Texture2D::Create("../resources/textures/container.jpg");
+  auto face_texture = Texture2D::Create("../resources/textures/awesomeface.png");
 
   shader_program->set_uniform("texture1", 0);
   shader_program->set_uniform("texture2", 1);

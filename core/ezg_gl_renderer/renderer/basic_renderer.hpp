@@ -12,6 +12,7 @@
 
 namespace ezg::gl {
 class BaseScene;
+class Skybox;
 class BasicRenderer {
 public:
   struct Config {
@@ -30,8 +31,11 @@ private:
   void setup_screen_quad();
   void setup_framebuffers(uint32_t width, uint32_t height);
   void setup_coordinate_axis();
+  void setup_skybox();
 
   void update(const system::Camera& camera);
+
+  void set_default_state();
 
   uint32_t m_width{0};
   uint32_t m_height{0};
@@ -50,6 +54,7 @@ private:
   std::unordered_map<std::string, ShaderProgram> m_shader_cache;
 
   CoordinateAxisData m_axis_data;
+  Ref<Skybox> m_skybox;
 };
 }  // namespace ezg::gl
 #endif  //EASYGRAPHICS_BASIC_RENDERER_HPP

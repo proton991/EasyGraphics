@@ -31,7 +31,7 @@ struct MaterialFactors {
 struct PBRMaterial {
   void bind_all_textures(ShaderProgram& shader, PBRSamplerData& sampler_data) const;
 
-  std::unordered_map<PBRComponent, TexturePtr> textures;
+  std::unordered_map<PBRComponent, Texture2DPtr> textures;
   double metallic_factor{1.0};  // default 1
   double roughness_factor{1.0};
   glm::vec4 base_color_factor{1, 1, 1, 1};

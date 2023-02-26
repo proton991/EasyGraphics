@@ -1,6 +1,8 @@
 #include "basic_renderer.hpp"
 #include "render_api.hpp"
 #include "scene.hpp"
+#include "assets/skybox.hpp"
+
 namespace ezg::gl {
 BasicRenderer::BasicRenderer(const BasicRenderer::Config& config)
     : m_width(config.width), m_height(config.height) {
@@ -9,6 +11,7 @@ BasicRenderer::BasicRenderer(const BasicRenderer::Config& config)
   setup_screen_quad();
   setup_framebuffers(m_width, m_height);
   setup_coordinate_axis();
+  setup_skybox();
 }
 
 void BasicRenderer::compile_shaders(
@@ -87,6 +90,25 @@ void BasicRenderer::setup_coordinate_axis() {
   m_axis_data.vao->attach_vertex_buffer(vbo);
 }
 
+void BasicRenderer::setup_skybox() {
+  std::vector<std::string> face_paths = {
+    "../resources/textures/skybox/right.jpg",
+    "../resources/textures/skybox/left.jpg",
+    "../resources/textures/skybox/top.jpg",
+    "../resources/textures/skybox/bottom.jpg",
+    "../resources/textures/skybox/front.jpg",
+    "../resources/textures/skybox/back.jpg",
+  };
+  m_skybox = Skybox::Create(face_paths);
+}
+
+void BasicRenderer::set_default_state() {
+  glDepthFunc(GL_LEQUAL);
+  glEnable(GL_FRAMEBUFFER_SRGB);
+  RenderAPI::set_clear_color({0.1f, 0.1f, 0.1f, 1.0f});
+  RenderAPI::enable_blending(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
 void BasicRenderer::update(const system::Camera& camera) {
   // camera ubo
   m_camera_data.view       = camera.get_view_matrix();
@@ -97,11 +119,9 @@ void BasicRenderer::update(const system::Camera& camera) {
 }
 
 void BasicRenderer::render_frame(const FrameInfo& info) {
+  set_default_state();
   m_gbuffer->bind();
-  glEnable(GL_FRAMEBUFFER_SRGB);
-  RenderAPI::enable_blending(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   RenderAPI::enable_depth_testing();
-  RenderAPI::set_clear_color({0.1f, 0.1f, 0.1f, 1.0f});
   RenderAPI::clear_color_and_depth();
   // forward pass
   auto& forward_shader = m_shader_cache.at("forward");
@@ -128,10 +148,10 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
   }
   m_shader_cache.at("coords_axis").use();
   RenderAPI::draw_line(m_axis_data.vao, 6);
+  m_skybox->draw(info.camera);
   m_gbuffer->unbind();
 
   RenderAPI::disable_depth_testing();
-  RenderAPI::set_clear_color({0.1f, 0.1f, 0.1f, 1.0f});
   RenderAPI::clear_color();
 
   auto& screen_shader = m_shader_cache.at("screen");

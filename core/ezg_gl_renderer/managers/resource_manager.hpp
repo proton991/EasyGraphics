@@ -24,15 +24,19 @@ public:
 
   ModelPtr load_gltf_model(const std::string& name, const std::string& path);
 
+  Texture2DPtr load_hdr_texture(const std::string& path);
+
+  Ref<TextureCubeMap> load_cubemap_textures(const std::string& name, const std::vector<std::string>& face_paths);
 private:
   ResourceManager() {
       m_white_texture = Texture2D::CreateDefaultWhite();
   };
-  void release_all();
 
   std::unordered_map<std::string, ModelPtr> m_model_cache;
-  std::vector<TexturePtr> m_texture_cache;
-  TexturePtr m_white_texture;
+  std::unordered_map<std::string, Texture2DPtr> m_hdri_cache;
+  std::unordered_map<std::string, Ref<TextureCubeMap>> m_cubemap_cache;
+  std::vector<Texture2DPtr> m_texture_cache;
+  Texture2DPtr m_white_texture;
 
   const std::unordered_map<std::string, int> c_AlphaModeValue = {
       {"OPAQUE", 0},

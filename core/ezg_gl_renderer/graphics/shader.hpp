@@ -56,6 +56,7 @@ public:
   ShaderProgram& operator=(ShaderProgram&&)      = delete;
   ShaderProgram& operator=(const ShaderProgram&) = delete;
 
+  auto get_location(const std::string& name) const { return m_uniforms.at(name); }
 private:
   void get_uniforms();
   std::unordered_map<std::string, int> m_uniforms;  // <name, location>

@@ -52,7 +52,7 @@ int main()
   vao->attach_index_buffer(ibo);
 
   // load texture
-  auto container_texture = Texture2D::create("../resources/textures/container.jpg");
+  auto container_texture = Texture2D::Create("../resources/textures/container.jpg");
   while (!window.should_close()) {
     RenderAPI::set_clear_color({0.2f, 0.3f, 0.3f, 1.0f});
     RenderAPI::clear_color_and_depth();

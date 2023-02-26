@@ -1,5 +1,6 @@
 #include "resource_manager.hpp"
 #include <spdlog/spdlog.h>
+#include <stb_image.h>
 #include <tiny_gltf.h>
 #include <tiny_obj_loader.h>
 #include <fstream>
@@ -159,11 +160,11 @@ ModelPtr ResourceManager::load_gltf_model(const std::string& name, const std::st
     PBRMaterial mesh_material{};
     if (materialIndex >= 0) {
       const tinygltf::Material& material = gltf_model.materials[materialIndex];
-      mesh_material.name = material.name;
-      mesh_material.alpha_cutoff = material.alphaCutoff;
-      mesh_material.alpha_mode = c_AlphaModeValue.at(material.alphaMode);
-      const auto& pbrMetallicRoughness = material.pbrMetallicRoughness;
-      mesh_material.base_color_factor  = {(float)pbrMetallicRoughness.baseColorFactor[0],
+      mesh_material.name                 = material.name;
+      mesh_material.alpha_cutoff         = material.alphaCutoff;
+      mesh_material.alpha_mode           = c_AlphaModeValue.at(material.alphaMode);
+      const auto& pbrMetallicRoughness   = material.pbrMetallicRoughness;
+      mesh_material.base_color_factor    = {(float)pbrMetallicRoughness.baseColorFactor[0],
                                          (float)pbrMetallicRoughness.baseColorFactor[1],
                                          (float)pbrMetallicRoughness.baseColorFactor[2],
                                          (float)pbrMetallicRoughness.baseColorFactor[3]};
@@ -260,4 +261,56 @@ ModelPtr ResourceManager::load_gltf_model(const std::string& name, const std::st
   return model;
 }
 
+Texture2DPtr ResourceManager::load_hdr_texture(const std::string& path) {
+  int width, height, channels;
+  spdlog::trace("Loading texture at path {}", path);
+  auto* data = stbi_loadf(path.c_str(), &width, &height, &channels, 0);
+  if (!data) {
+    spdlog::error("Failed to load HDR image {}", path);
+    return nullptr;
+  }
+  TextureInfo info{};
+  info.width           = width;
+  info.height          = height;
+  info.data_format     = GL_RGB;
+  info.internal_format = GL_RGB16F;
+  info.data_type       = GL_FLOAT;
+  info.wrap_s          = GL_CLAMP_TO_EDGE;
+  info.wrap_t          = GL_CLAMP_TO_EDGE;
+  info.min_filter      = GL_LINEAR;
+  info.mag_filter      = GL_LINEAR;
+  m_hdri_cache.try_emplace(path, Texture2D::Create(info, data));
+  return m_hdri_cache.at(path);
+}
+
+Ref<TextureCubeMap> ResourceManager::load_cubemap_textures(
+    const std::string& name, const std::vector<std::string>& face_paths) {
+  std::array<unsigned char*, 6> face_data{};
+  int width, height, channels;
+  for (unsigned int i = 0; i < face_paths.size(); i++) {
+    unsigned char* data = stbi_load(face_paths[i].c_str(), &width, &height, &channels, 0);
+    if (data) {
+      face_data[i] = data;
+      //      stbi_image_free(data);
+    } else {
+      spdlog::error("Cubemap texture failed to load at path: {}", face_paths[i]);
+      stbi_image_free(data);
+    }
+  }
+  TextureInfo texture_info;
+  texture_info.width = width;
+  texture_info.height = height;
+  texture_info.wrap_s = GL_CLAMP_TO_EDGE;
+  texture_info.wrap_t = GL_CLAMP_TO_EDGE;
+  texture_info.wrap_r = GL_CLAMP_TO_EDGE;
+  texture_info.min_filter = GL_LINEAR;
+  texture_info.mag_filter = GL_LINEAR;
+  texture_info.data_format = GL_RGB;
+  texture_info.internal_format = GL_RGB8;
+  m_cubemap_cache.try_emplace(name, TextureCubeMap::Create(texture_info, face_data));
+  for (unsigned int i = 0; i < face_data.size(); i++) {
+    stbi_image_free(face_data[i]);
+  }
+  return m_cubemap_cache.at(name);
+}
 }  // namespace ezg::gl
