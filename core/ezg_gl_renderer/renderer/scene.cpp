@@ -7,7 +7,7 @@ BaseScene::BaseScene(std::string_view name) : m_name(name) {
   spdlog::info("Setting up scene: {}", m_name);
 }
 
-void BaseScene::add_model(const ModelPtr& model) {
+void BaseScene::add_model(const Ref<Model>& model) {
   m_models.push_back(model);
 }
 

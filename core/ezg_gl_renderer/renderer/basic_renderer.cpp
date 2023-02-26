@@ -19,7 +19,7 @@ void BasicRenderer::compile_shaders(
   // build shaders
   for (const auto& info : shader_program_infos) {
     auto shader_program = ShaderProgramFactory::create_shader_program(info);
-    m_shader_cache.try_emplace(info.name, std::move(shader_program.value()));
+    m_shader_cache.try_emplace(info.name, std::move(shader_program));
   }
 }
 
@@ -67,7 +67,7 @@ void BasicRenderer::setup_coordinate_axis() {
       {"../resources/shaders/simple_renderer/coords_axis.fs.glsl", "fragment"},
   };
   ShaderProgramCreateInfo info{"coords_axis", stages};
-  m_shader_cache.try_emplace(info.name, ShaderProgramFactory::create_shader_program(info).value());
+  m_shader_cache.try_emplace(info.name, ShaderProgramFactory::create_shader_program(info));
   m_axis_data.line_vertices = {
       // x axis
       {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)},
@@ -125,9 +125,9 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
   RenderAPI::clear_color_and_depth();
   // forward pass
   auto& forward_shader = m_shader_cache.at("forward");
-  forward_shader.use();
-  forward_shader.set_uniform("uLightIntensity", info.scene->get_light_intensity());
-  forward_shader.set_uniform("uLightDirection", info.scene->get_light_pos());
+  forward_shader->use();
+  forward_shader->set_uniform("uLightIntensity", info.scene->get_light_intensity());
+  forward_shader->set_uniform("uLightDirection", info.scene->get_light_pos());
 
   update(info.camera);
   // render models
@@ -140,13 +140,13 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
       m_model_data.normal_matrix = glm::transpose(glm::inverse(m_model_data.mv_matrix));
       m_model_ubo->set_data(&m_model_data, sizeof(ModelData));
       // bindless textures
-      mesh.material.bind_all_textures(forward_shader, m_sampler_data);
+      mesh.material.upload_textures(forward_shader, m_sampler_data);
       m_pbr_sampler_ubo->set_data(m_sampler_data.samplers, sizeof(PBRSamplerData));
       // draw mesh
       RenderAPI::draw_mesh(mesh);
     }
   }
-  m_shader_cache.at("coords_axis").use();
+  m_shader_cache.at("coords_axis")->use();
   RenderAPI::draw_line(m_axis_data.vao, 6);
   m_skybox->draw(info.camera);
   m_gbuffer->unbind();
@@ -155,7 +155,7 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
   RenderAPI::clear_color();
 
   auto& screen_shader = m_shader_cache.at("screen");
-  screen_shader.use();
+  screen_shader->use();
   m_gbuffer->bind_texture("color");
   RenderAPI::draw_vertices(m_quad_vao, 6);
 }

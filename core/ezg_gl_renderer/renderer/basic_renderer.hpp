@@ -44,14 +44,14 @@ private:
   CameraData m_camera_data{};
   PBRSamplerData m_sampler_data{};
 
-  UniformBufferPtr m_model_ubo;
-  UniformBufferPtr m_camera_ubo;
-  UniformBufferPtr m_pbr_sampler_ubo;
+  Ref<UniformBuffer> m_model_ubo;
+  Ref<UniformBuffer> m_camera_ubo;
+  Ref<UniformBuffer> m_pbr_sampler_ubo;
 
   RenderTargetPtr m_gbuffer;
 
-  VertexArrayPtr m_quad_vao;
-  std::unordered_map<std::string, ShaderProgram> m_shader_cache;
+  Ref<VertexArray> m_quad_vao;
+  std::unordered_map<std::string, Ref<ShaderProgram>> m_shader_cache;
 
   CoordinateAxisData m_axis_data;
   Ref<Skybox> m_skybox;

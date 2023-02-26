@@ -1,7 +1,6 @@
 #ifndef EASYGRAPHICS_MODEL_HPP
 #define EASYGRAPHICS_MODEL_HPP
 
-#include <memory>
 #include <string>
 #include "mesh.hpp"
 
@@ -28,12 +27,11 @@ struct AABB {
   glm::vec3 bbx_max;
   glm::vec3 diag;
 };
-class Model;
-using ModelPtr = std::shared_ptr<Model>;
+
 class Model {
 public:
-  static ModelPtr Create(const std::string& name) {
-    return std::make_shared<Model>(name);
+  static Ref<Model> Create(const std::string& name) {
+    return CreateRef<Model>(name);
   }
   explicit Model(const std::string& name) : m_name(name) {}
   Model(const std::string& name, const std::vector<Vertex>& vertices,

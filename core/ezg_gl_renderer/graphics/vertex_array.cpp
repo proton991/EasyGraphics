@@ -19,7 +19,7 @@ void VertexArray::unbind() const {
   glBindVertexArray(0);
 }
 
-void VertexArray::attach_vertex_buffer(const VertexBufferPtr& vertex_buffer) {
+void VertexArray::attach_vertex_buffer(const Ref<VertexBuffer>& vertex_buffer) {
   assert(!vertex_buffer->get_buffer_view().get_elements().empty());
   glBindVertexArray(m_id);
   vertex_buffer->bind();
@@ -34,7 +34,7 @@ void VertexArray::attach_vertex_buffer(const VertexBufferPtr& vertex_buffer) {
   m_vertex_buffers.push_back(vertex_buffer);
 }
 
-void VertexArray::attach_index_buffer(const IndexBufferPtr& index_buffer) {
+void VertexArray::attach_index_buffer(const Ref<IndexBuffer>& index_buffer) {
   glBindVertexArray(m_id);
   index_buffer->bind();
   m_index_buffer = index_buffer;

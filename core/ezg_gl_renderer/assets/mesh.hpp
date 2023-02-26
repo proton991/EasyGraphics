@@ -1,7 +1,6 @@
 #ifndef EASYGRAPHICS_MESH_HPP
 #define EASYGRAPHICS_MESH_HPP
 
-#include <memory>
 #include <vector>
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/vec2.hpp"
@@ -37,8 +36,8 @@ struct Mesh {
 
   const GLsizei num_vertices;
   const GLsizei num_indices;
-//  std::unique_ptr<BaseVAO> vao;
-  VertexArrayPtr vao;
+
+  Ref<VertexArray> vao;
   glm::mat4 model_matrix{1.0f};
   PBRMaterial material;
 

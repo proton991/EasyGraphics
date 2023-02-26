@@ -1,15 +1,13 @@
 #ifndef UNIFORM_BUFFER_HPP
 #define UNIFORM_BUFFER_HPP
-#include <memory>
+#include "base.hpp"
 
 namespace ezg::gl {
-class UniformBuffer;
-using UniformBufferPtr = std::shared_ptr<UniformBuffer>;
 
 class UniformBuffer {
 public:
-  static UniformBufferPtr Create(uint32_t size, uint32_t binding) {
-    return std::make_shared<UniformBuffer>(size, binding);
+  static Ref<UniformBuffer> Create(uint32_t size, uint32_t binding) {
+    return CreateRef<UniformBuffer>(size, binding);
   }
   UniformBuffer(uint32_t size, uint32_t binding);
   virtual ~UniformBuffer();

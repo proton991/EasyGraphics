@@ -22,10 +22,10 @@ private:
   void setup_cubemap_textures(const std::vector<std::string>& face_paths);
   const size_t m_resolution;
   Ref<TextureCubeMap> m_cube_texture;
-  VertexArrayPtr m_quad_vao;
-  VertexArrayPtr m_cube_vao;
+  Ref<VertexArray> m_quad_vao;
+  Ref<VertexArray> m_cube_vao;
 
-  std::unordered_map<std::string, ShaderProgram> m_shader_cache;
+  std::unordered_map<std::string, Ref<ShaderProgram>> m_shader_cache;
   uint32_t m_texture_id{0};
 
 };

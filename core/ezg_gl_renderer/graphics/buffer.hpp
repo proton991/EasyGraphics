@@ -4,11 +4,9 @@
 #include <utility>
 #include <vector>
 #include <memory>
+#include "base.hpp"
+
 namespace ezg::gl {
-class VertexBuffer;
-class IndexBuffer;
-using VertexBufferPtr = std::shared_ptr<VertexBuffer>;
-using IndexBufferPtr  = std::shared_ptr<IndexBuffer>;
 enum class BufferDataType {
   None = 0,
   Float,
@@ -109,8 +107,8 @@ private:
 
 class VertexBuffer {
 public:
-  static VertexBufferPtr Create(uint32_t size, const void* data) {
-    return std::make_shared<VertexBuffer>(size, data);
+  static Ref<VertexBuffer> Create(uint32_t size, const void* data) {
+    return CreateRef<VertexBuffer>(size, data);
   }
   explicit VertexBuffer(uint32_t size);
   VertexBuffer(uint32_t size, const void* data);
@@ -131,8 +129,8 @@ private:
 
 class IndexBuffer {
 public:
-  static IndexBufferPtr Create(uint32_t count, const void* data) {
-    return std::make_shared<IndexBuffer>(count, data);
+  static Ref<IndexBuffer> Create(uint32_t count, const void* data) {
+    return CreateRef<IndexBuffer>(count, data);
   }
   IndexBuffer(uint32_t count, const void* data);
   ~IndexBuffer();

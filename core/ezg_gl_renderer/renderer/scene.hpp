@@ -14,7 +14,7 @@ public:
 
   virtual void init() = 0;
   void add_model(const std::string& model_name);
-  void add_model(const ModelPtr & model);
+  void add_model(const Ref<Model> & model);
 
   [[nodiscard]] AABB get_aabb() const;
 
@@ -22,7 +22,7 @@ public:
   const auto& get_light_intensity() const { return m_light_intensity; }
 private:
   std::string m_name;
-  std::vector<ModelPtr> m_models;
+  std::vector<Ref<Model>> m_models;
   // light comes from camera
   glm::vec3 m_light_position{0.f, 0.f, 1.f};
   glm::vec3 m_light_intensity{5.0f};

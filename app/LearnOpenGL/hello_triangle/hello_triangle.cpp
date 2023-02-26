@@ -15,7 +15,7 @@ int main()
   };
   ShaderProgramCreateInfo shader_program_info {"hello triangle", stages};
   auto shader_program = ShaderProgramFactory::create_shader_program(shader_program_info);
-  if (!shader_program.has_value()) {
+  if (!shader_program) {
     spdlog::error("Failed to create shader program!");
     std::abort();
   }

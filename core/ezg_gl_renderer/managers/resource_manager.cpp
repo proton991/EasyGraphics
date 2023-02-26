@@ -17,7 +17,7 @@ std::string ResourceManager::load_shader_source(const std::filesystem::path& pat
   return {std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
 }
 
-ModelPtr ResourceManager::get_model(const std::string& name) {
+Ref<Model> ResourceManager::get_model(const std::string& name) {
   const auto iter = m_model_cache.find(name);
   if (iter == m_model_cache.end()) {
     spdlog::error("{} model not in cache", name);
@@ -110,7 +110,7 @@ void ResourceManager::load_model(const std::string& name, const std::string& pat
   m_model_cache.try_emplace(name, std::make_shared<Model>(name, vertices, indices));
 }
 
-ModelPtr ResourceManager::load_gltf_model(const std::string& name, const std::string& path) {
+Ref<Model> ResourceManager::load_gltf_model(const std::string& name, const std::string& path) {
   tinygltf::Model gltf_model;
   tinygltf::TinyGLTF loader;
   std::string error;
@@ -261,7 +261,7 @@ ModelPtr ResourceManager::load_gltf_model(const std::string& name, const std::st
   return model;
 }
 
-Texture2DPtr ResourceManager::load_hdr_texture(const std::string& path) {
+Ref<Texture2D> ResourceManager::load_hdr_texture(const std::string& path) {
   int width, height, channels;
   spdlog::trace("Loading texture at path {}", path);
   auto* data = stbi_loadf(path.c_str(), &width, &height, &channels, 0);

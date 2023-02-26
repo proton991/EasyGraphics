@@ -63,7 +63,7 @@ Texture2D::Texture2D(const TextureInfo& info, const void* data) {
   glMakeTextureHandleResidentARB(m_handle);
 }
 
-Texture2DPtr Texture2D::CreateDefaultWhite() {
+Ref<Texture2D> Texture2D::CreateDefaultWhite() {
   return std::make_shared<Texture2D>("../resources/textures/white.png");
 }
 

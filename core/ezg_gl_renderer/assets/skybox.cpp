@@ -58,7 +58,7 @@ void Skybox::setup_shaders() {
 
   for (const auto& info : shader_program_infos) {
     auto shader_program = ShaderProgramFactory::create_shader_program(info);
-    m_shader_cache.try_emplace(info.name, std::move(shader_program.value()));
+    m_shader_cache.try_emplace(info.name, std::move(shader_program));
   }
 
 
@@ -106,10 +106,10 @@ Skybox::Skybox(const std::vector<std::string>& face_paths) : m_resolution{0}{
 
 void Skybox::draw(const system::Camera& camera) {
   auto& skybox_shader = m_shader_cache.at("skybox");
-  skybox_shader.use();
+  skybox_shader->use();
   m_cube_texture->bind(0);
   auto view = glm::mat4(glm::mat3(camera.get_view_matrix()));
-  skybox_shader.set_uniform("uViewProj", camera.get_projection_matrix() * view);
+  skybox_shader->set_uniform("uViewProj", camera.get_projection_matrix() * view);
   RenderAPI::draw_indices(m_cube_vao);
 }
 }  // namespace ezg::gl

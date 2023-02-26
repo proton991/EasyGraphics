@@ -14,7 +14,7 @@ struct LineVertex {
 
 struct CoordinateAxisData {
   std::vector<LineVertex> line_vertices;
-  VertexArrayPtr vao;
+  Ref<VertexArray> vao;
 };
 }  // namespace ezg::gl
 #endif  //RENDERER_DATA_HPP

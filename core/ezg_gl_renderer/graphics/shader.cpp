@@ -57,7 +57,7 @@ bool link_program(GLuint id) {
   return success == GL_TRUE;
 }
 
-std::optional<ShaderProgram> ShaderProgramFactory::create_shader_program(
+Ref<ShaderProgram> ShaderProgramFactory::create_shader_program(
     const ShaderProgramCreateInfo& info) {
   spd::trace("Building shader program {}", info.name);
   std::vector<GLuint> shader_ids;
@@ -67,7 +67,7 @@ std::optional<ShaderProgram> ShaderProgramFactory::create_shader_program(
     auto id{glCreateShader(ShaderStage::Name2GL_ENUM.at(stage.type))};
     auto shader_code = ResourceManager::load_shader_source(stage.file_path);
     if (shader_code.empty()) {
-      return std::nullopt;
+      return nullptr;
     }
     if (!compile_shader(id, shader_code)) {
       success = false;
@@ -80,7 +80,7 @@ std::optional<ShaderProgram> ShaderProgramFactory::create_shader_program(
     for (const auto id : shader_ids) {
       glDeleteShader(id);
     }
-    return std::nullopt;
+    return nullptr;
   }
 
   // link program and validate
@@ -93,12 +93,12 @@ std::optional<ShaderProgram> ShaderProgramFactory::create_shader_program(
       glDetachShader(program_id, id);
       glDeleteShader(id);
     }
-    return std::nullopt;
+    return nullptr;
   }
   for (const auto id : shader_ids) {
     glDeleteShader(id);
   }
-  return std::make_optional<ShaderProgram>({info.name, program_id});
+  return CreateRef<ShaderProgram>(info.name, program_id);
 }
 
 ShaderProgram::ShaderProgram(std::string name, GLuint id) : m_id(id), m_name(std::move(name)) {

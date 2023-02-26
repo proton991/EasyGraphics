@@ -13,6 +13,7 @@
 #include <utility>
 
 #include <glad/glad.h>
+#include "base.hpp"
 
 namespace ezg::gl {
 bool compile_shader(GLuint id, const std::string& code);
@@ -27,7 +28,6 @@ struct ShaderStage {
   std::string file_path;
   std::string type;
   static std::unordered_map<std::string, int> Name2GL_ENUM;
-
 };
 
 struct ShaderProgramCreateInfo {
@@ -52,11 +52,12 @@ public:
   ShaderProgram& set_uniform(const std::string& name, const glm::mat3x3& value);
   ShaderProgram& set_uniform(const std::string& name, const glm::mat4x4& value);
 
-  ShaderProgram(const ShaderProgram&)            = delete;
-  ShaderProgram& operator=(ShaderProgram&&)      = delete;
+  ShaderProgram(const ShaderProgram&) = delete;
+  ShaderProgram& operator=(ShaderProgram&&) = delete;
   ShaderProgram& operator=(const ShaderProgram&) = delete;
 
   auto get_location(const std::string& name) const { return m_uniforms.at(name); }
+
 private:
   void get_uniforms();
   std::unordered_map<std::string, int> m_uniforms;  // <name, location>
@@ -66,7 +67,8 @@ private:
 
 class ShaderProgramFactory {
 public:
-  static std::optional<ShaderProgram> create_shader_program(const ShaderProgramCreateInfo& info);
+  //  static std::optional<ShaderProgram> create_shader_program(const ShaderProgramCreateInfo& info);
+  static Ref<ShaderProgram> create_shader_program(const ShaderProgramCreateInfo& info);
 };
 }  // namespace ezg::gl
 #endif  //EASYGRAPHICS_SHADER_HPP

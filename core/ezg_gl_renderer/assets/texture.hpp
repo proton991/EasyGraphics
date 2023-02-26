@@ -2,12 +2,9 @@
 #define EASYGRAPHICS_TEXTURE_HPP
 #include <glad/glad.h>
 #include <string>
-#include <memory>
 #include "base.hpp"
 
 namespace ezg::gl {
-class Texture2D;
-using Texture2DPtr = std::shared_ptr<Texture2D>;
 struct TextureInfo {
   int width{0};
   int height{0};
@@ -23,15 +20,15 @@ struct TextureInfo {
 };
 class Texture2D {
 public:
-  static Texture2DPtr Create(const std::string& path) {
-    return std::make_shared<Texture2D>(path);
+  static Ref<Texture2D> Create(const std::string& path) {
+    return CreateRef<Texture2D>(path);
   }
 
-  static Texture2DPtr Create(const TextureInfo& info, const void* data) {
-    return std::make_shared<Texture2D>(info, data);
+  static Ref<Texture2D> Create(const TextureInfo& info, const void* data) {
+    return CreateRef<Texture2D>(info, data);
   }
 
-  static Texture2DPtr CreateDefaultWhite();
+  static Ref<Texture2D> CreateDefaultWhite();
 
   explicit Texture2D(const std::string& path);
   Texture2D(const TextureInfo& info, const void* data);
