@@ -31,8 +31,8 @@ struct ShaderStage {
 };
 
 struct ShaderProgramCreateInfo {
-  const std::string& name;
-  const std::vector<ShaderStage>& stages;
+  const std::string name;
+  const std::vector<ShaderStage> stages;
 };
 
 class ShaderProgram {

@@ -1,7 +1,9 @@
 #include "basic_renderer.hpp"
+#include "assets/skybox.hpp"
+#include "graphics/framebuffer.hpp"
+#include "graphics/shader.hpp"
 #include "render_api.hpp"
 #include "scene.hpp"
-#include "assets/skybox.hpp"
 
 namespace ezg::gl {
 BasicRenderer::BasicRenderer(const BasicRenderer::Config& config)
@@ -52,13 +54,15 @@ void BasicRenderer::setup_screen_quad() {
 }
 
 void BasicRenderer::setup_framebuffers(uint32_t width, uint32_t height) {
-  RenderTargetInfo rt_info;
-  rt_info.height                 = height;
-  rt_info.width                  = width;
-  rt_info.samples                = 1;
-  rt_info.has_depth              = true;
-  rt_info.color_attachment_infos = {{"color", RTAttachmentFormat::RGBA8}};
-  m_gbuffer                      = RenderTarget::Create(rt_info);
+  // srgb color attachment
+  AttachmentInfo color_info  = AttachmentInfo::Color("color", AttachmentBinding::COLOR0);
+  color_info.internal_format = GL_SRGB8_ALPHA8;
+  // depth attachment
+  AttachmentInfo depth_stencil_info = AttachmentInfo::DepthStencil();
+
+  std::vector<AttachmentInfo> attachment_infos{color_info, depth_stencil_info};
+  FramebufferCreatInfo framebuffer_ci{width, height, attachment_infos};
+  m_gbuffer = Framebuffer::Create(framebuffer_ci);
 }
 
 void BasicRenderer::setup_coordinate_axis() {
@@ -99,7 +103,8 @@ void BasicRenderer::setup_skybox() {
     "../resources/textures/skybox/front.jpg",
     "../resources/textures/skybox/back.jpg",
   };
-  m_skybox = Skybox::Create(face_paths);
+//  m_skybox = Skybox::Create(face_paths);
+  m_skybox = Skybox::Create("../resources/textures/hdri/barcelona.hdr", 2048);
 }
 
 void BasicRenderer::set_default_state() {
@@ -149,6 +154,7 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
   m_shader_cache.at("coords_axis")->use();
   RenderAPI::draw_line(m_axis_data.vao, 6);
   m_skybox->draw(info.camera);
+//  m_skybox->draw_equirectangular(info.camera);
   m_gbuffer->unbind();
 
   RenderAPI::disable_depth_testing();

@@ -263,8 +263,11 @@ Ref<Model> ResourceManager::load_gltf_model(const std::string& name, const std::
 
 Ref<Texture2D> ResourceManager::load_hdr_texture(const std::string& path) {
   int width, height, channels;
+  stbi_set_flip_vertically_on_load(true);
   spdlog::trace("Loading texture at path {}", path);
   auto* data = stbi_loadf(path.c_str(), &width, &height, &channels, 0);
+  stbi_set_flip_vertically_on_load(false);
+
   if (!data) {
     spdlog::error("Failed to load HDR image {}", path);
     return nullptr;

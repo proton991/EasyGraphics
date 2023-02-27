@@ -2,17 +2,17 @@
 #define EASYGRAPHICS_BASIC_RENDERER_HPP
 
 #include <vector>
-#include "assets/model.hpp"
 #include "frame_info.hpp"
-#include "graphics/render_target.hpp"
-#include "graphics/shader.hpp"
-#include "graphics/uniform_buffer.hpp"
-#include "graphics/vertex_array.hpp"
 #include "renderer_data.hpp"
 
 namespace ezg::gl {
+// forward declaration
+class Framebuffer;
+class VertexArray;
+class UniformBuffer;
 class BaseScene;
 class Skybox;
+
 class BasicRenderer {
 public:
   struct Config {
@@ -48,7 +48,7 @@ private:
   Ref<UniformBuffer> m_camera_ubo;
   Ref<UniformBuffer> m_pbr_sampler_ubo;
 
-  RenderTargetPtr m_gbuffer;
+  Ref<Framebuffer> m_gbuffer;
 
   Ref<VertexArray> m_quad_vao;
   std::unordered_map<std::string, Ref<ShaderProgram>> m_shader_cache;
