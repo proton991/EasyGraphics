@@ -76,11 +76,14 @@ public:
   ~Framebuffer();
   void bind(bool set_view_port = true) const;
   void unbind() const;
-  void bind_texture(const std::string& name, int slot) const;
 
+  void bind_texture(const std::string& name, int slot) const;
   void attach_layer_texture(int layer, const std::string& name);
+  void add_attachment(const AttachmentInfo& attachment_info);
+
   void resize_attachment(const std::string& name, int width, int height);
-  void resize_depth_renderbuffer(const std::string& name, int width, int height);
+  void resize_depth_renderbuffer(int width, int height);
+
 private:
   void setup_depth_rbo();
   void setup_attachments();

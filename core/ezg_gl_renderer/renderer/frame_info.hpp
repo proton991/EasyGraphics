@@ -1,8 +1,8 @@
 #ifndef FRAME_INFO_HPP
 #define FRAME_INFO_HPP
 #include <glm/mat4x4.hpp>
-#include "systems/camera_system.hpp"
 #include "scene.hpp"
+#include "systems/camera_system.hpp"
 
 namespace ezg::gl {
 class ShaderProgram;
@@ -22,8 +22,8 @@ struct CameraData {
 };
 
 struct FrameInfo {
-  const BaseScenePtr& scene;
+  const Ref<BaseScene>& scene;
   const system::Camera& camera;
 };
-}
+}  // namespace ezg::gl
 #endif  //FRAME_INFO_HPP

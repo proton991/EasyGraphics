@@ -3,7 +3,7 @@
 * https://www.gsn-lib.org/index.html#projectName=ShadersMonthly09&graphName=MicrofacetBRDF
 */
 #version 450 core
-#extension GL_ARB_bindless_texture : require
+#extension GL_ARB_bindless_texture: require
 out vec4 fColor;
 
 in vec3 vViewSpacePosition;
@@ -33,6 +33,9 @@ layout (binding = 2) uniform PBRSamplers {
     sampler2D uPBRSamplers[5];
 };
 
+// IBL
+layout (binding = 3) uniform samplerCube uEnvDiffuseSampler;
+
 #define TEX_BASECOLOR_INDEX 0
 #define TEX_METALLICROUGHNESS_INDEX 1
 #define TEX_EMISSIVE_INDEX 2
@@ -44,11 +47,19 @@ layout (binding = 2) uniform PBRSamplers {
 #define ALPHAMODE_MASK 2
 
 #define RECIPROCAL_PI 0.3183098861837907
+#define PI 3.1415926535897932384626433832795
 
 const float GAMMA = 2.2;
 const float irradiPerp = 1.0;
 const float reflectance = 0.5;
 
+vec2 directionToSphericalEnvmap(vec3 dir) {
+    float phi = atan(dir.y, dir.x);
+    float theta = acos(dir.z);
+    float s = 0.5 - phi / (2.0 * PI);
+    float t = 1.0 - theta / PI;
+    return vec2(s, t);
+}
 vec4 sRGBToLinear(vec4 srgbIn)
 {
     return vec4(pow(srgbIn.xyz, vec3(GAMMA)), srgbIn.w);
@@ -185,6 +196,13 @@ void main() {
         // irradiance contribution from directional light
         radiance += brdf * irradiance * uLightIntensity;
     }
+
+    // compute F0
+    vec3 f0 = vec3(0.16 * (reflectance * reflectance));
+    f0 = mix(f0, baseColor.rgb, metallic);
+    vec3 rhoD = (1.0 - metallic) * baseColor.rgb;
+    rhoD *= vec3(1.0) - f0; // optionally
+    radiance += rhoD * texture(uEnvDiffuseSampler, N).rgb;
 
     if (uHasOcclusionMap) {
         float ao = texture(uPBRSamplers[TEX_OCCLUSION_INDEX], vTexCoords).r;

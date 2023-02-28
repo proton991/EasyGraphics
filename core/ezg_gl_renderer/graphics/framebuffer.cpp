@@ -62,14 +62,8 @@ void Framebuffer::setup_attachments() {
   for (auto& attachment_info : m_attachments_infos) {
     // create attachment
     auto attachment = Attachment::Create(attachment_info);
-    if (attachment->get_type() == AttachmentType::TEXTURE_CUBEMAP) {
-      for (int i = 0; i < 6; i++) {
-        glNamedFramebufferTextureLayer(m_id, static_cast<int>(attachment->get_binding()),
-                                       attachment->get_id(), 0, i);
-        glClearNamedFramebufferfv(m_id, GL_COLOR, 0, ClearColor);
-        glClearNamedFramebufferfv(m_id, GL_DEPTH, 0, &ClearDepth);
-      }
-    } else {
+    if (attachment->get_type() != AttachmentType::TEXTURE_CUBEMAP) {
+      // cubemap texture need to be configured via attach_layer_texture
       glNamedFramebufferTexture(m_id, static_cast<int>(attachment->get_binding()),
                                 attachment->get_id(), 0);
     }
@@ -116,9 +110,26 @@ void Framebuffer::resize_attachment(const std::string& name, int width, int heig
   }
 }
 
-void Framebuffer::resize_depth_renderbuffer(const std::string& name, int width, int height) {
+void Framebuffer::resize_depth_renderbuffer(int width, int height) {
   glNamedRenderbufferStorage(m_depth_rbo, GL_DEPTH24_STENCIL8, width, height);
   glNamedFramebufferRenderbuffer(m_id, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_depth_rbo);
+}
+
+void Framebuffer::add_attachment(const AttachmentInfo& attachment_info) {
+  auto attachment = Attachment::Create(attachment_info);
+  if (attachment->get_type() == AttachmentType::TEXTURE_CUBEMAP) {
+    for (int i = 0; i < 6; i++) {
+      glNamedFramebufferTextureLayer(m_id, static_cast<int>(attachment->get_binding()),
+                                     attachment->get_id(), 0, i);
+      glClearNamedFramebufferfv(m_id, GL_COLOR, 0, ClearColor);
+      glClearNamedFramebufferfv(m_id, GL_DEPTH, 0, &ClearDepth);
+    }
+  } else {
+    glNamedFramebufferTexture(m_id, static_cast<int>(attachment->get_binding()),
+                              attachment->get_id(), 0);
+  }
+  m_attachment_ids.push_back(attachment->get_id());
+  m_attachments.try_emplace(attachment->get_name(), attachment);
 }
 
 void Framebuffer::unbind() const {

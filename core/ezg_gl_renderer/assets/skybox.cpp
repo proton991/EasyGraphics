@@ -46,51 +46,6 @@ const float QUAD_VERTICES[] = {
     1.0f,  1.0f,  1.0f, 1.0f   //
 };
 
-const std::array<float, 108> SkyboxVertices {
-    // positions
-    -1.0f,  1.0f, -1.0f,
-    -1.0f, -1.0f, -1.0f,
-    1.0f, -1.0f, -1.0f,
-    1.0f, -1.0f, -1.0f,
-    1.0f,  1.0f, -1.0f,
-    -1.0f,  1.0f, -1.0f,
-
-    -1.0f, -1.0f,  1.0f,
-    -1.0f, -1.0f, -1.0f,
-    -1.0f,  1.0f, -1.0f,
-    -1.0f,  1.0f, -1.0f,
-    -1.0f,  1.0f,  1.0f,
-    -1.0f, -1.0f,  1.0f,
-
-    1.0f, -1.0f, -1.0f,
-    1.0f, -1.0f,  1.0f,
-    1.0f,  1.0f,  1.0f,
-    1.0f,  1.0f,  1.0f,
-    1.0f,  1.0f, -1.0f,
-    1.0f, -1.0f, -1.0f,
-
-    -1.0f, -1.0f,  1.0f,
-    -1.0f,  1.0f,  1.0f,
-    1.0f,  1.0f,  1.0f,
-    1.0f,  1.0f,  1.0f,
-    1.0f, -1.0f,  1.0f,
-    -1.0f, -1.0f,  1.0f,
-
-    -1.0f,  1.0f, -1.0f,
-    1.0f,  1.0f, -1.0f,
-    1.0f,  1.0f,  1.0f,
-    1.0f,  1.0f,  1.0f,
-    -1.0f,  1.0f,  1.0f,
-    -1.0f,  1.0f, -1.0f,
-
-    -1.0f, -1.0f, -1.0f,
-    -1.0f, -1.0f,  1.0f,
-    1.0f, -1.0f, -1.0f,
-    1.0f, -1.0f, -1.0f,
-    -1.0f, -1.0f,  1.0f,
-    1.0f, -1.0f,  1.0f
-};
-
 void Skybox::setup_shaders() {
   std::vector<ShaderProgramCreateInfo> shader_program_infos;
   if (m_type == SkyboxType::Cubemap) {
@@ -143,27 +98,17 @@ void Skybox::setup_screen_quads() {
   m_quad_vao->unbind();
 }
 
-//void Skybox::setup_cube_quads() {
-//  m_cube_vao = VertexArray::Create();
-//  m_cube_vao->bind();
-//  auto vbo = VertexBuffer::Create(sizeof(SKY_BOX_VERTICES), SKY_BOX_VERTICES);
-//  vbo->set_buffer_view({
-//      {"aPos", BufferDataType::Vec3f},
-//  });
-//  auto ibo =
-//      IndexBuffer::Create(sizeof(SKY_BOX_INDICES) / sizeof(SKY_BOX_INDICES[0]), SKY_BOX_INDICES);
-//  m_cube_vao->attach_vertex_buffer(vbo);
-//  m_cube_vao->attach_index_buffer(ibo);
-//}
-
 void Skybox::setup_cube_quads() {
   m_cube_vao = VertexArray::Create();
   m_cube_vao->bind();
-  auto vbo = VertexBuffer::Create(sizeof(SkyboxVertices), SkyboxVertices.data());
+  auto vbo = VertexBuffer::Create(sizeof(SKY_BOX_VERTICES), SKY_BOX_VERTICES);
   vbo->set_buffer_view({
       {"aPos", BufferDataType::Vec3f},
   });
+  auto ibo =
+      IndexBuffer::Create(sizeof(SKY_BOX_INDICES) / sizeof(SKY_BOX_INDICES[0]), SKY_BOX_INDICES);
   m_cube_vao->attach_vertex_buffer(vbo);
+  m_cube_vao->attach_index_buffer(ibo);
 }
 
 Skybox::Skybox(const std::vector<std::string>& face_paths) {
@@ -179,18 +124,27 @@ Skybox::Skybox(const std::string& hdr_path, int resolution) {
   setup_shaders();
   setup_cube_quads();
   glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-  AttachmentInfo env_map_info{.width   = resolution,
-                              .height  = resolution,
-                              .type    = AttachmentType::TEXTURE_CUBEMAP,
-                              .binding = AttachmentBinding::COLOR0,
-                              .name    = "color",
-                              // use float for hdr
-                              .internal_format = GL_RGB16F,
-                              .data_format     = GL_RGB,
-                              .data_type       = GL_FLOAT};
+  AttachmentInfo base_color{.width   = resolution,
+                            .height  = resolution,
+                            .type    = AttachmentType::TEXTURE_CUBEMAP,
+                            .binding = AttachmentBinding::COLOR0,
+                            .name    = "base_color",
+                            // use float for hdr
+                            .internal_format = GL_RGB16F,
+                            .data_format     = GL_RGB,
+                            .data_type       = GL_FLOAT};
+  AttachmentInfo prefilter_diffuse{.width   = PREFILTER_DIFFUSE_RESOLUTION,
+                                   .height  = PREFILTER_DIFFUSE_RESOLUTION,
+                                   .type    = AttachmentType::TEXTURE_CUBEMAP,
+                                   .binding = AttachmentBinding::COLOR0,
+                                   .name    = "prefilter_diffuse",
+                                   // use float for hdr
+                                   .internal_format = GL_RGB16F,
+                                   .data_format     = GL_RGB,
+                                   .data_type       = GL_FLOAT};
   FramebufferCreatInfo env_fbo_ci{.width             = static_cast<uint32_t>(resolution),
                                   .height            = static_cast<uint32_t>(resolution),
-                                  .attachments_infos = {env_map_info}};
+                                  .attachments_infos = {base_color}};
   m_env_fbo = Framebuffer::Create(env_fbo_ci);
 
   auto hdr_texture = ResourceManager::GetInstance().load_hdr_texture(hdr_path);
@@ -209,10 +163,31 @@ Skybox::Skybox(const std::string& hdr_path, int resolution) {
   m_env_fbo->bind();
   for (int i = 0; i < 6; i++) {
     convert_shader->set_uniform("uProjView", capture_proj * capture_views[i]);
-    m_env_fbo->attach_layer_texture(i, "color");
-    RenderAPI::draw_vertices(m_cube_vao, 36);
+    m_env_fbo->attach_layer_texture(i, "base_color");
+    RenderAPI::draw_indices(m_cube_vao);
+  }
+  ShaderProgramCreateInfo info1{
+      "equirectangular_converter",
+      {
+          {"../resources/shaders/simple_renderer/skybox.vs.glsl", "vertex"},
+          {"../resources/shaders/simple_renderer/prefilter_diffuse.fs.glsl", "fragment"},
+      }};
+  auto prefilter_diffuse_shader = ShaderProgramFactory::create_shader_program(info1);
+  prefilter_diffuse_shader->use();
+  m_env_fbo->add_attachment(prefilter_diffuse);
+  m_env_fbo->resize_depth_renderbuffer(PREFILTER_DIFFUSE_RESOLUTION, PREFILTER_DIFFUSE_RESOLUTION);
+  m_env_fbo->bind_texture("base_color", 0);
+  glViewport(0, 0, PREFILTER_DIFFUSE_RESOLUTION, PREFILTER_DIFFUSE_RESOLUTION);
+  for (int i = 0; i < 6; i++) {
+    prefilter_diffuse_shader->set_uniform("uProjView", capture_proj * capture_views[i]);
+    m_env_fbo->attach_layer_texture(i, "prefilter_diffuse");
+    RenderAPI::draw_indices(m_cube_vao);
   }
   m_env_fbo->unbind();
+}
+
+void Skybox::bind_prefilter_diffuse() {
+  m_env_fbo->bind_texture("prefilter_diffuse", 3);
 }
 
 void Skybox::draw(const system::Camera& camera) {
@@ -221,10 +196,10 @@ void Skybox::draw(const system::Camera& camera) {
   if (m_type == SkyboxType::Cubemap) {
     m_cube_texture->bind(0);
   } else {
-    m_env_fbo->bind_texture("color", 0);
+    m_env_fbo->bind_texture("base_color", 0);
   }
   auto view = glm::mat4(glm::mat3(camera.get_view_matrix()));
   skybox_shader->set_uniform("uProjView", camera.get_projection_matrix() * view);
-  RenderAPI::draw_vertices(m_cube_vao, 36);
+  RenderAPI::draw_indices(m_cube_vao);
 }
 }  // namespace ezg::gl

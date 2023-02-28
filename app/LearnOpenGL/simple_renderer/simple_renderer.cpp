@@ -36,13 +36,13 @@ int main() {
 
   std::vector<std::string> model_paths{
       "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf",
-      "../../glTF-Sample-Models/2.0/ToyCar/glTF/ToyCar.gltf",
+      "../../glTF-Sample-Models/2.0/MetalRoughSpheres/glTF/MetalRoughSpheres.gltf",
       "../../glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf",
       "../../glTF-Sample-Models/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf"};
 
   ResourceManager::GetInstance().load_gltf_model("helmet", model_paths[0]);
 
-  auto scene = std::make_shared<CustomScene>("demo");
+  auto scene = SceneBuilder::Create<CustomScene>("demo");
   scene->init();
 
   auto camera = Camera::CreateBasedOnBBox(scene->get_aabb().bbx_min, scene->get_aabb().bbx_max);
@@ -57,6 +57,8 @@ int main() {
 
   while (!window.should_close()) {
     FrameInfo frame_info{scene, camera};
+
+    frame_info.scene->update();
 
     renderer.render_frame(frame_info);
 
