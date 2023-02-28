@@ -46,6 +46,51 @@ const float QUAD_VERTICES[] = {
     1.0f,  1.0f,  1.0f, 1.0f   //
 };
 
+const std::array<float, 108> SkyboxVertices {
+    // positions
+    -1.0f,  1.0f, -1.0f,
+    -1.0f, -1.0f, -1.0f,
+    1.0f, -1.0f, -1.0f,
+    1.0f, -1.0f, -1.0f,
+    1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+    1.0f, -1.0f, -1.0f,
+    1.0f, -1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f, -1.0f,
+    1.0f, -1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,
+    1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+    -1.0f,  1.0f, -1.0f,
+    1.0f,  1.0f, -1.0f,
+    1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+    1.0f, -1.0f, -1.0f,
+    1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+    1.0f, -1.0f,  1.0f
+};
+
 void Skybox::setup_shaders() {
   std::vector<ShaderProgramCreateInfo> shader_program_infos;
   if (m_type == SkyboxType::Cubemap) {
@@ -98,17 +143,27 @@ void Skybox::setup_screen_quads() {
   m_quad_vao->unbind();
 }
 
+//void Skybox::setup_cube_quads() {
+//  m_cube_vao = VertexArray::Create();
+//  m_cube_vao->bind();
+//  auto vbo = VertexBuffer::Create(sizeof(SKY_BOX_VERTICES), SKY_BOX_VERTICES);
+//  vbo->set_buffer_view({
+//      {"aPos", BufferDataType::Vec3f},
+//  });
+//  auto ibo =
+//      IndexBuffer::Create(sizeof(SKY_BOX_INDICES) / sizeof(SKY_BOX_INDICES[0]), SKY_BOX_INDICES);
+//  m_cube_vao->attach_vertex_buffer(vbo);
+//  m_cube_vao->attach_index_buffer(ibo);
+//}
+
 void Skybox::setup_cube_quads() {
   m_cube_vao = VertexArray::Create();
   m_cube_vao->bind();
-  auto vbo = VertexBuffer::Create(sizeof(SKY_BOX_VERTICES), SKY_BOX_VERTICES);
+  auto vbo = VertexBuffer::Create(sizeof(SkyboxVertices), SkyboxVertices.data());
   vbo->set_buffer_view({
       {"aPos", BufferDataType::Vec3f},
   });
-  auto ibo =
-      IndexBuffer::Create(sizeof(SKY_BOX_INDICES) / sizeof(SKY_BOX_INDICES[0]), SKY_BOX_INDICES);
   m_cube_vao->attach_vertex_buffer(vbo);
-  m_cube_vao->attach_index_buffer(ibo);
 }
 
 Skybox::Skybox(const std::vector<std::string>& face_paths) {
@@ -123,6 +178,7 @@ Skybox::Skybox(const std::string& hdr_path, int resolution) {
   m_type = SkyboxType::Equirectangular;
   setup_shaders();
   setup_cube_quads();
+  glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
   AttachmentInfo env_map_info{.width   = resolution,
                               .height  = resolution,
                               .type    = AttachmentType::TEXTURE_CUBEMAP,
@@ -132,10 +188,9 @@ Skybox::Skybox(const std::string& hdr_path, int resolution) {
                               .internal_format = GL_RGB16F,
                               .data_format     = GL_RGB,
                               .data_type       = GL_FLOAT};
-  AttachmentInfo depth_stencil_info = AttachmentInfo::DepthStencil();
   FramebufferCreatInfo env_fbo_ci{.width             = static_cast<uint32_t>(resolution),
                                   .height            = static_cast<uint32_t>(resolution),
-                                  .attachments_infos = {env_map_info, depth_stencil_info}};
+                                  .attachments_infos = {env_map_info}};
   m_env_fbo = Framebuffer::Create(env_fbo_ci);
 
   auto hdr_texture = ResourceManager::GetInstance().load_hdr_texture(hdr_path);
@@ -155,7 +210,7 @@ Skybox::Skybox(const std::string& hdr_path, int resolution) {
   for (int i = 0; i < 6; i++) {
     convert_shader->set_uniform("uProjView", capture_proj * capture_views[i]);
     m_env_fbo->attach_layer_texture(i, "color");
-    RenderAPI::draw_indices(m_cube_vao);
+    RenderAPI::draw_vertices(m_cube_vao, 36);
   }
   m_env_fbo->unbind();
 }
@@ -166,10 +221,10 @@ void Skybox::draw(const system::Camera& camera) {
   if (m_type == SkyboxType::Cubemap) {
     m_cube_texture->bind(0);
   } else {
-    m_env_fbo->bind_texture("color");
+    m_env_fbo->bind_texture("color", 0);
   }
   auto view = glm::mat4(glm::mat3(camera.get_view_matrix()));
   skybox_shader->set_uniform("uProjView", camera.get_projection_matrix() * view);
-  RenderAPI::draw_indices(m_cube_vao);
+  RenderAPI::draw_vertices(m_cube_vao, 36);
 }
 }  // namespace ezg::gl

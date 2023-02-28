@@ -55,12 +55,11 @@ void BasicRenderer::setup_screen_quad() {
 
 void BasicRenderer::setup_framebuffers(uint32_t width, uint32_t height) {
   // srgb color attachment
-  AttachmentInfo color_info  = AttachmentInfo::Color("color", AttachmentBinding::COLOR0);
+  AttachmentInfo color_info =
+      AttachmentInfo::Color("color", AttachmentBinding::COLOR0, width, height);
   color_info.internal_format = GL_SRGB8_ALPHA8;
-  // depth attachment
-  AttachmentInfo depth_stencil_info = AttachmentInfo::DepthStencil();
 
-  std::vector<AttachmentInfo> attachment_infos{color_info, depth_stencil_info};
+  std::vector<AttachmentInfo> attachment_infos{color_info};
   FramebufferCreatInfo framebuffer_ci{width, height, attachment_infos};
   m_gbuffer = Framebuffer::Create(framebuffer_ci);
 }
@@ -96,14 +95,14 @@ void BasicRenderer::setup_coordinate_axis() {
 
 void BasicRenderer::setup_skybox() {
   std::vector<std::string> face_paths = {
-    "../resources/textures/skybox/right.jpg",
-    "../resources/textures/skybox/left.jpg",
-    "../resources/textures/skybox/top.jpg",
-    "../resources/textures/skybox/bottom.jpg",
-    "../resources/textures/skybox/front.jpg",
-    "../resources/textures/skybox/back.jpg",
+      "../resources/textures/skybox/right.jpg",   //
+      "../resources/textures/skybox/left.jpg",    //
+      "../resources/textures/skybox/top.jpg",     //
+      "../resources/textures/skybox/bottom.jpg",  //
+      "../resources/textures/skybox/front.jpg",   //
+      "../resources/textures/skybox/back.jpg",    //
   };
-//  m_skybox = Skybox::Create(face_paths);
+  //  m_skybox = Skybox::Create(face_paths);
   m_skybox = Skybox::Create("../resources/textures/hdri/barcelona.hdr", 2048);
 }
 
@@ -154,7 +153,6 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
   m_shader_cache.at("coords_axis")->use();
   RenderAPI::draw_line(m_axis_data.vao, 6);
   m_skybox->draw(info.camera);
-//  m_skybox->draw_equirectangular(info.camera);
   m_gbuffer->unbind();
 
   RenderAPI::disable_depth_testing();
@@ -162,7 +160,7 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
 
   auto& screen_shader = m_shader_cache.at("screen");
   screen_shader->use();
-  m_gbuffer->bind_texture("color");
+  m_gbuffer->bind_texture("color", 0);
   RenderAPI::draw_vertices(m_quad_vao, 6);
 }
 }  // namespace ezg::gl

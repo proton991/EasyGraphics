@@ -36,6 +36,12 @@ Attachment::Attachment(const AttachmentInfo& info)
   }
 }
 
+void Framebuffer::setup_depth_rbo() {
+  glCreateRenderbuffers(1, &m_depth_rbo);
+  glNamedRenderbufferStorage(m_depth_rbo, GL_DEPTH24_STENCIL8, m_width, m_height);
+  glNamedFramebufferRenderbuffer(m_id, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_depth_rbo);
+}
+
 Ref<Framebuffer> Framebuffer::Create(const FramebufferCreatInfo& info) {
   return CreateRef<Framebuffer>(info);
 }
@@ -48,39 +54,28 @@ Framebuffer::Framebuffer(const FramebufferCreatInfo& info)
 Framebuffer::~Framebuffer() {
   glDeleteFramebuffers(1, &m_id);
   glDeleteTextures(m_attachment_ids.size(), m_attachment_ids.data());
-  m_color_attachments.clear();
-  m_depth_attachment.reset();
+  m_attachments.clear();
   m_attachment_ids.clear();
 }
 void Framebuffer::setup_attachments() {
   std::vector<GLenum> buffers;
   for (auto& attachment_info : m_attachments_infos) {
-    attachment_info.width  = m_width;
-    attachment_info.height = m_height;
     // create attachment
     auto attachment = Attachment::Create(attachment_info);
     if (attachment->get_type() == AttachmentType::TEXTURE_CUBEMAP) {
       for (int i = 0; i < 6; i++) {
         glNamedFramebufferTextureLayer(m_id, static_cast<int>(attachment->get_binding()),
                                        attachment->get_id(), 0, i);
-        float clearColor[3] = {0.1f, 0.1f, 0.1f};
-        float depth =0;
-        glClearNamedFramebufferfv(m_id, GL_COLOR, 0, clearColor);
-        glClearNamedFramebufferfv(m_id, GL_DEPTH, 0, &depth);
-
+        glClearNamedFramebufferfv(m_id, GL_COLOR, 0, ClearColor);
+        glClearNamedFramebufferfv(m_id, GL_DEPTH, 0, &ClearDepth);
       }
     } else {
       glNamedFramebufferTexture(m_id, static_cast<int>(attachment->get_binding()),
                                 attachment->get_id(), 0);
     }
     m_attachment_ids.push_back(attachment->get_id());
-
-    if (attachment_info.binding == AttachmentBinding::DEPTH_STENCIL) {
-      m_depth_attachment = std::move(attachment);
-    } else {
-      buffers.push_back(static_cast<GLenum>(attachment->get_binding()));
-      m_color_attachments.try_emplace(attachment->get_name(), attachment);
-    }
+    buffers.push_back(static_cast<GLenum>(attachment->get_binding()));
+    m_attachments.try_emplace(attachment->get_name(), attachment);
   }
   if (buffers.empty()) {
     glDrawBuffer(GL_NONE);
@@ -93,12 +88,12 @@ void Framebuffer::invalidate() {
   if (m_id != 0) {
     glDeleteFramebuffers(1, &m_id);
     glDeleteTextures(m_attachment_ids.size(), m_attachment_ids.data());
-    m_color_attachments.clear();
-    m_depth_attachment.reset();
+    m_attachments.clear();
     m_attachment_ids.clear();
   }
   glCreateFramebuffers(1, &m_id);
   setup_attachments();
+  setup_depth_rbo();
   auto status = glCheckNamedFramebufferStatus(m_id, GL_FRAMEBUFFER);
   if (status != GL_FRAMEBUFFER_COMPLETE) {
     spdlog::error("Framebuffer is not complete, status {}", status);
@@ -106,11 +101,24 @@ void Framebuffer::invalidate() {
 }
 
 void Framebuffer::attach_layer_texture(int layer, const std::string& name) {
-  const auto& attachment = m_color_attachments.at(name);
+  const auto& attachment = m_attachments.at(name);
   glNamedFramebufferTextureLayer(m_id, static_cast<int>(attachment->get_binding()),
                                  attachment->get_id(), 0, layer);
-  glClearNamedFramebufferfv(m_id, GL_COLOR, 0, clear_color);
-  glClearNamedFramebufferfv(m_id, GL_DEPTH, 0, &clear_depth);
+  glClearNamedFramebufferfv(m_id, GL_COLOR, 0, ClearColor);
+  glClearNamedFramebufferfv(m_id, GL_DEPTH, 0, &ClearDepth);
+}
+
+void Framebuffer::resize_attachment(const std::string& name, int width, int height) {
+  const auto& att = m_attachments.at(name);
+  glTextureStorage2D(att->get_id(), 1, att->get_internal_format(), width, height);
+  if (att->get_type() != AttachmentType::TEXTURE_CUBEMAP) {
+    glNamedFramebufferTexture(m_id, static_cast<int>(att->get_binding()), att->get_id(), 0);
+  }
+}
+
+void Framebuffer::resize_depth_renderbuffer(const std::string& name, int width, int height) {
+  glNamedRenderbufferStorage(m_depth_rbo, GL_DEPTH24_STENCIL8, width, height);
+  glNamedFramebufferRenderbuffer(m_id, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_depth_rbo);
 }
 
 void Framebuffer::unbind() const {
@@ -121,13 +129,15 @@ int Framebuffer::get_slot(const Ref<Attachment>& attachment) const {
   return static_cast<int>(attachment->get_binding()) - GL_COLOR_ATTACHMENT0;
 }
 
-void Framebuffer::bind() const {
+void Framebuffer::bind(bool set_view_port) const {
   glBindFramebuffer(GL_FRAMEBUFFER, m_id);
-  glViewport(0, 0, m_width, m_height);
+  if (set_view_port) {
+    glViewport(0, 0, m_width, m_height);
+  }
 }
 
-void Framebuffer::bind_texture(const std::string& name) const {
-  const auto& attachment = m_color_attachments.at(name);
-  glBindTextureUnit(get_slot(attachment), attachment->get_id());
+void Framebuffer::bind_texture(const std::string& name, int slot) const {
+  const auto& attachment = m_attachments.at(name);
+  glBindTextureUnit(slot, attachment->get_id());
 }
 }  // namespace ezg::gl
