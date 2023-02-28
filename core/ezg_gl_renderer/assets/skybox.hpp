@@ -27,6 +27,8 @@ private:
   void setup_shaders();
   void setup_screen_quads();
   void setup_cube_quads();
+
+  void calc_prefilter_diffuse();
   Ref<TextureCubeMap> m_cube_texture;
   Ref<VertexArray> m_quad_vao;
   Ref<VertexArray> m_cube_vao;

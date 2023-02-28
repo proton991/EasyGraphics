@@ -46,6 +46,16 @@ const float QUAD_VERTICES[] = {
     1.0f,  1.0f,  1.0f, 1.0f   //
 };
 
+// Setup projection and view matrices for capturing data onto the 6 cubemap face directions
+const auto CaptureProjs = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
+const glm::mat4 CaptureViews[]{
+    glm::lookAt(glm::vec3(0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+    glm::lookAt(glm::vec3(0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+    glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+    glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)),
+    glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+    glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f))};
+
 void Skybox::setup_shaders() {
   std::vector<ShaderProgramCreateInfo> shader_program_infos;
   if (m_type == SkyboxType::Cubemap) {
@@ -133,6 +143,28 @@ Skybox::Skybox(const std::string& hdr_path, int resolution) {
                             .internal_format = GL_RGB16F,
                             .data_format     = GL_RGB,
                             .data_type       = GL_FLOAT};
+  FramebufferCreatInfo env_fbo_ci{.width             = static_cast<uint32_t>(resolution),
+                                  .height            = static_cast<uint32_t>(resolution),
+                                  .attachments_infos = {base_color}};
+  m_env_fbo = Framebuffer::Create(env_fbo_ci);
+
+  auto hdr_texture     = ResourceManager::GetInstance().load_hdr_texture(hdr_path);
+  auto& convert_shader = m_shader_cache.at("equirectangular_converter");
+
+  convert_shader->use();
+  hdr_texture->bind(0);
+  m_env_fbo->bind();
+  for (int i = 0; i < 6; i++) {
+    convert_shader->set_uniform("uProjView", CaptureProjs * CaptureViews[i]);
+    m_env_fbo->attach_layer_texture(i, "base_color");
+    RenderAPI::draw_indices(m_cube_vao);
+  }
+  m_env_fbo->unbind();
+  // calculate prefiltered IBL data
+  calc_prefilter_diffuse();
+}
+
+void Skybox::calc_prefilter_diffuse() {
   AttachmentInfo prefilter_diffuse{.width   = PREFILTER_DIFFUSE_RESOLUTION,
                                    .height  = PREFILTER_DIFFUSE_RESOLUTION,
                                    .type    = AttachmentType::TEXTURE_CUBEMAP,
@@ -142,30 +174,6 @@ Skybox::Skybox(const std::string& hdr_path, int resolution) {
                                    .internal_format = GL_RGB16F,
                                    .data_format     = GL_RGB,
                                    .data_type       = GL_FLOAT};
-  FramebufferCreatInfo env_fbo_ci{.width             = static_cast<uint32_t>(resolution),
-                                  .height            = static_cast<uint32_t>(resolution),
-                                  .attachments_infos = {base_color}};
-  m_env_fbo = Framebuffer::Create(env_fbo_ci);
-
-  auto hdr_texture = ResourceManager::GetInstance().load_hdr_texture(hdr_path);
-  // Setup projection and view matrices for capturing data onto the 6 cubemap face directions
-  auto capture_proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
-  const glm::mat4 capture_views[]{
-      glm::lookAt(glm::vec3(0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
-      glm::lookAt(glm::vec3(0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
-      glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
-      glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)),
-      glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
-      glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f))};
-  auto& convert_shader = m_shader_cache.at("equirectangular_converter");
-  convert_shader->use();
-  hdr_texture->bind(0);
-  m_env_fbo->bind();
-  for (int i = 0; i < 6; i++) {
-    convert_shader->set_uniform("uProjView", capture_proj * capture_views[i]);
-    m_env_fbo->attach_layer_texture(i, "base_color");
-    RenderAPI::draw_indices(m_cube_vao);
-  }
   ShaderProgramCreateInfo info1{
       "equirectangular_converter",
       {
@@ -178,8 +186,9 @@ Skybox::Skybox(const std::string& hdr_path, int resolution) {
   m_env_fbo->resize_depth_renderbuffer(PREFILTER_DIFFUSE_RESOLUTION, PREFILTER_DIFFUSE_RESOLUTION);
   m_env_fbo->bind_texture("base_color", 0);
   glViewport(0, 0, PREFILTER_DIFFUSE_RESOLUTION, PREFILTER_DIFFUSE_RESOLUTION);
+  m_env_fbo->bind(false);
   for (int i = 0; i < 6; i++) {
-    prefilter_diffuse_shader->set_uniform("uProjView", capture_proj * capture_views[i]);
+    prefilter_diffuse_shader->set_uniform("uProjView", CaptureProjs * CaptureViews[i]);
     m_env_fbo->attach_layer_texture(i, "prefilter_diffuse");
     RenderAPI::draw_indices(m_cube_vao);
   }
