@@ -37,8 +37,8 @@ int main() {
   std::vector<std::string> model_paths{
       "../../glTF-Sample-Models/2.0/SpecularTest/glTF/SpecularTest.gltf",
       "../../glTF-Sample-Models/2.0/MetalRoughSpheres/glTF/MetalRoughSpheres.gltf",
-      "../../glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf",
-      "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf"};
+      "../../glTF-Sample-Models/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf",
+      "../../glTF-Sample-Models/2.0/EnvironmentTest/glTF/EnvironmentTest.gltf"};
 
   ResourceManager::GetInstance().load_gltf_model("helmet", model_paths[0]);
 

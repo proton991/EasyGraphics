@@ -139,10 +139,10 @@ vec3 brdfMicrofacet(in vec3 L, in vec3 V, in vec3 N, in float metallic, in float
     float NoH = clamp(dot(N, H), 0.0, 1.0);
     float VoH = clamp(dot(V, H), 0.0, 1.0);
 
-    vec3 f0 = vec3(0.16 * (reflectance * reflectance));
-    f0 = mix(f0, baseColor, metallic);
+    vec3 F0 = vec3(0.16 * (reflectance * reflectance));
+    F0 = mix(F0, baseColor, metallic);
 
-    vec3 F = fresnelSchlick(VoH, f0);
+    vec3 F = fresnelSchlick(VoH, F0);
     float D = D_GGX(NoH, roughness);
     float G = G_Smith(NoV, NoL, roughness);
 
@@ -217,14 +217,14 @@ void main() {
     vec3 rhoD = (1.0 - metallic) * baseColor.rgb;
     rhoD *= vec3(1.0) - f0; // optionally
     // IBL Diffuse
-    radiance += rhoD * texture(uEnvDiffuseSampler, N).rgb;
+    vec3 IBL_Diffuse = rhoD * texture(uEnvDiffuseSampler, N).rgb;
     // IBL Specular
-    radiance += specularIBL(f0, roughness, N, V);
-
-    if (uHasOcclusionMap) {
-        float ao = texture(uPBRSamplers[TEX_OCCLUSION_INDEX], vTexCoords).r;
-        radiance = mix(radiance, radiance * ao, uOcclusionStrength);
-    }
+    vec3 IBL_Specular = specularIBL(f0, roughness, N, V);
+//    if (uHasOcclusionMap) {
+//        float ao = texture(uPBRSamplers[TEX_OCCLUSION_INDEX], vTexCoords).r;
+//        radiance = mix(radiance, radiance * ao, uOcclusionStrength);
+//    }
+    vec3 finalColor = IBL_Diffuse + IBL_Specular + radiance;
     if (uAlphaMode == ALPHAMODE_OPAQUE) {
         baseColor.a = 1.0;
     } else if (uAlphaMode == ALPHAMODE_MASK) {
@@ -233,6 +233,8 @@ void main() {
         }
         baseColor.a = 1.0;
     }
+    // HDR tonemapping
+    finalColor = finalColor / (finalColor + vec3(1.0));
 
-    fColor = vec4(radiance, baseColor.a);
+    fColor = vec4(finalColor, baseColor.a);
 }

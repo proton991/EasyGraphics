@@ -242,7 +242,7 @@ void Skybox::calc_brdf_lut() {
   setup_screen_quads();
   AttachmentInfo brdf_lut{.width   = m_resolution,
                           .height  = m_resolution,
-                          .type    = AttachmentType::TEXTURE_CUBEMAP,
+                          .type    = AttachmentType::TEXTURE_2D,
                           .binding = AttachmentBinding::COLOR0,
                           .name    = "brdf_lut",
                           // use float for hdr
