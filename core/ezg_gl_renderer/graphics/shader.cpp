@@ -123,37 +123,51 @@ void ShaderProgram::use() const {
 }
 
 ShaderProgram& ShaderProgram::set_uniform(const std::string& name, int value) {
-  glUniform1i(m_uniforms.at(name), value);
+  if (m_uniforms.contains(name)) {
+    glUniform1i(m_uniforms.at(name), value);
+  }
   return *this;
 }
 
 ShaderProgram& ShaderProgram::set_uniform(const std::string& name, float value) {
-  glUniform1f(m_uniforms.at(name), value);
+  if (m_uniforms.contains(name)) {
+    glUniform1f(m_uniforms.at(name), value);
+  }
   return *this;
 }
 
 ShaderProgram& ShaderProgram::set_uniform(const std::string& name, const glm::vec2& value) {
-  glUniform2fv(m_uniforms.at(name), 1, value_ptr(value));
+  if (m_uniforms.contains(name)) {
+    glUniform2fv(m_uniforms.at(name), 1, value_ptr(value));
+  }
   return *this;
 }
 
 ShaderProgram& ShaderProgram::set_uniform(const std::string& name, const glm::vec3& value) {
-  glUniform3fv(m_uniforms.at(name), 1, value_ptr(value));
+  if (m_uniforms.contains(name)) {
+    glUniform3fv(m_uniforms.at(name), 1, value_ptr(value));
+  }
   return *this;
 }
 
 ShaderProgram& ShaderProgram::set_uniform(const std::string& name, const glm::vec4& value) {
-  glUniform4fv(m_uniforms.at(name), 1, value_ptr(value));
+  if (m_uniforms.contains(name)) {
+    glUniform4fv(m_uniforms.at(name), 1, value_ptr(value));
+  }
   return *this;
 }
 
 ShaderProgram& ShaderProgram::set_uniform(const std::string& name, const glm::mat3x3& value) {
-  glUniformMatrix3fv(m_uniforms.at(name), 1, GL_FALSE, value_ptr(value));
+  if (m_uniforms.contains(name)) {
+    glUniformMatrix3fv(m_uniforms.at(name), 1, GL_FALSE, value_ptr(value));
+  }
   return *this;
 }
 
 ShaderProgram& ShaderProgram::set_uniform(const std::string& name, const glm::mat4x4& value) {
-  glUniformMatrix4fv(m_uniforms.at(name), 1, GL_FALSE, value_ptr(value));
+  if (m_uniforms.contains(name)) {
+    glUniformMatrix4fv(m_uniforms.at(name), 1, GL_FALSE, value_ptr(value));
+  }
   return *this;
 }
 

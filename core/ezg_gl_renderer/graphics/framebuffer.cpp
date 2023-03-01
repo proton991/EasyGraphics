@@ -16,6 +16,9 @@ Attachment::Attachment(const AttachmentInfo& info)
     glTextureParameteri(m_id, GL_TEXTURE_WRAP_S, info.wrap);
     glTextureParameteri(m_id, GL_TEXTURE_WRAP_T, info.wrap);
     glTextureStorage2D(m_id, 1, info.internal_format, info.width, info.height);
+    if (info.generate_mipmap) {
+      glGenerateTextureMipmap(m_id);
+    }
   } else if (m_type == AttachmentType::TEXTURE_2D_MS) {
     // default 4xMSAA
     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, info.internal_format, info.width,
@@ -33,6 +36,9 @@ Attachment::Attachment(const AttachmentInfo& info)
     glTextureParameteri(m_id, GL_TEXTURE_WRAP_R, info.wrap);
     glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, info.min_filter);
     glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, info.mag_filter);
+    if (info.generate_mipmap) {
+      glGenerateTextureMipmap(m_id);
+    }
   }
 }
 
@@ -150,5 +156,10 @@ void Framebuffer::bind(bool set_view_port) const {
 void Framebuffer::bind_texture(const std::string& name, int slot) const {
   const auto& attachment = m_attachments.at(name);
   glBindTextureUnit(slot, attachment->get_id());
+}
+
+void Framebuffer::clear() {
+  glClearNamedFramebufferfv(m_id, GL_COLOR, 0, ClearColor);
+  glClearNamedFramebufferfv(m_id, GL_DEPTH, 0, &ClearDepth);
 }
 }  // namespace ezg::gl

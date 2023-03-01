@@ -35,6 +35,8 @@ layout (binding = 2) uniform PBRSamplers {
 
 // IBL
 layout (binding = 3) uniform samplerCube uEnvDiffuseSampler;
+layout (binding = 4) uniform samplerCube uEnvSpecularSampler;
+layout (binding = 5) uniform sampler2D uBrdfLutSampler;
 
 #define TEX_BASECOLOR_INDEX 0
 #define TEX_METALLICROUGHNESS_INDEX 1
@@ -52,6 +54,8 @@ layout (binding = 3) uniform samplerCube uEnvDiffuseSampler;
 const float GAMMA = 2.2;
 const float irradiPerp = 1.0;
 const float reflectance = 0.5;
+
+const int mipLevelCount = 5;
 
 vec2 directionToSphericalEnvmap(vec3 dir) {
     float phi = atan(dir.y, dir.x);
@@ -157,6 +161,16 @@ vec3 brdfMicrofacet(in vec3 L, in vec3 V, in vec3 N, in float metallic, in float
     return diff + spec;
 }
 
+// adapted from "Real Shading in Unreal Engine 4", Brian Karis, Epic Games
+vec3 specularIBL(vec3 F0, float roughness, vec3 N, vec3 V) {
+    float NoV = max(dot(N, V), 0.0);
+    vec3 R = reflect(-V, N);
+    vec3 T1 = textureLod(uEnvSpecularSampler, R, roughness * float(mipLevelCount)).rgb;
+    vec4 brdfIntegration = texture(uBrdfLutSampler, vec2(NoV, roughness));
+    vec3 T2 = (F0 * brdfIntegration.x + brdfIntegration.y);
+    return T1 * T2;
+}
+
 void main() {
     vec3 N = normalize(vViewSpaceNormal);
     vec3 V = normalize(-vViewSpacePosition);
@@ -202,7 +216,10 @@ void main() {
     f0 = mix(f0, baseColor.rgb, metallic);
     vec3 rhoD = (1.0 - metallic) * baseColor.rgb;
     rhoD *= vec3(1.0) - f0; // optionally
+    // IBL Diffuse
     radiance += rhoD * texture(uEnvDiffuseSampler, N).rgb;
+    // IBL Specular
+    radiance += specularIBL(f0, roughness, N, V);
 
     if (uHasOcclusionMap) {
         float ao = texture(uPBRSamplers[TEX_OCCLUSION_INDEX], vTexCoords).r;

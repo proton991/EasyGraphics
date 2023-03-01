@@ -43,6 +43,7 @@ struct AttachmentInfo {
   GLenum internal_format{GL_RGBA8};
   GLenum data_format{GL_RGBA};
   GLenum data_type{GL_UNSIGNED_BYTE};
+  bool generate_mipmap{false};
 };
 
 class Attachment {
@@ -84,6 +85,7 @@ public:
   void resize_attachment(const std::string& name, int width, int height);
   void resize_depth_renderbuffer(int width, int height);
 
+  void clear();
 private:
   void setup_depth_rbo();
   void setup_attachments();

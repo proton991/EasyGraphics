@@ -132,8 +132,9 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
   forward_shader->use();
   forward_shader->set_uniform("uLightIntensity", info.scene->get_light_intensity());
   forward_shader->set_uniform("uLightDirection", info.scene->get_light_pos());
+  // bind Prefiltered IBL texture
+  m_skybox->bind_prefilter_data();
 
-  m_skybox->bind_prefilter_diffuse();
   update(info.camera);
   // render models
   for (const auto& model : info.scene->m_models) {

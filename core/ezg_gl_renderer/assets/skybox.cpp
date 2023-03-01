@@ -129,7 +129,7 @@ Skybox::Skybox(const std::vector<std::string>& face_paths) {
   m_cube_texture = ResourceManager::GetInstance().load_cubemap_textures("skybox1", face_paths);
 }
 
-Skybox::Skybox(const std::string& hdr_path, int resolution) {
+Skybox::Skybox(const std::string& hdr_path, int resolution) : m_resolution(resolution) {
   m_type = SkyboxType::Equirectangular;
   setup_shaders();
   setup_cube_quads();
@@ -157,16 +157,18 @@ Skybox::Skybox(const std::string& hdr_path, int resolution) {
   for (int i = 0; i < 6; i++) {
     convert_shader->set_uniform("uProjView", CaptureProjs * CaptureViews[i]);
     m_env_fbo->attach_layer_texture(i, "base_color");
-    RenderAPI::draw_indices(m_cube_vao);
+    draw_cube();
   }
   m_env_fbo->unbind();
   // calculate prefiltered IBL data
   calc_prefilter_diffuse();
+  calc_prefilter_specular();
+  calc_brdf_lut();
 }
 
 void Skybox::calc_prefilter_diffuse() {
-  AttachmentInfo prefilter_diffuse{.width   = PREFILTER_DIFFUSE_RESOLUTION,
-                                   .height  = PREFILTER_DIFFUSE_RESOLUTION,
+  AttachmentInfo prefilter_diffuse{.width   = m_resolution / 8,
+                                   .height  = m_resolution / 8,
                                    .type    = AttachmentType::TEXTURE_CUBEMAP,
                                    .binding = AttachmentBinding::COLOR0,
                                    .name    = "prefilter_diffuse",
@@ -175,29 +177,105 @@ void Skybox::calc_prefilter_diffuse() {
                                    .data_format     = GL_RGB,
                                    .data_type       = GL_FLOAT};
   ShaderProgramCreateInfo info1{
-      "equirectangular_converter",
+      "prefilter_diffuse",
       {
           {"../resources/shaders/simple_renderer/skybox.vs.glsl", "vertex"},
           {"../resources/shaders/simple_renderer/prefilter_diffuse.fs.glsl", "fragment"},
       }};
   auto prefilter_diffuse_shader = ShaderProgramFactory::create_shader_program(info1);
   prefilter_diffuse_shader->use();
-  m_env_fbo->add_attachment(prefilter_diffuse);
-  m_env_fbo->resize_depth_renderbuffer(PREFILTER_DIFFUSE_RESOLUTION, PREFILTER_DIFFUSE_RESOLUTION);
-  m_env_fbo->bind_texture("base_color", 0);
-  glViewport(0, 0, PREFILTER_DIFFUSE_RESOLUTION, PREFILTER_DIFFUSE_RESOLUTION);
   m_env_fbo->bind(false);
+  m_env_fbo->add_attachment(prefilter_diffuse);
+  m_env_fbo->resize_depth_renderbuffer(m_resolution / 8, m_resolution / 8);
+  m_env_fbo->bind_texture("base_color", 0);
+  glViewport(0, 0, m_resolution / 8, m_resolution / 8);
   for (int i = 0; i < 6; i++) {
     prefilter_diffuse_shader->set_uniform("uProjView", CaptureProjs * CaptureViews[i]);
     m_env_fbo->attach_layer_texture(i, "prefilter_diffuse");
-    RenderAPI::draw_indices(m_cube_vao);
+    draw_cube();
   }
   m_env_fbo->unbind();
 }
 
-void Skybox::bind_prefilter_diffuse() {
-  m_env_fbo->bind_texture("prefilter_diffuse", 3);
+void Skybox::calc_prefilter_specular() {
+  AttachmentInfo prefilter_specular{.width   = m_resolution / 4,
+                                    .height  = m_resolution / 4,
+                                    .type    = AttachmentType::TEXTURE_CUBEMAP,
+                                    .binding = AttachmentBinding::COLOR0,
+                                    .name    = "prefilter_specular",
+                                    // use float for hdr
+                                    .internal_format = GL_RGB16F,
+                                    .data_format     = GL_RGB,
+                                    .data_type       = GL_FLOAT,
+                                    .generate_mipmap = true};
+  ShaderProgramCreateInfo info{
+      "prefilter_specular",
+      {
+          {"../resources/shaders/simple_renderer/skybox.vs.glsl", "vertex"},
+          {"../resources/shaders/simple_renderer/prefilter_specular.fs.glsl", "fragment"},
+      }};
+  auto prefilter_diffuse_shader = ShaderProgramFactory::create_shader_program(info);
+  prefilter_diffuse_shader->use();
+  m_env_fbo->bind(false);
+  m_env_fbo->add_attachment(prefilter_specular);
+  m_env_fbo->bind_texture("base_color", 0);
+  unsigned int maxMipLevels = 5;
+  for (unsigned int mip = 0; mip < maxMipLevels; ++mip) {
+    // reisze framebuffer according to mip-level size.
+    auto mipWidth  = static_cast<int>((m_resolution / 4.0) * std::pow(0.5, mip));
+    auto mipHeight = static_cast<int>((m_resolution / 4.0) * std::pow(0.5, mip));
+    m_env_fbo->resize_depth_renderbuffer(mipWidth, mipHeight);
+    glViewport(0, 0, mipWidth, mipHeight);
+
+    float roughness = (float)mip / (float)(maxMipLevels - 1);
+    prefilter_diffuse_shader->set_uniform("uRoughness", roughness);
+    for (auto i = 0; i < 6; ++i) {
+      prefilter_diffuse_shader->set_uniform("uProjView", CaptureProjs * CaptureViews[i]);
+      m_env_fbo->attach_layer_texture(i, "prefilter_specular");
+      draw_cube();
+    }
+  }
+  m_env_fbo->unbind();
 }
+
+void Skybox::calc_brdf_lut() {
+  setup_screen_quads();
+  AttachmentInfo brdf_lut{.width   = m_resolution,
+                          .height  = m_resolution,
+                          .type    = AttachmentType::TEXTURE_CUBEMAP,
+                          .binding = AttachmentBinding::COLOR0,
+                          .name    = "brdf_lut",
+                          // use float for hdr
+                          .internal_format = GL_RGB16F,
+                          .data_format     = GL_RGB,
+                          .data_type       = GL_FLOAT,
+                          .generate_mipmap = true};
+  ShaderProgramCreateInfo info{
+      "brdf_lut",
+      {
+          {"../resources/shaders/simple_renderer/framebuffers_screen.vs.glsl", "vertex"},
+          {"../resources/shaders/simple_renderer/brdf_lut.fs.glsl", "fragment"},
+      }};
+  auto brdf_lut_shader = ShaderProgramFactory::create_shader_program(info);
+
+  m_env_fbo->bind(false);
+  m_env_fbo->add_attachment(brdf_lut);
+  m_env_fbo->resize_depth_renderbuffer(m_resolution, m_resolution);
+  m_env_fbo->bind_texture("base_color", 0);
+
+  brdf_lut_shader->use();
+  glViewport(0, 0, m_resolution, m_resolution);
+  m_env_fbo->clear();
+  m_quad_vao->bind();
+  RenderAPI::draw_vertices(m_quad_vao, 6);
+}
+
+void Skybox::bind_prefilter_data() {
+  m_env_fbo->bind_texture("prefilter_diffuse", 3);
+  m_env_fbo->bind_texture("prefilter_specular", 4);
+  m_env_fbo->bind_texture("brdf_lut", 5);
+}
+
 
 void Skybox::draw(const system::Camera& camera) {
   auto& skybox_shader = m_shader_cache.at("skybox");
@@ -209,6 +287,10 @@ void Skybox::draw(const system::Camera& camera) {
   }
   auto view = glm::mat4(glm::mat3(camera.get_view_matrix()));
   skybox_shader->set_uniform("uProjView", camera.get_projection_matrix() * view);
+  draw_cube();
+}
+
+void Skybox::draw_cube() {
   RenderAPI::draw_indices(m_cube_vao);
 }
 }  // namespace ezg::gl

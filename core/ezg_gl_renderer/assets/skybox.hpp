@@ -8,7 +8,6 @@
 #include "graphics/vertex_array.hpp"
 #include "systems/camera_system.hpp"
 
-#define PREFILTER_DIFFUSE_RESOLUTION 256
 
 namespace ezg::gl {
 class Framebuffer;
@@ -21,14 +20,19 @@ public:
   Skybox(const std::string& hdr_path, int resolution);  // using hdr image
   void draw(const system::Camera& camera);
   // IBL
-  void bind_prefilter_diffuse();
+  void bind_prefilter_data();
 
 private:
   void setup_shaders();
   void setup_screen_quads();
   void setup_cube_quads();
 
+  void draw_cube();
+  // IBL
   void calc_prefilter_diffuse();
+  void calc_prefilter_specular();
+  void calc_brdf_lut();
+
   Ref<TextureCubeMap> m_cube_texture;
   Ref<VertexArray> m_quad_vao;
   Ref<VertexArray> m_cube_vao;
@@ -36,6 +40,8 @@ private:
   std::unordered_map<std::string, Ref<ShaderProgram>> m_shader_cache;
   Ref<Framebuffer> m_env_fbo;
   SkyboxType m_type;
+
+  int m_resolution{0};
 };
 }  // namespace ezg::gl
 #endif  //SKYBOX_HPP
