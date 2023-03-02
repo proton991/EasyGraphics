@@ -40,7 +40,7 @@ int main() {
       "../../glTF-Sample-Models/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf",
       "../../glTF-Sample-Models/2.0/EnvironmentTest/glTF/EnvironmentTest.gltf"};
 
-  ResourceManager::GetInstance().load_gltf_model("helmet", model_paths[0]);
+  ResourceManager::GetInstance().load_gltf_model("helmet", model_paths[1]);
 
   auto scene = SceneBuilder::Create<CustomScene>("demo");
   scene->init();

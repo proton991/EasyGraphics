@@ -8,6 +8,8 @@
 #include "graphics/vertex_array.hpp"
 #include "systems/camera_system.hpp"
 
+#define DIFFUSE_RESOLUTION 256
+#define SPECULAR_RESOLUTION 512
 
 namespace ezg::gl {
 class Framebuffer;
@@ -28,10 +30,11 @@ private:
   void setup_cube_quads();
 
   void draw_cube();
+  void draw_quad();
   // IBL
   void calc_prefilter_diffuse();
   void calc_prefilter_specular();
-  void calc_brdf_lut();
+  void calc_brdf_integration();
 
   Ref<TextureCubeMap> m_cube_texture;
   Ref<VertexArray> m_quad_vao;
@@ -39,6 +42,7 @@ private:
 
   std::unordered_map<std::string, Ref<ShaderProgram>> m_shader_cache;
   Ref<Framebuffer> m_env_fbo;
+  Ref<Framebuffer> m_screen_fbo;
   SkyboxType m_type;
 
   int m_resolution{0};

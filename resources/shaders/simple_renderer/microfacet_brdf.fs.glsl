@@ -217,14 +217,14 @@ void main() {
     }
 
     // compute F0
-    vec3 f0 = vec3(0.16 * (reflectance * reflectance));
-    f0 = mix(f0, baseColor.rgb, metallic);
+    vec3 F0 = vec3(0.16 * (reflectance * reflectance));
+    F0 = mix(F0, baseColor.rgb, metallic);
     vec3 rhoD = (1.0 - metallic) * baseColor.rgb;
-    rhoD *= vec3(1.0) - f0; // optionally
+//    rhoD *= vec3(1.0) - f0; // optionally
     // IBL Diffuse
     vec3 IBL_Diffuse = rhoD * texture(uEnvDiffuseSampler, N).rgb;
     // IBL Specular
-    vec3 IBL_Specular = specularIBL(f0, roughness, N, V);
+    vec3 IBL_Specular = specularIBL(F0, roughness, N, V);
 //    if (uHasOcclusionMap) {
 //        float ao = texture(uPBRSamplers[TEX_OCCLUSION_INDEX], vTexCoords).r;
 //        radiance = mix(radiance, radiance * ao, uOcclusionStrength);
