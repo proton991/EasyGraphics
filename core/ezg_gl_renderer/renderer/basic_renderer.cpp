@@ -113,13 +113,20 @@ void BasicRenderer::set_default_state() {
   RenderAPI::enable_blending(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-void BasicRenderer::update(const system::Camera& camera) {
+void BasicRenderer::update(const FrameInfo& info) {
   // camera ubo
-  m_camera_data.view       = camera.get_view_matrix();
-  m_camera_data.projection = camera.get_projection_matrix();
+  m_camera_data.view       = info.camera.get_view_matrix();
+  m_camera_data.projection = info.camera.get_projection_matrix();
   m_camera_data.proj_view  = m_camera_data.projection * m_camera_data.view;
 
   m_camera_ubo->set_data(&m_camera_data, sizeof(CameraData));
+  // forward pass
+  auto& forward_shader = m_shader_cache.at("forward");
+  forward_shader->use();
+  forward_shader->set_uniform("uLightIntensity", info.scene->get_light_intensity());
+  forward_shader->set_uniform("uLightPos", info.scene->get_light_pos());
+  forward_shader->set_uniform("uLightDir", info.scene->get_light_dir());
+  forward_shader->set_uniform("uCameraPos", info.camera.get_pos());
 }
 
 void BasicRenderer::render_frame(const FrameInfo& info) {
@@ -127,26 +134,20 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
   m_gbuffer->bind();
   RenderAPI::enable_depth_testing();
   RenderAPI::clear_color_and_depth();
-  // forward pass
-  auto& forward_shader = m_shader_cache.at("forward");
-  forward_shader->use();
-  forward_shader->set_uniform("uLightIntensity", info.scene->get_light_intensity());
-  forward_shader->set_uniform("uLightDirection", info.scene->get_light_pos());
+
   // bind Prefiltered IBL texture
   m_skybox->bind_prefilter_data();
 
-  update(info.camera);
+  update(info);
   // render models
   for (const auto& model : info.scene->m_models) {
     for (const auto& mesh : model->get_meshes()) {
       m_sampler_data = {};
       // model ubo
-      m_model_data.mvp_matrix    = m_camera_data.proj_view * mesh.model_matrix;
-      m_model_data.mv_matrix     = m_camera_data.view * mesh.model_matrix;
-      m_model_data.normal_matrix = glm::transpose(glm::inverse(m_model_data.mv_matrix));
+      m_model_data.model_matrix = mesh.model_matrix;
       m_model_ubo->set_data(&m_model_data, sizeof(ModelData));
       // bindless textures
-      mesh.material.upload_textures(forward_shader, m_sampler_data);
+      mesh.material.upload_textures(m_shader_cache.at("forward"), m_sampler_data);
       m_pbr_sampler_ubo->set_data(m_sampler_data.samplers, sizeof(PBRSamplerData));
       // draw mesh
       RenderAPI::draw_mesh(mesh);

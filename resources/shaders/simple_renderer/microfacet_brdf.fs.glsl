@@ -6,11 +6,12 @@
 #extension GL_ARB_bindless_texture: require
 out vec4 fColor;
 
-in vec3 vViewSpacePosition;
-in vec3 vViewSpaceNormal;
+in vec3 vWorldSpacePos;
+in vec3 vWorldSpaceNormal;
 in vec2 vTexCoords;
 
-uniform vec3 uLightDirection;
+uniform vec3 uLightPos;
+uniform vec3 uLightDir;
 uniform vec3 uLightIntensity;
 
 uniform int uAlphaMode;
@@ -27,6 +28,8 @@ uniform float uMetallicFactor;
 uniform float uRoughnessFactor;
 uniform vec3 uEmissiveFactor;
 uniform float uOcclusionStrength;
+
+uniform vec3 uCameraPos;
 
 // --------- bindless texture ---------------
 layout (binding = 2) uniform PBRSamplers {
@@ -172,9 +175,14 @@ vec3 specularIBL(vec3 F0, float roughness, vec3 N, vec3 V) {
 }
 
 void main() {
-    vec3 N = normalize(vViewSpaceNormal);
-    vec3 V = normalize(-vViewSpacePosition);
-    vec3 L = uLightDirection;
+    vec3 N = normalize(vWorldSpaceNormal);
+    vec3 V = normalize(uCameraPos - vWorldSpacePos);
+    if (uHasNormalMap) {
+        N = applyNormalMap(N, V, vTexCoords);
+    }
+//    vec3 L = normalize(uLightPos - vWorldSpacePos);
+    vec3 L = normalize(-uLightDir);
+
     vec3 H = normalize(L + V);
 
     vec4 baseColor = uBaseColorFactor;
@@ -193,9 +201,6 @@ void main() {
         vec4 metallicRougnessFromTexture = texture(uPBRSamplers[TEX_METALLICROUGHNESS_INDEX], vTexCoords);
         metallic *= metallicRougnessFromTexture.b;
         roughness *= metallicRougnessFromTexture.g;
-    }
-    if (uHasNormalMap) {
-        N = applyNormalMap(N, V, vTexCoords);
     }
 
     if (uHasEmissiveMap) {

@@ -2,10 +2,9 @@
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec2 aTexCoords;
 layout (location = 2) in vec3 aNormal;
-//layout (location = 3) in vec3 aTangent;
 
-out vec3 vViewSpacePosition;
-out vec3 vViewSpaceNormal;
+out vec3 vWorldSpacePos;
+out vec3 vWorldSpaceNormal;
 out vec2 vTexCoords;
 
 layout(std140, binding = 0) uniform Camera
@@ -16,15 +15,13 @@ layout(std140, binding = 0) uniform Camera
 };
 layout(std140, binding = 1) uniform Model
 {
-    mat4 uMvp;
-    mat4 uModelView;
-    mat4 uNormal;
+    mat4 uModel;
 };
 
 void main()
 {
-    vViewSpacePosition = vec3(uModelView * vec4(aPos, 1));
-    vViewSpaceNormal = normalize(vec3(uNormal * vec4(aNormal, 0)));
+    vWorldSpaceNormal = vec3((transpose(inverse(uModel))) * vec4(aNormal, 0.0));
+    vWorldSpacePos = vec3(uModel * vec4(aPos, 1.0));
     vTexCoords = aTexCoords;
-    gl_Position = uMvp * vec4(aPos, 1.0);
+    gl_Position = uProjView * vec4(vWorldSpacePos, 1.0);
 }

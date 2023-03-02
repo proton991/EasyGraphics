@@ -10,6 +10,7 @@ public:
   Camera(glm::vec3 eye, glm::vec3 target, float fov, float aspect, float near, float far, float speed=2.0f);
   glm::mat4 get_view_matrix() const;
   glm::mat4 get_projection_matrix() const;
+  const auto get_pos() const { return m_position; }
 
   void set_speed(float speed) { m_speed = speed; }
   void update(float deltaTime);

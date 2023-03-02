@@ -30,6 +30,7 @@ public:
   [[nodiscard]] AABB get_aabb() const;
 
   const auto& get_light_pos() const { return m_light_position; }
+  const auto& get_light_dir() const { return m_light_dir; }
   const auto& get_light_intensity() const { return m_light_intensity; }
   void switch_camera_light();
   auto light_from_camera() const { return m_camera_light_on; }
@@ -38,7 +39,8 @@ private:
   std::string m_name;
   std::vector<Ref<Model>> m_models;
   // light comes from camera
-  glm::vec3 m_light_position{0.f, 0.f, 1.f};
+  glm::vec3 m_light_position{10.f, 10.f, 10.f};
+  glm::vec3 m_light_dir{0.0f, 0.0f, -1.0f};
   glm::vec3 m_light_intensity{5.0f};
   bool m_camera_light_on{true};
 };

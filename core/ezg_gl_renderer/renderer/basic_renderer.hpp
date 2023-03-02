@@ -33,7 +33,7 @@ private:
   void setup_coordinate_axis();
   void setup_skybox();
 
-  void update(const system::Camera& camera);
+  void update(const FrameInfo& info);
 
   void set_default_state();
 
