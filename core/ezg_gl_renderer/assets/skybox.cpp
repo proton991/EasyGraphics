@@ -51,7 +51,7 @@ void Skybox::setup_shaders() {
         "skybox",
         {
             {"../resources/shaders/simple_renderer/background.vs.glsl", "vertex"},
-            {"../resources/shaders/simple_renderer/cubemap.fs.glsl", "fragment"},
+            {"../resources/shaders/simple_renderer/background.fs.glsl", "fragment"},
         }};
     shader_program_infos.push_back(info);
   } else {
@@ -65,7 +65,7 @@ void Skybox::setup_shaders() {
         "skybox",
         {
             {"../resources/shaders/simple_renderer/background.vs.glsl", "vertex"},
-            {"../resources/shaders/simple_renderer/equirectangular.fs.glsl", "fragment"},
+            {"../resources/shaders/simple_renderer/background_hdr.fs.glsl", "fragment"},
         }};
     ShaderProgramCreateInfo prefilter_diffuse_info{
         "prefilter_diffuse",

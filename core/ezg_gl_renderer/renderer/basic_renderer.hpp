@@ -48,7 +48,7 @@ private:
   Ref<UniformBuffer> m_camera_ubo;
   Ref<UniformBuffer> m_pbr_sampler_ubo;
 
-  Ref<Framebuffer> m_gbuffer;
+  Ref<Framebuffer> m_pbuffer;
 
   Ref<VertexArray> m_quad_vao;
   std::unordered_map<std::string, Ref<ShaderProgram>> m_shader_cache;

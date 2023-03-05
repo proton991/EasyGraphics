@@ -61,7 +61,7 @@ void BasicRenderer::setup_framebuffers(uint32_t width, uint32_t height) {
 
   std::vector<AttachmentInfo> attachment_infos{color_info};
   FramebufferCreatInfo framebuffer_ci{width, height, attachment_infos};
-  m_gbuffer = Framebuffer::Create(framebuffer_ci);
+  m_pbuffer = Framebuffer::Create(framebuffer_ci);
 }
 
 void BasicRenderer::setup_coordinate_axis() {
@@ -121,17 +121,17 @@ void BasicRenderer::update(const FrameInfo& info) {
 
   m_camera_ubo->set_data(&m_camera_data, sizeof(CameraData));
   // forward pass
-  auto& forward_shader = m_shader_cache.at("forward");
-  forward_shader->use();
-  forward_shader->set_uniform("uLightIntensity", info.scene->get_light_intensity());
-  forward_shader->set_uniform("uLightPos", info.scene->get_light_pos());
-  forward_shader->set_uniform("uLightDir", info.scene->get_light_dir());
-  forward_shader->set_uniform("uCameraPos", info.camera.get_pos());
+  auto& shader = m_shader_cache.at("pbr");
+  shader->use();
+  shader->set_uniform("uLightIntensity", info.scene->get_light_intensity());
+  shader->set_uniform("uLightPos", info.scene->get_light_pos());
+  shader->set_uniform("uLightDir", info.scene->get_light_dir());
+  shader->set_uniform("uCameraPos", info.camera.get_pos());
 }
 
 void BasicRenderer::render_frame(const FrameInfo& info) {
   set_default_state();
-  m_gbuffer->bind();
+  m_pbuffer->bind();
   RenderAPI::enable_depth_testing();
   RenderAPI::clear_color_and_depth();
 
@@ -147,7 +147,7 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
       m_model_data.model_matrix = mesh.model_matrix;
       m_model_ubo->set_data(&m_model_data, sizeof(ModelData));
       // bindless textures
-      mesh.material.upload_textures(m_shader_cache.at("forward"), m_sampler_data);
+      mesh.material.upload_textures(m_shader_cache.at("pbr"), m_sampler_data);
       m_pbr_sampler_ubo->set_data(m_sampler_data.samplers, sizeof(PBRSamplerData));
       // draw mesh
       RenderAPI::draw_mesh(mesh);
@@ -156,14 +156,14 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
   m_shader_cache.at("coords_axis")->use();
   RenderAPI::draw_line(m_axis_data.vao, 6);
   m_skybox->draw(info.camera);
-  m_gbuffer->unbind();
+  m_pbuffer->unbind();
 
   RenderAPI::disable_depth_testing();
   RenderAPI::clear_color();
 
   auto& screen_shader = m_shader_cache.at("screen");
   screen_shader->use();
-  m_gbuffer->bind_texture("color", 0);
+  m_pbuffer->bind_texture("color", 0);
   RenderAPI::draw_vertices(m_quad_vao, 6);
 }
 }  // namespace ezg::gl

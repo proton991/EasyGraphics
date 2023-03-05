@@ -2,7 +2,7 @@
 
 in vec3 vTexCoords;
 
-uniform sampler2D equirectangularMap;
+uniform sampler2D uEquirectangularSampler;
 
 out vec4 fColor;
 
@@ -16,7 +16,7 @@ vec2 sampleSphericalMap(const vec3 v){
 
 void main() {
     const vec2 uv = sampleSphericalMap(normalize(vTexCoords));
-    const vec3 color = texture(equirectangularMap, uv).rgb;
+    const vec3 color = texture(uEquirectangularSampler, uv).rgb;
 
     fColor = vec4(color, 1.0);
 }

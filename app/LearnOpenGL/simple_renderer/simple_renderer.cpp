@@ -24,9 +24,9 @@ int main() {
   Window window{config};
   std::vector<ShaderStage> stages1 = {
       {"../resources/shaders/simple_renderer/forward.vs.glsl", "vertex"},
-      {"../resources/shaders/simple_renderer/microfacet_brdf.fs.glsl", "fragment"},
+      {"../resources/shaders/simple_renderer/pbr_cook_torrance.fs.glsl", "fragment"},
   };
-  ShaderProgramCreateInfo info1{"forward", stages1};
+  ShaderProgramCreateInfo info1{"pbr", stages1};
 
   std::vector<ShaderStage> stages2 = {
       {"../resources/shaders/simple_renderer/framebuffers_screen.vs.glsl", "vertex"},
@@ -35,12 +35,12 @@ int main() {
   ShaderProgramCreateInfo info2{"screen", stages2};
 
   std::vector<std::string> model_paths{
-      "../../glTF-Sample-Models/2.0/SpecularTest/glTF/SpecularTest.gltf",
+      "../../glTF-Sample-Models/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf",
       "../../glTF-Sample-Models/2.0/MetalRoughSpheres/glTF/MetalRoughSpheres.gltf",
       "../../glTF-Sample-Models/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf",
       "../../glTF-Sample-Models/2.0/EnvironmentTest/glTF/EnvironmentTest.gltf"};
 
-  ResourceManager::GetInstance().load_gltf_model("helmet", model_paths[1]);
+  ResourceManager::GetInstance().load_gltf_model("helmet", model_paths[0]);
 
   auto scene = SceneBuilder::Create<CustomScene>("demo");
   scene->init();
