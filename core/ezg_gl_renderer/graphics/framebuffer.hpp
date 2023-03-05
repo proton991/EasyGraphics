@@ -33,6 +33,7 @@ struct AttachmentInfo {
   }
   int width{0};
   int height{0};
+  int level{1};
   AttachmentType type;
   AttachmentBinding binding;
   std::string name;
@@ -79,13 +80,15 @@ public:
   void unbind() const;
 
   void bind_texture(const std::string& name, int slot) const;
-  void attach_layer_texture(int layer, const std::string& name);
+  void attach_layer_texture(int layer, const std::string& name, int level = 0);
   void add_attachment(const AttachmentInfo& attachment_info);
 
   void resize_attachment(const std::string& name, int width, int height);
   void resize_depth_renderbuffer(int width, int height);
 
   void clear();
+
+  const auto get_texture_id(const std::string& name) const { return m_attachments.at(name)->get_id(); }
 private:
   void setup_depth_rbo();
   void setup_attachments();

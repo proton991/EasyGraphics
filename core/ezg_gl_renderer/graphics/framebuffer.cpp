@@ -27,7 +27,7 @@ Attachment::Attachment(const AttachmentInfo& info)
 
     glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &m_id);
     glTextureStorage2D(m_id,
-                       1,                     // one level, no mipmaps
+                       info.level,            //level: number of  mipmaps
                        info.internal_format,  // internal format
                        info.width, info.height);
 
@@ -100,10 +100,10 @@ void Framebuffer::invalidate() {
   }
 }
 
-void Framebuffer::attach_layer_texture(int layer, const std::string& name) {
+void Framebuffer::attach_layer_texture(int layer, const std::string& name, int level) {
   const auto& attachment = m_attachments.at(name);
   glNamedFramebufferTextureLayer(m_id, static_cast<int>(attachment->get_binding()),
-                                 attachment->get_id(), 0, layer);
+                                 attachment->get_id(), level, layer);
   glClearNamedFramebufferfv(m_id, GL_COLOR, 0, ClearColor);
   glClearNamedFramebufferfv(m_id, GL_DEPTH, 0, &ClearDepth);
 }

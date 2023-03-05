@@ -46,6 +46,7 @@ private:
   SkyboxType m_type;
 
   int m_resolution{0};
+  const unsigned int MaxMipLevels = 5;
 };
 }  // namespace ezg::gl
 #endif  //SKYBOX_HPP

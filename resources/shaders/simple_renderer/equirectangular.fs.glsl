@@ -8,9 +8,8 @@ void main()
 {
     vec3 envColor = texture(uEnvSampler, vTexCoords).rgb;
 
-    // HDR tonemap and gamma correct
+    // HDR tonemap
     envColor = envColor / (envColor + vec3(1.0));
-    envColor = pow(envColor, vec3(1.0/2.2));
 
     fColor = vec4(envColor, 1.0);
 }
