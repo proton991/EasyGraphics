@@ -1,5 +1,5 @@
 #include "scene.hpp"
-#include <spdlog/spdlog.h>
+#include "log.hpp"
 #include "managers/resource_manager.hpp"
 #include "systems/input_system.hpp"
 

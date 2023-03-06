@@ -1,10 +1,9 @@
 #include "shader.hpp"
-#include <spdlog/spdlog.h>
+#include "log.hpp"
 #include <utility>
 #include "managers/resource_manager.hpp"
 
 namespace ezg::gl {
-namespace spd = spdlog;
 
 std::unordered_map<std::string, int> ShaderStage::Name2GL_ENUM = {{"vertex", GL_VERTEX_SHADER},
                                                                   {"fragment", GL_FRAGMENT_SHADER},

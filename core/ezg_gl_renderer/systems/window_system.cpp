@@ -1,9 +1,8 @@
 #include "window_system.hpp"
 #include <GLFW/glfw3.h>
-#include <spdlog/spdlog.h>
+#include "log.hpp"
 #include "input_system.hpp"
 
-namespace spd = spdlog;
 namespace ezg::system {
 
 static void glfw_error_call_back(int code, const char* msg) {

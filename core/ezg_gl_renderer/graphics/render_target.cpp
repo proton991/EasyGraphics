@@ -1,6 +1,6 @@
 #include "render_target.hpp"
 
-#include <spdlog/spdlog.h>
+#include "log.hpp"
 #include <utility>
 
 namespace ezg::gl {

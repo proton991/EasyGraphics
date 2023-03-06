@@ -1,5 +1,5 @@
 #include "resource_manager.hpp"
-#include <spdlog/spdlog.h>
+#include "log.hpp"
 #include <stb_image.h>
 #include <tiny_gltf.h>
 #include <tiny_obj_loader.h>

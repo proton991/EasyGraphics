@@ -1,7 +1,7 @@
 #include "vertex_array.hpp"
-#include <spdlog/spdlog.h>
+#include "log.hpp"
+
 namespace ezg::gl {
-namespace spd = spdlog;
 
 VertexArray::VertexArray() {
   glCreateVertexArrays(1, &m_id);

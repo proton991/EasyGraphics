@@ -1,6 +1,7 @@
 #ifndef EASYGRAPHICS_WINDOW_SYSTEM_HPP
 #define EASYGRAPHICS_WINDOW_SYSTEM_HPP
 
+#include <memory>
 #include "graphics/context.hpp"
 
 struct GLFWwindow;

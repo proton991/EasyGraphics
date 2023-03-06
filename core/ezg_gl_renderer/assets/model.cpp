@@ -1,5 +1,5 @@
 #include "model.hpp"
-#include <spdlog/spdlog.h>
+#include "log.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace ezg::gl {

@@ -1,5 +1,5 @@
 #include "texture.hpp"
-#include <spdlog/spdlog.h>
+#include "log.hpp"
 #include <stb_image.h>
 
 namespace ezg::gl {

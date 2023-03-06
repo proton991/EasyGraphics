@@ -4,7 +4,6 @@
 #include "systems/profile_system.hpp"
 #include "systems/window_system.hpp"
 
-#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 using namespace ezg::system;
 using namespace ezg::gl;
 using namespace ezg::app;
@@ -35,12 +34,12 @@ int main() {
   ShaderProgramCreateInfo info2{"screen", stages2};
 
   std::vector<std::string> model_paths{
-      "../../glTF-Sample-Models/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf",
+      "../../glTF-Sample-Models/2.0/ToyCar/glTF/ToyCar.gltf",
       "../../glTF-Sample-Models/2.0/MetalRoughSpheres/glTF/MetalRoughSpheres.gltf",
       "../../glTF-Sample-Models/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf",
       "../../glTF-Sample-Models/2.0/EnvironmentTest/glTF/EnvironmentTest.gltf"};
 
-  ResourceManager::GetInstance().load_gltf_model("helmet", model_paths[0]);
+  ResourceManager::GetInstance().load_gltf_model("helmet", model_paths[1]);
 
   auto scene = SceneBuilder::Create<CustomScene>("demo");
   scene->init();

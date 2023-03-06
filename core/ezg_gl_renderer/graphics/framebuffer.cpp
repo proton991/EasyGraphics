@@ -1,5 +1,5 @@
 #include "framebuffer.hpp"
-#include <spdlog/spdlog.h>
+#include "log.hpp"
 
 namespace ezg::gl {
 
