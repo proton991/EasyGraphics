@@ -25,7 +25,7 @@ public:
   void add_model(const std::string& model_name);
   void add_model(const Ref<Model>& model);
 
-  void update();
+  void update(float time = 0.0f);
 
   [[nodiscard]] AABB get_aabb() const;
 

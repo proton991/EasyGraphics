@@ -34,6 +34,7 @@ void GUISystem::draw(const GUIInfo& info) {
     ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 
     ImGui::Combo("Select Model", &m_selected_model, info.model_list.data(), info.model_list.size());
+    ImGui::Checkbox("Rotate Model", &m_rotate_model);
     ImGui::SameLine();
 
     ImGui::End();

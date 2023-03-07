@@ -26,6 +26,7 @@ private:
   void render_frame();
 
   int m_selected_model{0};
+  bool m_rotate_model{true};
 };
 }  // namespace ezg::system
 #endif  //EASYGRAPHICS_GUI_SYSTEM_HPP

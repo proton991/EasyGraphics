@@ -16,10 +16,14 @@ void BaseScene::add_model(const std::string& model_name) {
   m_models.push_back(ResourceManager::GetInstance().get_model(model_name));
 }
 
-void BaseScene::update() {
+void BaseScene::update(float time) {
   // turn on/off light
   if (system::KeyboardMouseInput::GetInstance().was_key_pressed_once(GLFW_KEY_L)) {
     switch_camera_light();
+  }
+  float rotation_angle = time * 0.5f;
+  for (auto& model : m_models) {
+    model->rotate(rotation_angle);
   }
 }
 

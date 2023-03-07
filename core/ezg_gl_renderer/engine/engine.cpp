@@ -3,8 +3,8 @@
 #include "renderer/basic_renderer.hpp"
 #include "simple_scene.hpp"
 #include "systems/gui_system.hpp"
-#include "systems/profile_system.hpp"
 #include "systems/input_system.hpp"
+#include "systems/profile_system.hpp"
 #include "systems/window_system.hpp"
 
 using namespace ezg::system;
@@ -58,10 +58,15 @@ void Engine::run() {
   GUIInfo gui_info{ModelNames};
   while (!m_window->should_close()) {
     FrameInfo frame_info{m_scene, *m_camera};
+    float delta_time = m_stop_watch->time_step();
 
-    m_scene->update();
+    if (m_gui->m_rotate_model) {
+      m_scene->update(delta_time);
+    } else {
+      m_scene->update();
+    }
 
-    m_camera->update(m_stop_watch->time_step());
+    m_camera->update(delta_time);
 
     m_renderer->render_frame(frame_info);
 
