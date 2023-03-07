@@ -51,7 +51,6 @@ void Engine::reload_scene(int index) {
   m_scene->load_new_model(ModelPaths[m_current_model_index]);
   auto aabb = m_scene->get_aabb();
   m_camera  = Camera::Create(aabb.bbx_min, aabb.bbx_max);
-  KeyboardMouseInput::GetInstance().reset();
 }
 
 void Engine::run() {
@@ -66,7 +65,7 @@ void Engine::run() {
       m_scene->update();
     }
 
-    m_camera->update(delta_time);
+    m_camera->update(delta_time, m_gui->m_rotate_camera);
 
     m_renderer->render_frame(frame_info);
 

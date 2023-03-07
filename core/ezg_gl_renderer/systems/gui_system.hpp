@@ -26,7 +26,8 @@ private:
   void render_frame();
 
   int m_selected_model{0};
-  bool m_rotate_model{true};
+  bool m_rotate_model{false};
+  bool m_rotate_camera{false};
 };
 }  // namespace ezg::system
 #endif  //EASYGRAPHICS_GUI_SYSTEM_HPP

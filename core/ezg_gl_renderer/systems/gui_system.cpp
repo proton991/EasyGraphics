@@ -35,6 +35,7 @@ void GUISystem::draw(const GUIInfo& info) {
 
     ImGui::Combo("Select Model", &m_selected_model, info.model_list.data(), info.model_list.size());
     ImGui::Checkbox("Rotate Model", &m_rotate_model);
+    ImGui::Checkbox("Rotate Camera", &m_rotate_camera);
     ImGui::SameLine();
 
     ImGui::End();

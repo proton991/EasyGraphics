@@ -75,10 +75,7 @@ public:
 
   void resume();
 
-  inline void reset() {
-    m_first_mouse = true;
-  }
-
+  void pause();
 private:
   KeyboardMouseInput() = default;
   std::array<std::int64_t, 2> m_previous_cursor_pos{0, 0};  // [x, y]
@@ -89,6 +86,7 @@ private:
   bool m_mouse_buttons_updated{false};
   bool m_first_mouse{true};
   mutable std::shared_mutex m_input_mutex;
+  bool m_mouse_paused{false};
 };
 }  // namespace ezg::system
 #endif  //EASYGRAPHICS_INPUT_SYSTEM_HPP

@@ -45,8 +45,9 @@ Camera::Camera(glm::vec3 eye, glm::vec3 target, float fov, float aspect, float n
     : m_position{eye}, m_aspect{aspect}, m_fov{fov}, m_near{near}, m_far{far}, m_speed(speed) {
   glm::vec3 direction = glm::normalize(target - m_position);
 
-  m_pitch = glm::degrees(asin(direction.y));
-  m_yaw   = glm::degrees(atan2(direction.z, direction.x));
+  m_pitch  = glm::degrees(asin(direction.y));
+  m_yaw    = glm::degrees(atan2(direction.z, direction.x));
+  m_target = target;
 
   update_base_vectors();
   set_projection_matrix();
@@ -106,20 +107,33 @@ void Camera::update_view() {
   m_pitch = std::clamp(m_pitch, -89.0f, 89.0f);
 }
 
-void Camera::update(float deltaTime) {
-  if (KeyboardMouseInput::GetInstance().was_key_pressed_once(GLFW_KEY_TAB)) {
+void Camera::update(float deltaTime, bool rotate) {
+  if (KeyboardMouseInput::GetInstance().was_key_pressed_once(GLFW_KEY_TAB) && !rotate) {
     m_dirty = !m_dirty;
     if (m_dirty) {
       KeyboardMouseInput::GetInstance().resume();
+    } else {
+      KeyboardMouseInput::GetInstance().pause();
     }
   }
-  if (m_dirty) {
+  if (m_dirty && !rotate) {
     const float velocity = m_speed * deltaTime;
     update_position(velocity);
     update_view();
     update_base_vectors();
   }
 
+  if (rotate && !m_dirty) {
+    float angle = 0.3f * deltaTime;
+    auto rotation{glm::mat3(glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f)))};
+    m_position = m_position * rotation;
+    m_front    = m_front * rotation;
+    m_up       = m_up * rotation;
+    m_right    = m_right * rotation;
+    glm::vec3 direction{glm::normalize(m_target - m_position)};
+    m_pitch = glm::degrees(asin(direction.y));
+    m_yaw   = glm::degrees(atan2(direction.z, direction.x));
+  }
 }
 
 glm::mat4 Camera::get_view_matrix() const {

@@ -16,7 +16,7 @@ public:
   const auto get_pos() const { return m_position; }
 
   void set_speed(float speed) { m_speed = speed; }
-  void update(float deltaTime);
+  void update(float deltaTime, bool rotate = false);
 
 private:
   void set_projection_matrix();
@@ -29,6 +29,8 @@ private:
   glm::vec3 m_up{0.0f, 1.0f, 0.0f};
   glm::vec3 m_right;
   const glm::vec3 m_world_up{0.0f, 1.0f, 0.0f};
+
+  glm::vec3 m_target{};
 
   float m_aspect;
   float m_fov{70.0f};

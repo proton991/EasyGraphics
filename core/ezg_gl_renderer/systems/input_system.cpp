@@ -64,8 +64,10 @@ void KeyboardMouseInput::set_cursor_pos(const double pos_x, const double pos_y) 
     m_previous_cursor_pos[1] = pos_y;
     m_first_mouse = false;
   }
-  m_current_cursor_pos[0] = static_cast<std::int64_t>(pos_x);
-  m_current_cursor_pos[1] = static_cast<std::int64_t>(pos_y);
+  if (!m_mouse_paused) {
+    m_current_cursor_pos[0] = static_cast<std::int64_t>(pos_x);
+    m_current_cursor_pos[1] = static_cast<std::int64_t>(pos_y);
+  }
 }
 
 std::array<std::int64_t, 2> KeyboardMouseInput::get_cursor_pos() const {
@@ -86,7 +88,14 @@ std::array<double, 2> KeyboardMouseInput::calculate_cursor_position_delta() {
 }
 
 void KeyboardMouseInput::resume() {
+  std::scoped_lock lock(m_input_mutex);
   m_current_cursor_pos = m_previous_cursor_pos;
   m_first_mouse = true;
+  m_mouse_paused = false;
+}
+
+void KeyboardMouseInput::pause() {
+  std::scoped_lock lock(m_input_mutex);
+  m_mouse_paused = true;
 }
 }  // namespace ezg::system
