@@ -67,23 +67,32 @@ target_include_directories(glfw INTERFACE ${GLFW_DIR}/include)
 target_link_directories(glfw INTERFACE ${GLFW_DIR}/lib-vc2022)
 target_link_libraries(glfw INTERFACE glfw3)
 
+############################
+##         imgui           #
+############################
+#add_library(imgui STATIC)
+#target_include_directories(imgui PUBLIC imgui)
+#target_sources(imgui PRIVATE
+#    imgui/imgui.h
+#    imgui/imgui.cpp
+#
+#    imgui/imgui_demo.cpp
+#    imgui/imgui_draw.cpp
+#    imgui/imgui_widgets.cpp
+#
+#    imgui/imgui_impl_vulkan.cpp
+#    imgui/imgui_impl_sdl.cpp
+#    )
+#target_link_libraries(imgui PUBLIC Vulkan::Vulkan sdl2)
+
 ###########################
 #         imgui           #
 ###########################
 add_library(imgui STATIC)
-target_include_directories(imgui PUBLIC imgui)
-target_sources(imgui PRIVATE
-    imgui/imgui.h
-    imgui/imgui.cpp
-
-    imgui/imgui_demo.cpp
-    imgui/imgui_draw.cpp
-    imgui/imgui_widgets.cpp
-
-    imgui/imgui_impl_vulkan.cpp
-    imgui/imgui_impl_sdl.cpp
-    )
-target_link_libraries(imgui PUBLIC Vulkan::Vulkan sdl2)
+target_include_directories(imgui PUBLIC dear_imgui)
+file(GLOB IMGUI_SRC dear_imgui/*.cpp dear_imgui/*.h)
+target_sources(imgui PRIVATE ${IMGUI_SRC})
+target_link_libraries(imgui glfw)
 
 ###########################
 #         glad            #

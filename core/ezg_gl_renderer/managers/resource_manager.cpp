@@ -110,7 +110,11 @@ void ResourceManager::load_model(const std::string& name, const std::string& pat
   m_model_cache.try_emplace(name, std::make_shared<Model>(name, vertices, indices));
 }
 
-Ref<Model> ResourceManager::load_gltf_model(const std::string& name, const std::string& path) {
+Ref<Model> ResourceManager::load_gltf_model(const std::string& path) {
+  auto name = extract_name(path);
+  if (m_model_cache.contains(name)) {
+    return m_model_cache.at(name);
+  }
   tinygltf::Model gltf_model;
   tinygltf::TinyGLTF loader;
   std::string error;
@@ -258,6 +262,8 @@ Ref<Model> ResourceManager::load_gltf_model(const std::string& name, const std::
   model->set_aabb(aabb);
   m_model_cache[name] = model;
   spdlog::info("Model {} mesh size : {}", name, model->get_mesh_size());
+  model->translate(glm::vec3{0.0f, 0.0f, 0.0f});
+  m_texture_cache.clear();
   return model;
 }
 
@@ -315,5 +321,11 @@ Ref<TextureCubeMap> ResourceManager::load_cubemap_textures(
     stbi_image_free(face_data[i]);
   }
   return m_cubemap_cache.at(name);
+}
+
+std::string ResourceManager::extract_name(const std::string& path) {
+  size_t pos = path.find_last_of('/');
+  // Extract the substring after the last '/'
+  return path.substr(pos + 1);
 }
 }  // namespace ezg::gl

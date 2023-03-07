@@ -1,4 +1,6 @@
 #include "basic_renderer.hpp"
+
+#include <memory>
 #include "assets/skybox.hpp"
 #include "graphics/framebuffer.hpp"
 #include "graphics/shader.hpp"
@@ -6,9 +8,23 @@
 #include "scene.hpp"
 
 namespace ezg::gl {
-BasicRenderer::BasicRenderer(const BasicRenderer::Config& config)
+BasicRenderer::BasicRenderer(const RendererConfig& config)
     : m_width(config.width), m_height(config.height) {
-  compile_shaders(config.shader_program_infos);
+  ShaderProgramCreateInfo info1{
+      "pbr",
+      {
+          {"../resources/shaders/simple_renderer/forward.vs.glsl", "vertex"},
+          {"../resources/shaders/simple_renderer/pbr_cook_torrance.fs.glsl", "fragment"},
+      }};
+
+  ShaderProgramCreateInfo info2{
+      "screen",
+      {
+          {"../resources/shaders/simple_renderer/framebuffers_screen.vs.glsl", "vertex"},
+          {"../resources/shaders/simple_renderer/framebuffers_screen.fs.glsl", "fragment"},
+      }};
+
+  compile_shaders({info1, info2});
   setup_ubos();
   setup_screen_quad();
   setup_framebuffers(m_width, m_height);

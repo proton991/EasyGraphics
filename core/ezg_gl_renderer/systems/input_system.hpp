@@ -75,6 +75,10 @@ public:
 
   void resume();
 
+  inline void reset() {
+    m_first_mouse = true;
+  }
+
 private:
   KeyboardMouseInput() = default;
   std::array<std::int64_t, 2> m_previous_cursor_pos{0, 0};  // [x, y]

@@ -99,7 +99,6 @@ Window::Window(const WindowConfig& config) {
   center_window();
   // setup input callbacks
   set_glfw_callbacks();
-  disable_cursor();
 }
 
 void Window::wait_for_focus() {

@@ -22,11 +22,13 @@ public:
 
   Ref<Model> get_model(const std::string& name);
 
-  Ref<Model> load_gltf_model(const std::string& name, const std::string& path);
+  Ref<Model> load_gltf_model(const std::string& path);
 
   Ref<Texture2D> load_hdr_texture(const std::string& path);
 
   Ref<TextureCubeMap> load_cubemap_textures(const std::string& name, const std::vector<std::string>& face_paths);
+
+  std::string extract_name(const std::string& path);
 private:
   ResourceManager() {
       m_white_texture = Texture2D::CreateDefaultWhite();

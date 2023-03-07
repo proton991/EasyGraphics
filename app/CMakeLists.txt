@@ -38,6 +38,7 @@ set(GL_APPS
   hello_triangle_textured
   camera_class
   simple_renderer
+  ezg_gl_engine
 )
 
 file(GLOB DLLS "${CMAKE_SOURCE_DIR}/third_party/dlls/*.dll")

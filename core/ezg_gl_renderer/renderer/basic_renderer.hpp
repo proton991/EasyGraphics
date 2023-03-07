@@ -4,6 +4,7 @@
 #include <vector>
 #include "frame_info.hpp"
 #include "renderer_data.hpp"
+#include "base.hpp"
 
 namespace ezg::gl {
 // forward declaration
@@ -12,16 +13,14 @@ class VertexArray;
 class UniformBuffer;
 class BaseScene;
 class Skybox;
-
+struct RendererConfig {
+  const uint32_t width;
+  const uint32_t height;
+};
 class BasicRenderer {
 public:
-  struct Config {
-    const uint32_t width;
-    const uint32_t height;
-    const std::vector<ShaderProgramCreateInfo>& shader_program_infos;
-  };
 
-  explicit BasicRenderer(const Config& config);
+  explicit BasicRenderer(const RendererConfig& config);
 
   void render_frame(const FrameInfo& info);
 

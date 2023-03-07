@@ -21,7 +21,7 @@ public:
   BaseScene& operator=(const BaseScene&) = delete;
   BaseScene(const BaseScene&)            = delete;
 
-  virtual void init() = 0;
+  virtual void init() {};
   void add_model(const std::string& model_name);
   void add_model(const Ref<Model>& model);
 
@@ -35,7 +35,7 @@ public:
   void switch_camera_light();
   auto light_from_camera() const { return m_camera_light_on; }
 
-private:
+protected:
   std::string m_name;
   std::vector<Ref<Model>> m_models;
   // light comes from camera

@@ -93,7 +93,6 @@ private:
   void setup_depth_rbo();
   void setup_attachments();
   void invalidate();
-  int get_slot(const Ref<Attachment>& attachment) const;
 
   uint32_t m_id{0};
   int m_width;

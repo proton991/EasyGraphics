@@ -142,10 +142,6 @@ void Framebuffer::unbind() const {
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-int Framebuffer::get_slot(const Ref<Attachment>& attachment) const {
-  return static_cast<int>(attachment->get_binding()) - GL_COLOR_ATTACHMENT0;
-}
-
 void Framebuffer::bind(bool set_view_port) const {
   glBindFramebuffer(GL_FRAMEBUFFER, m_id);
   if (set_view_port) {

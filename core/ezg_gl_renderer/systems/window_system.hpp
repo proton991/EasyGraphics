@@ -60,7 +60,7 @@ private:
 
     // status
     bool should_close{false};
-    bool show_cursor{false};
+    bool show_cursor{true};
     bool should_resize{false};
   } m_data;
 };

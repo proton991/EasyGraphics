@@ -1,6 +1,7 @@
 #include "custom_scene.hpp"
 #include "managers/resource_manager.hpp"
 #include "renderer/basic_renderer.hpp"
+#include "systems/gui_system.hpp"
 #include "systems/profile_system.hpp"
 #include "systems/window_system.hpp"
 
@@ -39,7 +40,7 @@ int main() {
       "../../glTF-Sample-Models/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf",
       "../../glTF-Sample-Models/2.0/EnvironmentTest/glTF/EnvironmentTest.gltf"};
 
-  ResourceManager::GetInstance().load_gltf_model("helmet", model_paths[1]);
+  ResourceManager::GetInstance().load_gltf_model(model_paths[0]);
 
   auto scene = SceneBuilder::Create<CustomScene>("demo");
   scene->init();
@@ -47,10 +48,9 @@ int main() {
   auto camera = Camera::CreateBasedOnBBox(scene->get_aabb().bbx_min, scene->get_aabb().bbx_max);
 
   StopWatch stop_watch;
-  BasicRenderer::Config render_config{
+  RendererConfig render_config{
       config.width,
-      config.height,
-      {info1, info2},
+      config.height
   };
   BasicRenderer renderer{render_config};
 

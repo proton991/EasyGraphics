@@ -5,8 +5,21 @@
 #include <iostream>
 #include "systems/input_system.hpp"
 namespace ezg::system {
+Ref<Camera> Camera::Create(const glm::vec3& bbox_min, const glm::vec3& bbox_max) {
+  const auto diag   = bbox_max - bbox_min;
+  auto max_distance = glm::length(diag);
+  float near        = 0.001f * max_distance;
+  float far         = 5.f * max_distance;
+  float fov         = 70.0f;
+  const auto center = 0.5f * (bbox_max + bbox_min);
+  const auto up     = glm::vec3(0, 1, 0);
+  const auto eye    = diag.z > 0 ? center + 1.5f * diag : center + 2.f * glm::cross(diag, up);
+  const auto speed  = max_distance / 2;
+  return CreateRef<Camera>(eye, center, fov, 1.0f, near, far, speed);
+}
+
 Camera Camera::CreateDefault() {
-  glm::vec3 eye    = {0.0f, 0.0f, -5.0f};
+  glm::vec3 eye    = {0.0f, 0.0f, 5.0f};
   glm::vec3 target = {0.0f, 0.0f, 0.0f};
   float fov        = 70.0f;
   float near       = 1.0f;
