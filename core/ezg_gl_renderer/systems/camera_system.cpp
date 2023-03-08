@@ -5,7 +5,7 @@
 #include <iostream>
 #include "systems/input_system.hpp"
 namespace ezg::system {
-Ref<Camera> Camera::Create(const glm::vec3& bbox_min, const glm::vec3& bbox_max) {
+Ref<Camera> Camera::Create(const glm::vec3& bbox_min, const glm::vec3& bbox_max, float aspect) {
   const auto diag   = bbox_max - bbox_min;
   auto max_distance = glm::length(diag);
   float near        = 0.001f * max_distance;
@@ -15,7 +15,7 @@ Ref<Camera> Camera::Create(const glm::vec3& bbox_min, const glm::vec3& bbox_max)
   const auto up     = glm::vec3(0, 1, 0);
   const auto eye    = diag.z > 0 ? center + 1.5f * diag : center + 2.f * glm::cross(diag, up);
   const auto speed  = max_distance / 2;
-  return CreateRef<Camera>(eye, center, fov, 1.0f, near, far, speed);
+  return CreateRef<Camera>(eye, center, fov, aspect, near, far, speed);
 }
 
 Camera Camera::CreateDefault() {
@@ -134,6 +134,11 @@ void Camera::update(float deltaTime, bool rotate) {
     m_pitch = glm::degrees(asin(direction.y));
     m_yaw   = glm::degrees(atan2(direction.z, direction.x));
   }
+}
+
+void Camera::update_aspect(float aspect) {
+  m_aspect = aspect;
+  set_projection_matrix();
 }
 
 glm::mat4 Camera::get_view_matrix() const {

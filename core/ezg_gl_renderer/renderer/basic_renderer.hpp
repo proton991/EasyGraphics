@@ -2,9 +2,9 @@
 #define EASYGRAPHICS_BASIC_RENDERER_HPP
 
 #include <vector>
+#include "base.hpp"
 #include "frame_info.hpp"
 #include "renderer_data.hpp"
-#include "base.hpp"
 
 namespace ezg::gl {
 // forward declaration
@@ -19,10 +19,11 @@ struct RendererConfig {
 };
 class BasicRenderer {
 public:
-
   explicit BasicRenderer(const RendererConfig& config);
 
   void render_frame(const FrameInfo& info);
+
+  void resize_fbos(int width, int height);
 
 private:
   void compile_shaders(const std::vector<ShaderProgramCreateInfo>& shader_program_infos);

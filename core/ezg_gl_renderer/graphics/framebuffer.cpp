@@ -110,8 +110,8 @@ void Framebuffer::attach_layer_texture(int layer, const std::string& name, int l
 
 void Framebuffer::resize_attachment(const std::string& name, int width, int height) {
   const auto& att = m_attachments.at(name);
-  glTextureStorage2D(att->get_id(), 1, att->get_internal_format(), width, height);
   if (att->get_type() != AttachmentType::TEXTURE_CUBEMAP) {
+    glTextureStorage2D(att->get_id(), 1, att->get_internal_format(), width, height);
     glNamedFramebufferTexture(m_id, static_cast<int>(att->get_binding()), att->get_id(), 0);
   }
 }

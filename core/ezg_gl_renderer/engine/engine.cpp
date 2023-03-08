@@ -17,7 +17,7 @@ void Engine::initialize() {
   config.height        = 900;
   config.major_version = 4;
   config.minor_version = 5;
-  config.resizable     = GL_FALSE;
+  config.resizable     = GL_TRUE;
   config.title         = "OpenGL Renderer";
   m_window             = CreateRef<Window>(config);
 
@@ -40,7 +40,7 @@ void Engine::initialize() {
 
   // setup camera
   auto aabb = m_scene->get_aabb();
-  m_camera  = Camera::Create(aabb.bbx_min, aabb.bbx_max);
+  m_camera  = Camera::Create(aabb.bbx_min, aabb.bbx_max, m_window->get_aspect());
 
   // timer
   m_stop_watch = CreateRef<StopWatch>();
@@ -50,13 +50,19 @@ void Engine::reload_scene(int index) {
   m_current_model_index = index;
   m_scene->load_new_model(ModelPaths[m_current_model_index]);
   auto aabb = m_scene->get_aabb();
-  m_camera  = Camera::Create(aabb.bbx_min, aabb.bbx_max);
+  m_camera  = Camera::Create(aabb.bbx_min, aabb.bbx_max, m_window->get_aspect());
 }
 
 void Engine::run() {
   GUIInfo gui_info{ModelNames};
   while (!m_window->should_close()) {
     FrameInfo frame_info{m_scene, *m_camera};
+    if (m_window->should_resize()) {
+      m_window->resize();
+      m_renderer->resize_fbos(m_window->get_width(), m_window->get_height());
+      float aspect = (float)m_window->get_width() / (float)m_window->get_height();
+      m_camera->update_aspect(aspect);
+    }
     float delta_time = m_stop_watch->time_step();
 
     if (m_gui->m_rotate_model) {

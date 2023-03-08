@@ -45,6 +45,13 @@ public:
   void update();
 
   [[nodiscard]] auto should_close() const { return m_data.should_close; }
+  [[nodiscard]] auto should_resize() const { return m_data.should_resize; }
+
+  void resize() { m_data.should_resize = false; }
+
+  [[nodiscard]] auto get_width() const { return m_data.width; }
+  [[nodiscard]] auto get_height() const { return m_data.height; }
+  [[nodiscard]] auto get_aspect() const { return float(m_data.width) / float(m_data.height); }
 
 private:
   bool center_window();

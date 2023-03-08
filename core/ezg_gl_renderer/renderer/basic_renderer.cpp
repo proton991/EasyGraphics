@@ -182,4 +182,11 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
   m_pbuffer->bind_texture("color", 0);
   RenderAPI::draw_vertices(m_quad_vao, 6);
 }
+
+void BasicRenderer::resize_fbos(int width, int height) {
+  m_width  = width;
+  m_height = height;
+  setup_framebuffers(m_width, m_height);
+  glViewport(0, 0, width, height);
+}
 }  // namespace ezg::gl
