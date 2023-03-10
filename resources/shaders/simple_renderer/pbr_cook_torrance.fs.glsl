@@ -219,8 +219,10 @@ void main() {
     // compute F0
     vec3 F0 = vec3(0.16 * (reflectance * reflectance));
     F0 = mix(F0, baseColor.rgb, metallic);
+    vec3 F = fresnelSchlick(max(dot(V, H), 0.0), F0);
     vec3 rhoD = (1.0 - metallic) * baseColor.rgb;
-//    rhoD *= vec3(1.0) - f0; // optionally
+    rhoD *= vec3(1.0) - F;
+
     // IBL Diffuse
     vec3 IBL_Diffuse = rhoD * texture(uEnvDiffuseSampler, N).rgb;
     // IBL Specular
