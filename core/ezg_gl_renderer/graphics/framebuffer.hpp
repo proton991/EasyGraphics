@@ -19,18 +19,12 @@ enum class AttachmentBinding : decltype(GL_COLOR_ATTACHMENT0) {
   COLOR4 = GL_COLOR_ATTACHMENT4,
 
   DEPTH_STENCIL = GL_DEPTH_STENCIL_ATTACHMENT,
+  DEPTH = GL_DEPTH_ATTACHMENT,
 };
 
 struct AttachmentInfo {
-  static auto Color(std::string name_, AttachmentBinding binding_, int w, int h) {
-    AttachmentInfo info{};
-    info.type    = AttachmentType::TEXTURE_2D;
-    info.name    = std::move(name_);
-    info.binding = binding_;
-    info.width   = w;
-    info.height  = h;
-    return info;
-  }
+  static AttachmentInfo Color(std::string name_, AttachmentBinding binding_, int w, int h);
+  static AttachmentInfo Depth(int w, int h);
   int width{0};
   int height{0};
   int level{1};
@@ -42,8 +36,6 @@ struct AttachmentInfo {
   int mag_filter{GL_LINEAR};
   int min_filter{GL_LINEAR};
   GLenum internal_format{GL_RGBA8};
-  GLenum data_format{GL_RGBA};
-  GLenum data_type{GL_UNSIGNED_BYTE};
   bool generate_mipmap{false};
 };
 
@@ -88,7 +80,10 @@ public:
 
   void clear();
 
-  const auto get_texture_id(const std::string& name) const { return m_attachments.at(name)->get_id(); }
+  const auto get_texture_id(const std::string& name) const {
+    return m_attachments.at(name)->get_id();
+  }
+
 private:
   void setup_depth_rbo();
   void setup_attachments();
@@ -104,6 +99,7 @@ private:
 
   const float ClearColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
   const float ClearDepth    = 1.0f;
+  bool m_has_depth_texture{false};
 };
 }  // namespace ezg::gl
 #endif  //FRAMEBUFFER_HPP

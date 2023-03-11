@@ -146,9 +146,11 @@ Skybox::Skybox(const std::string& hdr_path, int resolution) : m_resolution(resol
                             .binding = AttachmentBinding::COLOR0,
                             .name    = "base_color",
                             // use float for hdr
-                            .internal_format = GL_RGB16F,
-                            .data_format     = GL_RGB,
-                            .data_type       = GL_FLOAT};
+                            .internal_format = GL_RGB16F};
+
+  AttachmentInfo depth{ AttachmentInfo::Depth(resolution, resolution) };
+  depth.internal_format = GL_RGB16F;
+
   FramebufferCreatInfo env_fbo_ci{.width             = static_cast<uint32_t>(resolution),
                                   .height            = static_cast<uint32_t>(resolution),
                                   .attachments_infos = {base_color}};
@@ -180,9 +182,7 @@ void Skybox::calc_prefilter_diffuse() {
                                    .binding = AttachmentBinding::COLOR0,
                                    .name    = "prefilter_diffuse",
                                    // use float for hdr
-                                   .internal_format = GL_RGB16F,
-                                   .data_format     = GL_RGB,
-                                   .data_type       = GL_FLOAT};
+                                   .internal_format = GL_RGB16F};
 
   auto& prefilter_diffuse_shader = m_shader_cache.at("prefilter_diffuse");
   prefilter_diffuse_shader->use();
@@ -209,8 +209,6 @@ void Skybox::calc_prefilter_specular() {
                                     .min_filter = GL_LINEAR_MIPMAP_LINEAR,
                                     // use float for hdr
                                     .internal_format = GL_RGB16F,
-                                    .data_format     = GL_RGB,
-                                    .data_type       = GL_FLOAT,
                                     .generate_mipmap = true};
 
   auto& shader = m_shader_cache.at("prefilter_specular");
@@ -244,9 +242,8 @@ void Skybox::calc_brdf_integration() {
                       .binding = AttachmentBinding::COLOR0,
                       .name    = "brdf_integration",
                       // use float for hdr
-                      .internal_format = GL_RG16F,
-                      .data_format     = GL_RG,
-                      .data_type       = GL_FLOAT};
+                      .internal_format = GL_RG16F};
+
   FramebufferCreatInfo screen_fbo_ci{.width             = static_cast<uint32_t>(m_resolution),
                                      .height            = static_cast<uint32_t>(m_resolution),
                                      .attachments_infos = {info}};

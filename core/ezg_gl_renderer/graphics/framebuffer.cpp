@@ -2,6 +2,29 @@
 #include "log.hpp"
 
 namespace ezg::gl {
+AttachmentInfo AttachmentInfo::Color(std::string name_, AttachmentBinding binding_, int w, int h) {
+  AttachmentInfo info{};
+  info.type    = AttachmentType::TEXTURE_2D;
+  info.name    = std::move(name_);
+  info.binding = binding_;
+  info.width   = w;
+  info.height  = h;
+  return info;
+}
+
+AttachmentInfo AttachmentInfo::Depth(int w, int h) {
+  AttachmentInfo info{};
+  info.type            = AttachmentType::TEXTURE_2D;
+  info.name            = "depth";
+  info.binding         = AttachmentBinding::DEPTH;
+  info.width           = w;
+  info.height          = h;
+  info.min_filter      = GL_NEAREST;
+  info.mag_filter      = GL_NEAREST;
+  info.wrap            = GL_REPEAT;
+  info.internal_format = GL_DEPTH_COMPONENT32F;
+  return info;
+}
 
 Ref<Attachment> Attachment::Create(const AttachmentInfo& info) {
   return CreateRef<Attachment>(info);
@@ -74,7 +97,12 @@ void Framebuffer::setup_attachments() {
                                 attachment->get_id(), 0);
     }
     m_attachment_ids.push_back(attachment->get_id());
-    buffers.push_back(static_cast<GLenum>(attachment->get_binding()));
+    if (attachment->get_binding() != AttachmentBinding::DEPTH &&
+        attachment->get_binding() != AttachmentBinding::DEPTH_STENCIL) {
+      buffers.push_back(static_cast<GLenum>(attachment->get_binding()));
+    } else {
+      m_has_depth_texture = true;
+    }
     m_attachments.try_emplace(attachment->get_name(), attachment);
   }
   if (buffers.empty()) {
@@ -93,7 +121,9 @@ void Framebuffer::invalidate() {
   }
   glCreateFramebuffers(1, &m_id);
   setup_attachments();
-  setup_depth_rbo();
+  if (!m_has_depth_texture) {
+    setup_depth_rbo();
+  }
   auto status = glCheckNamedFramebufferStatus(m_id, GL_FRAMEBUFFER);
   if (status != GL_FRAMEBUFFER_COMPLETE) {
     spdlog::error("Framebuffer is not complete, status {}", status);

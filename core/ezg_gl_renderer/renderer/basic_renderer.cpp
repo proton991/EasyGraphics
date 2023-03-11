@@ -74,8 +74,8 @@ void BasicRenderer::setup_framebuffers(uint32_t width, uint32_t height) {
   AttachmentInfo color_info =
       AttachmentInfo::Color("color", AttachmentBinding::COLOR0, width, height);
   color_info.internal_format = GL_SRGB8_ALPHA8;
-
-  std::vector<AttachmentInfo> attachment_infos{color_info};
+  AttachmentInfo depth {AttachmentInfo::Depth(width, height)};
+  std::vector<AttachmentInfo> attachment_infos{color_info, depth};
   FramebufferCreatInfo framebuffer_ci{width, height, attachment_infos};
   m_pbuffer = Framebuffer::Create(framebuffer_ci);
 }
