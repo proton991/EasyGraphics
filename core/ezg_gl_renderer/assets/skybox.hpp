@@ -20,9 +20,10 @@ public:
   static Ref<Skybox> Create(const std::string& hdr_path, int resolution);
   Skybox(const std::vector<std::string>& face_paths);   // using 6 images
   Skybox(const std::string& hdr_path, int resolution);  // using hdr image
-  void draw(const system::Camera& camera);
+  void draw(const Ref<system::Camera>& camera, bool blur=false);
   // IBL
   void bind_prefilter_data();
+  void unbind_prefilter_data();
 
 private:
   void setup_shaders();

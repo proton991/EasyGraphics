@@ -22,8 +22,9 @@ void Engine::initialize() {
   m_window             = CreateRef<Window>(config);
 
   // setup GUI
-  m_gui                   = GUISystem::Create(m_window->Handle());
-  m_gui->m_selected_model = m_current_model_index;
+  m_gui     = GUISystem::Create(m_window->Handle());
+  m_options = CreateRef<RenderOptions>();
+  //  m_gui->m_selected_model = m_current_model_index;
 
   // setup renderer
 
@@ -46,7 +47,7 @@ void Engine::initialize() {
   m_stop_watch = CreateRef<StopWatch>();
 }
 
-void Engine::reload_scene(int index) {
+void Engine::reload_scene(uint32_t index) {
   m_current_model_index = index;
   m_scene->load_new_model(ModelPaths[m_current_model_index]);
   auto aabb = m_scene->get_aabb();
@@ -54,9 +55,10 @@ void Engine::reload_scene(int index) {
 }
 
 void Engine::run() {
-  GUIInfo gui_info{ModelNames};
+  m_options->num_models = ModelNames.size();
+  m_options->model_list = ModelNames.data();
   while (!m_window->should_close()) {
-    FrameInfo frame_info{m_scene, *m_camera};
+    FrameInfo frame_info{m_scene, m_options, m_camera};
     if (m_window->should_resize()) {
       m_window->resize();
       m_renderer->resize_fbos(m_window->get_width(), m_window->get_height());
@@ -65,20 +67,20 @@ void Engine::run() {
     }
     float delta_time = m_stop_watch->time_step();
 
-    if (m_gui->m_rotate_model) {
+    if (m_options->rotate_model) {
       m_scene->update(delta_time);
     } else {
       m_scene->update();
     }
 
-    m_camera->update(delta_time, m_gui->m_rotate_camera);
+    m_camera->update(delta_time, m_options->rotate_camera);
 
     m_renderer->render_frame(frame_info);
 
-    m_gui->draw(gui_info);
+    m_gui->draw(m_options);
 
-    if (m_gui->m_selected_model != m_current_model_index) {
-      reload_scene(m_gui->m_selected_model);
+    if (m_options->selected_model != m_current_model_index) {
+      reload_scene(m_options->selected_model);
     }
     m_window->swap_buffers();
     m_window->update();

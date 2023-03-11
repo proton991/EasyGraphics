@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "base.hpp"
+#include "render_option.hpp"
 
 namespace ezg::system {
 class Window;
@@ -24,7 +25,7 @@ public:
   void run();
 
 private:
-  void reload_scene(int index);
+  void reload_scene(uint32_t index);
 
   Ref<system::StopWatch> m_stop_watch;
   Ref<system::Window> m_window;
@@ -34,6 +35,8 @@ private:
   Ref<system::Camera> m_camera;
 
   Ref<BasicRenderer> m_renderer;
+
+  Ref<RenderOptions> m_options;
 
   int m_current_model_index{0};
 

@@ -148,7 +148,7 @@ Skybox::Skybox(const std::string& hdr_path, int resolution) : m_resolution(resol
                             // use float for hdr
                             .internal_format = GL_RGB16F};
 
-  AttachmentInfo depth{ AttachmentInfo::Depth(resolution, resolution) };
+  AttachmentInfo depth{AttachmentInfo::Depth(resolution, resolution)};
   depth.internal_format = GL_RGB16F;
 
   FramebufferCreatInfo env_fbo_ci{.width             = static_cast<uint32_t>(resolution),
@@ -263,16 +263,23 @@ void Skybox::bind_prefilter_data() {
   m_screen_fbo->bind_texture("brdf_integration", 5);
 }
 
-void Skybox::draw(const system::Camera& camera) {
+void Skybox::unbind_prefilter_data() {
+  glBindTextureUnit(3, 0);
+  glBindTextureUnit(4, 0);
+  glBindTextureUnit(5, 0);
+}
+
+void Skybox::draw(const Ref<system::Camera>& camera, bool blur) {
   auto& skybox_shader = m_shader_cache.at("skybox");
   skybox_shader->use();
   if (m_type == SkyboxType::Cubemap) {
     m_cube_texture->bind(0);
   } else {
-    m_env_fbo->bind_texture("base_color", 0);
+    blur ? m_env_fbo->bind_texture("prefilter_diffuse", 0)
+         : m_env_fbo->bind_texture("base_color", 0);
   }
-  auto view = glm::mat4(glm::mat3(camera.get_view_matrix()));
-  skybox_shader->set_uniform("uProjView", camera.get_projection_matrix() * view);
+  auto view = glm::mat4(glm::mat3(camera->get_view_matrix()));
+  skybox_shader->set_uniform("uProjView", camera->get_projection_matrix() * view);
   draw_cube();
 }
 

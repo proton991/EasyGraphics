@@ -3,6 +3,7 @@
 #include <glm/mat4x4.hpp>
 #include "scene.hpp"
 #include "systems/camera_system.hpp"
+#include "engine/render_option.hpp"
 
 namespace ezg::gl {
 class ShaderProgram;
@@ -21,7 +22,9 @@ struct CameraData {
 
 struct FrameInfo {
   const Ref<BaseScene>& scene;
-  const system::Camera& camera;
+  const Ref<RenderOptions>& options;
+  const Ref<system::Camera>& camera;
+//  const system::Camera& camera;
 };
 }  // namespace ezg::gl
 #endif  //FRAME_INFO_HPP

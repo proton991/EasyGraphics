@@ -74,7 +74,7 @@ void BasicRenderer::setup_framebuffers(uint32_t width, uint32_t height) {
   AttachmentInfo color_info =
       AttachmentInfo::Color("color", AttachmentBinding::COLOR0, width, height);
   color_info.internal_format = GL_SRGB8_ALPHA8;
-  AttachmentInfo depth {AttachmentInfo::Depth(width, height)};
+  AttachmentInfo depth{AttachmentInfo::Depth(width, height)};
   std::vector<AttachmentInfo> attachment_infos{color_info, depth};
   FramebufferCreatInfo framebuffer_ci{width, height, attachment_infos};
   m_pbuffer = Framebuffer::Create(framebuffer_ci);
@@ -110,15 +110,6 @@ void BasicRenderer::setup_coordinate_axis() {
 }
 
 void BasicRenderer::setup_skybox() {
-  std::vector<std::string> face_paths = {
-      "../resources/textures/skybox/right.jpg",   //
-      "../resources/textures/skybox/left.jpg",    //
-      "../resources/textures/skybox/top.jpg",     //
-      "../resources/textures/skybox/bottom.jpg",  //
-      "../resources/textures/skybox/front.jpg",   //
-      "../resources/textures/skybox/back.jpg",    //
-  };
-  //  m_skybox = Skybox::Create(face_paths);
   m_skybox = Skybox::Create("../resources/textures/hdri/barcelona.hdr", 2048);
 }
 
@@ -131,8 +122,8 @@ void BasicRenderer::set_default_state() {
 
 void BasicRenderer::update(const FrameInfo& info) {
   // camera ubo
-  m_camera_data.view       = info.camera.get_view_matrix();
-  m_camera_data.projection = info.camera.get_projection_matrix();
+  m_camera_data.view       = info.camera->get_view_matrix();
+  m_camera_data.projection = info.camera->get_projection_matrix();
   m_camera_data.proj_view  = m_camera_data.projection * m_camera_data.view;
 
   m_camera_ubo->set_data(&m_camera_data, sizeof(CameraData));
@@ -142,7 +133,7 @@ void BasicRenderer::update(const FrameInfo& info) {
   shader->set_uniform("uLightIntensity", info.scene->get_light_intensity());
   shader->set_uniform("uLightPos", info.scene->get_light_pos());
   shader->set_uniform("uLightDir", info.scene->get_light_dir());
-  shader->set_uniform("uCameraPos", info.camera.get_pos());
+  shader->set_uniform("uCameraPos", info.camera->get_pos());
 }
 
 void BasicRenderer::render_frame(const FrameInfo& info) {
@@ -152,7 +143,11 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
   RenderAPI::clear_color_and_depth();
 
   // bind Prefiltered IBL texture
-  m_skybox->bind_prefilter_data();
+  if (info.options->enable_env_map) {
+    m_skybox->bind_prefilter_data();
+  } else {
+    m_skybox->unbind_prefilter_data();
+  }
 
   update(info);
   // render models
@@ -169,9 +164,14 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
       RenderAPI::draw_mesh(mesh);
     }
   }
-  m_shader_cache.at("coords_axis")->use();
-  RenderAPI::draw_line(m_axis_data.vao, 6);
-  m_skybox->draw(info.camera);
+  if (info.options->show_axis) {
+    m_shader_cache.at("coords_axis")->use();
+    RenderAPI::draw_line(m_axis_data.vao, 6);
+  }
+
+  if (info.options->show_bg) {
+    m_skybox->draw(info.camera, info.options->blur);
+  }
   m_pbuffer->unbind();
 
   RenderAPI::disable_depth_testing();

@@ -20,10 +20,9 @@ GUISystem::GUISystem(GLFWwindow* glfw_window) {
   ImGui::StyleColorsDark();
   ImGui_ImplGlfw_InitForOpenGL(glfw_window, true);
   ImGui_ImplOpenGL3_Init(glsl_version);
-
 }
 
-void GUISystem::draw(const GUIInfo& info) {
+void GUISystem::draw(Ref<gl::RenderOptions> options) {
   begin_frame();
   {
     ImGui::SetNextWindowSize(ImVec2(300, 300));
@@ -33,11 +32,19 @@ void GUISystem::draw(const GUIInfo& info) {
     ImGui::Text("Frame time: %.3f ms", 1000.0f / ImGui::GetIO().Framerate);
     ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 
-    ImGui::Combo("Select Model", &m_selected_model, info.model_list.data(), info.model_list.size());
-    ImGui::Checkbox("Rotate Model", &m_rotate_model);
-    ImGui::Checkbox("Rotate Camera", &m_rotate_camera);
+    ImGui::Checkbox("Show Axis", &options->show_axis);
+    ImGui::Combo("Select Model", &options->selected_model, options->model_list,
+                 options->num_models);
+    ImGui::Checkbox("Rotate Model", &options->rotate_model);
     ImGui::SameLine();
+    ImGui::Checkbox("Rotate Camera", &options->rotate_camera);
 
+    if (ImGui::CollapsingHeader("Environment")) {
+      ImGui::Checkbox("Enable Environment Map", &options->enable_env_map);
+      ImGui::Checkbox("Show Background", &options->show_bg);
+      ImGui::SameLine();
+      ImGui::Checkbox("Blur", &options->blur);
+    }
     ImGui::End();
   }
   end_frame();
@@ -60,4 +67,4 @@ void GUISystem::render_frame() {
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-}
+}  // namespace ezg::system

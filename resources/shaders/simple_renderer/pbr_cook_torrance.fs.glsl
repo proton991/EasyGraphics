@@ -227,10 +227,10 @@ void main() {
     vec3 IBL_Diffuse = rhoD * texture(uEnvDiffuseSampler, N).rgb;
     // IBL Specular
     vec3 IBL_Specular = specularIBL(F0, roughness, N, V);
-//    if (uHasOcclusionMap) {
-//        float ao = texture(uPBRSamplers[TEX_OCCLUSION_INDEX], vTexCoords).r;
-//        radiance = mix(radiance, radiance * ao, uOcclusionStrength);
-//    }
+    if (uHasOcclusionMap) {
+        float ao = texture(uPBRSamplers[TEX_OCCLUSION_INDEX], vTexCoords).r;
+        radiance = mix(radiance, radiance * ao, uOcclusionStrength);
+    }
     vec3 finalColor = IBL_Diffuse + IBL_Specular + radiance;
     if (uAlphaMode == ALPHAMODE_OPAQUE) {
         baseColor.a = 1.0;
