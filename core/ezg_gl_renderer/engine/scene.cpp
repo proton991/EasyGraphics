@@ -12,8 +12,8 @@ void BaseScene::add_model(const Ref<Model>& model) {
   m_models.push_back(model);
 }
 
-void BaseScene::add_model(const std::string& model_name) {
-  m_models.push_back(ResourceManager::GetInstance().get_model(model_name));
+void BaseScene::add_model(const std::string& model_path) {
+  m_models.push_back(ResourceManager::GetInstance().load_gltf_model(model_path));
 }
 
 void BaseScene::update(float time) {
@@ -42,10 +42,10 @@ void BaseScene::switch_camera_light() {
   m_camera_light_on = !m_camera_light_on;
   if (!m_camera_light_on) {
     m_light_intensity = glm::vec3(0.0f);
-    spdlog::info("camera light off");
+    spdlog::info("light off");
   } else {
     m_light_intensity = glm::vec3(5.0f);
-    spdlog::info("camera light on");
+    spdlog::info("light on");
   }
 }
 }  // namespace ezg::gl

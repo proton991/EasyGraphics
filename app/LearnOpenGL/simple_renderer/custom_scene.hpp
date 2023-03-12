@@ -1,7 +1,7 @@
 #ifndef CUSTOM_SCENE_HPP
 #define CUSTOM_SCENE_HPP
 
-#include "renderer/scene.hpp"
+#include "ezg_gl_renderer/engine/scene.hpp"
 using namespace ezg::gl;
 
 namespace ezg::app {

@@ -1,11 +1,19 @@
 #include "simple_scene.hpp"
 #include <glm/gtx/string_cast.hpp>
 #include "managers/resource_manager.hpp"
+#include "assets/skybox.hpp"
+
 namespace ezg::gl {
-void SimpleScene::load_new_model(const std::string& path) {
+void SimpleScene::init() {
+  // setup skybox
+  m_skybox = Skybox::Create("../resources/textures/hdri/barcelona.hdr", 2048);
+  add_model(ModelPaths[0]);
+  load_floor();
+}
+
+void SimpleScene::load_new_model(uint32_t index) {
   m_models.clear();
-  auto model = ResourceManager::GetInstance().load_gltf_model(path);
-  m_models.push_back(model);
+  add_model(ModelPaths[index]);
 }
 
 void SimpleScene::load_floor() {

@@ -2,11 +2,9 @@
 
 #include <memory>
 #include "assets/line.hpp"
-#include "assets/skybox.hpp"
 #include "graphics/framebuffer.hpp"
 #include "graphics/shader.hpp"
 #include "render_api.hpp"
-#include "scene.hpp"
 
 namespace ezg::gl {
 BasicRenderer::BasicRenderer(const RendererConfig& config)
@@ -30,7 +28,6 @@ BasicRenderer::BasicRenderer(const RendererConfig& config)
   setup_screen_quad();
   setup_framebuffers(m_width, m_height);
   setup_coordinate_axis();
-  setup_skybox();
   m_aabb_line = CreateRef<Line>();
 }
 
@@ -113,9 +110,9 @@ void BasicRenderer::setup_coordinate_axis() {
   m_axis_line->vao->attach_vertex_buffer(vbo);
 }
 
-void BasicRenderer::setup_skybox() {
-  m_skybox = Skybox::Create("../resources/textures/hdri/barcelona.hdr", 2048);
-}
+//void BasicRenderer::setup_skybox() {
+//  m_skybox = Skybox::Create("../resources/textures/hdri/barcelona.hdr", 2048);
+//}
 
 void BasicRenderer::set_default_state() {
   glDepthFunc(GL_LEQUAL);
@@ -160,11 +157,13 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
   RenderAPI::enable_depth_testing();
   RenderAPI::clear_color_and_depth();
 
-  // bind Prefiltered IBL texture
-  if (info.options->enable_env_map) {
-    m_skybox->bind_prefilter_data();
-  } else {
-    m_skybox->unbind_prefilter_data();
+  if (info.scene->has_skybox()) {
+    // bind Prefiltered IBL texture
+    if (info.options->enable_env_map) {
+      info.scene->m_skybox->bind_prefilter_data();
+    } else {
+      info.scene->m_skybox->unbind_prefilter_data();
+    }
   }
 
   update(info);
@@ -183,8 +182,8 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
     RenderAPI::draw_line(m_aabb_line->vao, m_aabb_line->line_vertices.size());
   }
 
-  if (info.options->show_bg) {
-    m_skybox->draw(info.camera, info.options->blur);
+  if (info.scene->has_skybox() && info.options->show_bg) {
+    info.scene->m_skybox->draw(info.camera, info.options->blur);
   }
   m_pbuffer->unbind();
 

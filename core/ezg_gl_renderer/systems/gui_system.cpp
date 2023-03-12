@@ -44,7 +44,7 @@ void GUISystem::draw(Ref<gl::RenderOptions> options) {
     ImGui::SameLine();
     ImGui::Checkbox("Rotate Camera", &options->rotate_camera);
 
-    if (ImGui::CollapsingHeader("Environment")) {
+    if (options->has_env_map && ImGui::CollapsingHeader("Environment")) {
       ImGui::Checkbox("Enable Environment Map", &options->enable_env_map);
       ImGui::Checkbox("Show Background", &options->show_bg);
       ImGui::SameLine();

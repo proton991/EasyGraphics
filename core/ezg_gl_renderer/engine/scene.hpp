@@ -1,6 +1,7 @@
 #ifndef SCENE_HPP
 #define SCENE_HPP
 #include "assets/model.hpp"
+#include "ezg_gl_renderer/assets/skybox.hpp"
 #include "base.hpp"
 
 namespace ezg::gl {
@@ -25,6 +26,7 @@ public:
   virtual void load_floor() {};
   void add_model(const std::string& model_name);
   void add_model(const Ref<Model>& model);
+  virtual void load_new_model(uint32_t index) = 0;
 
   void update(float time = 0.0f);
 
@@ -34,12 +36,16 @@ public:
   const auto& get_light_dir() const { return m_light_dir; }
   const auto& get_light_intensity() const { return m_light_intensity; }
   void switch_camera_light();
-  auto light_from_camera() const { return m_camera_light_on; }
+  auto has_skybox() const { return m_skybox != nullptr;}
+
+  virtual int get_num_models() = 0;
+  virtual const char** get_model_data() = 0;
 
 protected:
   std::string m_name;
   std::vector<Ref<Model>> m_models;
   Ref<Model> m_floor;
+  Ref<Skybox> m_skybox;
   // light comes from camera
   glm::vec3 m_light_position{10.f, 10.f, 10.f};
   glm::vec3 m_light_dir{0.0f, 0.0f, -1.0f};

@@ -11,9 +11,8 @@ namespace ezg::gl {
 class Framebuffer;
 class VertexArray;
 class UniformBuffer;
-class BaseScene;
-class Skybox;
 struct Line;
+
 struct RendererConfig {
   const uint32_t width;
   const uint32_t height;
@@ -32,7 +31,6 @@ private:
   void setup_screen_quad();
   void setup_framebuffers(uint32_t width, uint32_t height);
   void setup_coordinate_axis();
-  void setup_skybox();
 
   void render_meshes(const std::vector<Mesh>& meshes);
 
@@ -56,12 +54,8 @@ private:
   Ref<VertexArray> m_quad_vao;
   std::unordered_map<std::string, Ref<ShaderProgram>> m_shader_cache;
 
-  //  CoordinateAxisData m_axis_data;
-  //  AABBData m_aabb_data{};
   Ref<Line> m_axis_line;
   Ref<Line> m_aabb_line;
-
-  Ref<Skybox> m_skybox;
 };
 }  // namespace ezg::gl
 #endif  //EASYGRAPHICS_BASIC_RENDERER_HPP

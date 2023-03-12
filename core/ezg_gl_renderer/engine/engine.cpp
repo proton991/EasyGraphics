@@ -24,7 +24,6 @@ void Engine::initialize() {
   // setup GUI
   m_gui     = GUISystem::Create(m_window->Handle());
   m_options = CreateRef<RenderOptions>();
-  //  m_gui->m_selected_model = m_current_model_index;
 
   // setup renderer
 
@@ -35,10 +34,11 @@ void Engine::initialize() {
   m_renderer = CreateRef<BasicRenderer>(render_config);
 
   // setup scene with default model
-  auto model = ResourceManager::GetInstance().load_gltf_model(ModelPaths[m_options->selected_model]);
-  m_scene    = CreateRef<SimpleScene>("SimpleScene");
-  m_scene->add_model(model);
-  m_scene->load_floor();
+  m_scene = CreateRef<SimpleScene>("SimpleScene");
+  m_scene->init();
+  if (!m_scene->has_skybox()) {
+    m_options->has_env_map = false;
+  }
 
   // setup camera
   auto aabb = m_scene->get_aabb();
@@ -49,14 +49,15 @@ void Engine::initialize() {
 }
 
 void Engine::load_scene(uint32_t index) {
-  m_scene->load_new_model(ModelPaths[index]);
+  m_scene->load_new_model(index);
+  m_scene->load_floor();
   auto aabb = m_scene->get_aabb();
   m_camera  = Camera::Create(aabb.bbx_min, aabb.bbx_max, m_window->get_aspect());
 }
 
 void Engine::run() {
-  m_options->num_models = ModelNames.size();
-  m_options->model_list = ModelNames.data();
+  m_options->num_models = m_scene->get_num_models();
+  m_options->model_list = m_scene->get_model_data();
   while (!m_window->should_close()) {
     FrameInfo frame_info{m_scene, m_options, m_camera};
     if (m_window->should_resize()) {
@@ -81,7 +82,6 @@ void Engine::run() {
 
     if (m_options->scene_changed) {
       load_scene(m_options->selected_model);
-      m_scene->load_floor();
     }
     m_window->swap_buffers();
     m_window->update();
