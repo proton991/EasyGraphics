@@ -22,11 +22,6 @@ private:
   void begin_frame();
   void end_frame();
   void render_frame();
-
-//  Ref<gl::RenderOptions> m_options;
-//  int m_selected_model{0};
-//  bool m_rotate_model{false};
-//  bool m_rotate_camera{false};
 };
 }  // namespace ezg::system
 #endif  //EASYGRAPHICS_GUI_SYSTEM_HPP

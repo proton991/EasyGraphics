@@ -35,9 +35,10 @@ void Engine::initialize() {
   m_renderer = CreateRef<BasicRenderer>(render_config);
 
   // setup scene with default model
-  auto model = ResourceManager::GetInstance().load_gltf_model(ModelPaths[m_current_model_index]);
+  auto model = ResourceManager::GetInstance().load_gltf_model(ModelPaths[m_options->selected_model]);
   m_scene    = CreateRef<SimpleScene>("SimpleScene");
   m_scene->add_model(model);
+  m_scene->load_floor();
 
   // setup camera
   auto aabb = m_scene->get_aabb();
@@ -47,9 +48,8 @@ void Engine::initialize() {
   m_stop_watch = CreateRef<StopWatch>();
 }
 
-void Engine::reload_scene(uint32_t index) {
-  m_current_model_index = index;
-  m_scene->load_new_model(ModelPaths[m_current_model_index]);
+void Engine::load_scene(uint32_t index) {
+  m_scene->load_new_model(ModelPaths[index]);
   auto aabb = m_scene->get_aabb();
   m_camera  = Camera::Create(aabb.bbx_min, aabb.bbx_max, m_window->get_aspect());
 }
@@ -79,8 +79,9 @@ void Engine::run() {
 
     m_gui->draw(m_options);
 
-    if (m_options->selected_model != m_current_model_index) {
-      reload_scene(m_options->selected_model);
+    if (m_options->scene_changed) {
+      load_scene(m_options->selected_model);
+      m_scene->load_floor();
     }
     m_window->swap_buffers();
     m_window->update();

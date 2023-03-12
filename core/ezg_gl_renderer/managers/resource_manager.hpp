@@ -26,13 +26,15 @@ public:
 
   Ref<Texture2D> load_hdr_texture(const std::string& path);
 
-  Ref<TextureCubeMap> load_cubemap_textures(const std::string& name, const std::vector<std::string>& face_paths);
+  Ref<TextureCubeMap> load_cubemap_textures(const std::string& name,
+                                            const std::vector<std::string>& face_paths);
 
   std::string extract_name(const std::string& path);
+
+  void delete_model(const std::string& name);
+
 private:
-  ResourceManager() {
-      m_white_texture = Texture2D::CreateDefaultWhite();
-  };
+  ResourceManager() { m_white_texture = Texture2D::CreateDefaultWhite(); };
 
   std::unordered_map<std::string, Ref<Model>> m_model_cache;
   std::unordered_map<std::string, Ref<Texture2D>> m_hdri_cache;

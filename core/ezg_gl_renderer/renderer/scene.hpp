@@ -22,6 +22,7 @@ public:
   BaseScene(const BaseScene&)            = delete;
 
   virtual void init() {};
+  virtual void load_floor() {};
   void add_model(const std::string& model_name);
   void add_model(const Ref<Model>& model);
 
@@ -38,6 +39,7 @@ public:
 protected:
   std::string m_name;
   std::vector<Ref<Model>> m_models;
+  Ref<Model> m_floor;
   // light comes from camera
   glm::vec3 m_light_position{10.f, 10.f, 10.f};
   glm::vec3 m_light_dir{0.0f, 0.0f, -1.0f};

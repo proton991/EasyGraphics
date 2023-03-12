@@ -1,6 +1,7 @@
 #include "basic_renderer.hpp"
 
 #include <memory>
+#include "assets/line.hpp"
 #include "assets/skybox.hpp"
 #include "graphics/framebuffer.hpp"
 #include "graphics/shader.hpp"
@@ -30,6 +31,7 @@ BasicRenderer::BasicRenderer(const RendererConfig& config)
   setup_framebuffers(m_width, m_height);
   setup_coordinate_axis();
   setup_skybox();
+  m_aabb_line = CreateRef<Line>();
 }
 
 void BasicRenderer::compile_shaders(
@@ -81,13 +83,15 @@ void BasicRenderer::setup_framebuffers(uint32_t width, uint32_t height) {
 }
 
 void BasicRenderer::setup_coordinate_axis() {
+  m_axis_line = CreateRef<Line>();
+
   std::vector<ShaderStage> stages = {
-      {"../resources/shaders/simple_renderer/coords_axis.vs.glsl", "vertex"},
-      {"../resources/shaders/simple_renderer/coords_axis.fs.glsl", "fragment"},
+      {"../resources/shaders/simple_renderer/lines.vs.glsl", "vertex"},
+      {"../resources/shaders/simple_renderer/lines.fs.glsl", "fragment"},
   };
   ShaderProgramCreateInfo info{"coords_axis", stages};
   m_shader_cache.try_emplace(info.name, ShaderProgramFactory::create_shader_program(info));
-  m_axis_data.line_vertices = {
+  m_axis_line->line_vertices = {
       // x axis
       {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)},
       {glm::vec3(100.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)},
@@ -98,15 +102,15 @@ void BasicRenderer::setup_coordinate_axis() {
       {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)},
       {glm::vec3(0.0f, 0.0f, 100.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)},
   };
-  auto vbo = VertexBuffer::Create(m_axis_data.line_vertices.size() * sizeof(LineVertex),
-                                  m_axis_data.line_vertices.data());
+  auto vbo = VertexBuffer::Create(m_axis_line->line_vertices.size() * sizeof(LineVertex),
+                                  m_axis_line->line_vertices.data());
   vbo->set_buffer_view({
       {"aPosition", BufferDataType::Vec3f},
       {"aColor", BufferDataType::Vec4f},
   });
-  m_axis_data.vao = VertexArray::Create();
-  m_axis_data.vao->bind();
-  m_axis_data.vao->attach_vertex_buffer(vbo);
+  m_axis_line->vao = VertexArray::Create();
+  m_axis_line->vao->bind();
+  m_axis_line->vao->attach_vertex_buffer(vbo);
 }
 
 void BasicRenderer::setup_skybox() {
@@ -136,6 +140,20 @@ void BasicRenderer::update(const FrameInfo& info) {
   shader->set_uniform("uCameraPos", info.camera->get_pos());
 }
 
+void BasicRenderer::render_meshes(const std::vector<Mesh>& meshes) {
+  for (const auto& mesh : meshes) {
+    m_sampler_data = {};
+    // model ubo
+    m_model_data.model_matrix = mesh.model_matrix;
+    m_model_ubo->set_data(&m_model_data, sizeof(ModelData));
+    // bindless textures
+    mesh.material.upload_textures(m_shader_cache.at("pbr"), m_sampler_data);
+    m_pbr_sampler_ubo->set_data(m_sampler_data.samplers, sizeof(PBRSamplerData));
+    // draw mesh
+    RenderAPI::draw_mesh(mesh);
+  }
+}
+
 void BasicRenderer::render_frame(const FrameInfo& info) {
   set_default_state();
   m_pbuffer->bind();
@@ -152,21 +170,17 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
   update(info);
   // render models
   for (const auto& model : info.scene->m_models) {
-    for (const auto& mesh : model->get_meshes()) {
-      m_sampler_data = {};
-      // model ubo
-      m_model_data.model_matrix = mesh.model_matrix;
-      m_model_ubo->set_data(&m_model_data, sizeof(ModelData));
-      // bindless textures
-      mesh.material.upload_textures(m_shader_cache.at("pbr"), m_sampler_data);
-      m_pbr_sampler_ubo->set_data(m_sampler_data.samplers, sizeof(PBRSamplerData));
-      // draw mesh
-      RenderAPI::draw_mesh(mesh);
-    }
+    render_meshes(model->get_meshes());
+    model->get_aabb().get_lines_data(m_aabb_line);
   }
+  render_meshes(info.scene->m_floor->get_meshes());
   if (info.options->show_axis) {
     m_shader_cache.at("coords_axis")->use();
-    RenderAPI::draw_line(m_axis_data.vao, 6);
+    RenderAPI::draw_line(m_axis_line->vao, m_axis_line->line_vertices.size());
+  }
+  if (info.options->show_aabb) {
+    m_shader_cache.at("coords_axis")->use();
+    RenderAPI::draw_line(m_aabb_line->vao, m_aabb_line->line_vertices.size());
   }
 
   if (info.options->show_bg) {

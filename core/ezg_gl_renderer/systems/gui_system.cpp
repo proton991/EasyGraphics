@@ -29,12 +29,17 @@ void GUISystem::draw(Ref<gl::RenderOptions> options) {
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowBgAlpha(0.5f);
     ImGui::Begin("GUI");
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
     ImGui::Text("Frame time: %.3f ms", 1000.0f / ImGui::GetIO().Framerate);
     ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+    ImGui::PopStyleColor();
 
     ImGui::Checkbox("Show Axis", &options->show_axis);
-    ImGui::Combo("Select Model", &options->selected_model, options->model_list,
-                 options->num_models);
+    ImGui::SameLine();
+    ImGui::Checkbox("Show AABB", &options->show_aabb);
+
+    options->scene_changed = ImGui::Combo("Select Model", &options->selected_model,
+                                          options->model_list, options->num_models);
     ImGui::Checkbox("Rotate Model", &options->rotate_model);
     ImGui::SameLine();
     ImGui::Checkbox("Rotate Camera", &options->rotate_camera);

@@ -25,7 +25,7 @@ public:
   void run();
 
 private:
-  void reload_scene(uint32_t index);
+  void load_scene(uint32_t index);
 
   Ref<system::StopWatch> m_stop_watch;
   Ref<system::Window> m_window;
@@ -37,9 +37,6 @@ private:
   Ref<BasicRenderer> m_renderer;
 
   Ref<RenderOptions> m_options;
-
-  int m_current_model_index{0};
-
 
   std::vector<const char*> ModelNames = {"ToyCar", "MetalRoughSpheres", "DamagedHelmet",
                                          "EnvironmentTest", "Sponza"};

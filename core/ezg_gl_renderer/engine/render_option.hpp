@@ -11,7 +11,9 @@ struct RenderOptions {
   bool enable_env_map{true};
   bool show_bg{true};
   bool show_axis{false};
+  bool show_aabb{false};
   bool blur{false};
+  bool scene_changed{false};
 };
-}
+}  // namespace ezg::gl
 #endif  //RENDER_OPTION_HPP

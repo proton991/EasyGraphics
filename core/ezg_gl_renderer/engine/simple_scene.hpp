@@ -9,6 +9,10 @@ class SimpleScene : public BaseScene {
 public:
   explicit SimpleScene(std::string_view name) : BaseScene(name) {}
   void load_new_model(const std::string& path);
+  void load_floor() override;
+
+private:
+  const char* FloorPath = "../resources/models/wood_floor/scene.gltf";
 };
 }
 

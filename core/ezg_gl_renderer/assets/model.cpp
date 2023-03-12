@@ -16,8 +16,10 @@ Model::Model(const std::string& name, const std::vector<Vertex>& vertices) : m_n
 }
 
 void Model::translate(const glm::vec3& target_pos) {
+  glm::vec3 delta = target_pos - m_aabb.get_center();
   for (auto& mesh : m_meshes) {
-    mesh.model_matrix = glm::translate(mesh.model_matrix, target_pos);
+    auto translation  = glm::translate(glm::mat4(1.0), delta);
+    mesh.model_matrix = translation * mesh.model_matrix;
   }
 
   m_aabb.translate(target_pos);
@@ -28,5 +30,13 @@ void Model::rotate(float angle) {
     mesh.model_matrix =
         glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f)) * mesh.model_matrix;
   }
+}
+
+void Model::scale(float factor) {
+  for (auto& mesh : m_meshes) {
+    const auto scale  = glm::scale(glm::mat4(1.0f), glm::vec3(factor));
+    mesh.model_matrix = scale * mesh.model_matrix;
+  }
+  m_aabb.scale(factor);
 }
 }  // namespace ezg::gl

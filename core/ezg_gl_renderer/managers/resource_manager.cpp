@@ -1,9 +1,9 @@
 #include "resource_manager.hpp"
-#include "log.hpp"
 #include <stb_image.h>
 #include <tiny_gltf.h>
 #include <tiny_obj_loader.h>
 #include <fstream>
+#include "log.hpp"
 #include "utils/gltf_utils.hpp"
 
 namespace ezg::gl {
@@ -261,7 +261,6 @@ Ref<Model> ResourceManager::load_gltf_model(const std::string& path) {
   AABB aabb{bbox_min, bbox_max};
   model->set_aabb(aabb);
   m_model_cache[name] = model;
-  spdlog::info("Model {} mesh size : {}", name, model->get_mesh_size());
   model->translate(glm::vec3{0.0f, 0.0f, 0.0f});
   m_texture_cache.clear();
   return model;
@@ -307,14 +306,14 @@ Ref<TextureCubeMap> ResourceManager::load_cubemap_textures(
     }
   }
   TextureInfo texture_info;
-  texture_info.width = width;
-  texture_info.height = height;
-  texture_info.wrap_s = GL_CLAMP_TO_EDGE;
-  texture_info.wrap_t = GL_CLAMP_TO_EDGE;
-  texture_info.wrap_r = GL_CLAMP_TO_EDGE;
-  texture_info.min_filter = GL_LINEAR;
-  texture_info.mag_filter = GL_LINEAR;
-  texture_info.data_format = GL_RGB;
+  texture_info.width           = width;
+  texture_info.height          = height;
+  texture_info.wrap_s          = GL_CLAMP_TO_EDGE;
+  texture_info.wrap_t          = GL_CLAMP_TO_EDGE;
+  texture_info.wrap_r          = GL_CLAMP_TO_EDGE;
+  texture_info.min_filter      = GL_LINEAR;
+  texture_info.mag_filter      = GL_LINEAR;
+  texture_info.data_format     = GL_RGB;
   texture_info.internal_format = GL_RGB8;
   m_cubemap_cache.try_emplace(name, TextureCubeMap::Create(texture_info, face_data));
   for (unsigned int i = 0; i < face_data.size(); i++) {
@@ -327,5 +326,11 @@ std::string ResourceManager::extract_name(const std::string& path) {
   size_t pos = path.find_last_of('/');
   // Extract the substring after the last '/'
   return path.substr(pos + 1);
+}
+
+void ResourceManager::delete_model(const std::string& name) {
+  if (m_model_cache.contains(name)) {
+    m_model_cache.erase(name);
+  }
 }
 }  // namespace ezg::gl

@@ -1,10 +1,10 @@
 #include "gltf_utils.hpp"
-#include "log.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <iostream>
 #include <vector>
 #include "assets/mesh.hpp"
+#include "log.hpp"
 
 /**
  * Reference: https://gitlab.com/gltf-viewer-tutorial/gltf-viewer

@@ -21,9 +21,11 @@ void BaseScene::update(float time) {
   if (system::KeyboardMouseInput::GetInstance().was_key_pressed_once(GLFW_KEY_L)) {
     switch_camera_light();
   }
-  float rotation_angle = time * 0.5f;
-  for (auto& model : m_models) {
-    model->rotate(rotation_angle);
+  if (time != 0.0f) {
+    float rotation_angle = time * 0.5f;
+    for (auto& model : m_models) {
+      model->rotate(rotation_angle);
+    }
   }
 }
 
