@@ -51,6 +51,7 @@ void Engine::initialize() {
 void Engine::load_scene(uint32_t index) {
   m_scene->load_new_model(index);
   m_scene->load_floor();
+  m_scene->load_light_model();
   auto aabb = m_scene->get_aabb();
   m_camera  = Camera::Create(aabb.bbx_min, aabb.bbx_max, m_window->get_aspect());
 }

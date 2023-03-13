@@ -172,7 +172,12 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
     render_meshes(model->get_meshes());
     model->get_aabb().get_lines_data(m_aabb_line);
   }
-  render_meshes(info.scene->m_floor->get_meshes());
+  if (info.options->show_light_model) {
+    render_meshes(info.scene->m_light_model->get_meshes());
+  }
+  if (info.options->show_floor) {
+    render_meshes(info.scene->m_floor->get_meshes());
+  }
   if (info.options->show_axis) {
     m_shader_cache.at("coords_axis")->use();
     RenderAPI::draw_line(m_axis_line->vao, m_axis_line->line_vertices.size());

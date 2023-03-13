@@ -19,7 +19,7 @@ void BaseScene::add_model(const std::string& model_path) {
 void BaseScene::update(float time) {
   // turn on/off light
   if (system::KeyboardMouseInput::GetInstance().was_key_pressed_once(GLFW_KEY_L)) {
-    switch_camera_light();
+    switch_light();
   }
   if (time != 0.0f) {
     float rotation_angle = time * 0.5f;
@@ -38,9 +38,9 @@ AABB BaseScene::get_aabb() const {
   return aabb;
 }
 
-void BaseScene::switch_camera_light() {
-  m_camera_light_on = !m_camera_light_on;
-  if (!m_camera_light_on) {
+void BaseScene::switch_light() {
+  m_light_on = !m_light_on;
+  if (!m_light_on) {
     m_light_intensity = glm::vec3(0.0f);
     spdlog::info("light off");
   } else {

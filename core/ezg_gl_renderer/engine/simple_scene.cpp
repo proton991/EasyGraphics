@@ -1,7 +1,7 @@
 #include "simple_scene.hpp"
 #include <glm/gtx/string_cast.hpp>
-#include "managers/resource_manager.hpp"
 #include "assets/skybox.hpp"
+#include "managers/resource_manager.hpp"
 
 namespace ezg::gl {
 void SimpleScene::init() {
@@ -9,11 +9,25 @@ void SimpleScene::init() {
   m_skybox = Skybox::Create("../resources/textures/hdri/barcelona.hdr", 2048);
   add_model(ModelPaths[0]);
   load_floor();
+  load_light_model();
 }
 
 void SimpleScene::load_new_model(uint32_t index) {
   m_models.clear();
   add_model(ModelPaths[index]);
+}
+
+void SimpleScene::load_light_model() {
+  m_light_model = ResourceManager::GetInstance().load_gltf_model(LightModelPath);
+
+  const auto aabb         = get_aabb();
+  const auto scene_size   = glm::length(aabb.diag);
+  const auto light_size   = glm::length(m_light_model->get_aabb().diag);
+  const auto scale_factor = scene_size / light_size;
+
+  m_light_model->scale(2 * scale_factor);
+  m_light_model->translate(aabb.bbx_max * 5.0f);
+  ResourceManager::GetInstance().delete_model(m_light_model->get_name());
 }
 
 void SimpleScene::load_floor() {

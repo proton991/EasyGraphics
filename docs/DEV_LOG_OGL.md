@@ -1,13 +1,14 @@
 # Dev Log (ezg_gl_renderer)
 
-#### Future plans (Phase0 - Phase4):
+#### Future plans (Phase0 - Phase9):
 1. Phase 0: OpenGL set up
 2. Phase 1: A render system
 3. Phase 2: PBR
 4. Phase 3: Image Based Lighting
-5. Phase 4: Render pipeline set up
-6. Phase 5: Integrating ImGUI.
-7. Phase 6: Support gltf features and extensions
+5. Phase 4: Integrating ImGUI.
+6. Phase 5: Shadows
+7. Phase 6: Raytracing tracing
+8. Phase 7: Support gltf features and extensions
 
 #### Long-term goals
 1. **read SIGGRAPH papers and try to implement them.**
@@ -34,7 +35,7 @@ It has wrappers of OpenGL Context Objects such as:
 
 
 ## 2023.2.17
-#### Current Progress (Phase1 complete)\
+#### Current Progress (Phase1 completed)\
 I have built a basic renderer using 2 render targets, first pass write color to a texture and second pass draw a full-screen squad to default framebuffer.
 
 #### Next stage plan:
@@ -53,7 +54,16 @@ Some say read texture as sRGB textures by setting the texture format to GL_SGB8_
 **But** according to gltf specifications, baseColorTexture and emissiveTexture are encoded with the sRGB transfer function, while ohers are linear textures. So we can't convert them all using this method. \
 My solution is: read using linear RGBA textures, and apply sRGBToLinear on my own.
 
-#### Current Progress (Phase2 complete) 
+#### Current Progress (Phase2 completed) 
 #### Next stage plan:
 1. Need to dive into PBR theories and figure out how it works.
 2. Start implementing IBL.
+
+## 2023.3.13
+
+#### Current Progress (Phase3 & Phase4 completed)
+
+#### Next stage plan:
+
+1. Implement shadow mapping.
+2. Implement cascade shadow mapping.

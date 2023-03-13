@@ -180,8 +180,8 @@ void main() {
     if (uHasNormalMap) {
         N = applyNormalMap(N, V, vTexCoords);
     }
-//    vec3 L = normalize(uLightPos - vWorldSpacePos);
-    vec3 L = normalize(-uLightDir);
+    vec3 L = normalize(uLightPos - vWorldSpacePos); // point light
+//    vec3 L = normalize(-uLightDir);
 
     vec3 H = normalize(L + V);
 
@@ -213,7 +213,9 @@ void main() {
         // if receives light
         vec3 brdf = brdfMicrofacet(L, V, N, metallic, roughness, baseColor.rgb, reflectance);
         // irradiance contribution from directional light
-        radiance += brdf * irradiance * uLightIntensity;
+        float distance = length(normalize(uLightPos) - normalize(vWorldSpacePos));
+        float attenuation = 1.0 / (distance * distance);
+        radiance += brdf * irradiance * uLightIntensity * attenuation;
     }
 
     // compute F0

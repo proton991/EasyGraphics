@@ -50,6 +50,10 @@ void GUISystem::draw(Ref<gl::RenderOptions> options) {
       ImGui::SameLine();
       ImGui::Checkbox("Blur", &options->blur);
     }
+    if (ImGui::CollapsingHeader("Scene Settings")) {
+      ImGui::Checkbox("Display Floor", &options->show_floor);
+      ImGui::Checkbox("Display Light Model", &options->show_light_model);
+    }
     ImGui::End();
   }
   end_frame();

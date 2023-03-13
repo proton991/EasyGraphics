@@ -13,6 +13,8 @@ struct RenderOptions {
   bool show_bg{true};
   bool show_axis{false};
   bool show_aabb{false};
+  bool show_floor{true};
+  bool show_light_model{true};
   bool blur{false};
   bool scene_changed{false};
 };
