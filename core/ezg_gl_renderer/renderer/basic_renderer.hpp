@@ -33,8 +33,9 @@ private:
   void setup_coordinate_axis();
 
   void render_meshes(const std::vector<Mesh>& meshes);
+  void render_scene(const FrameInfo& info);
 
-  void update(const FrameInfo& info);
+  void update_ubo(const FrameInfo& info);
 
   void set_default_state();
 

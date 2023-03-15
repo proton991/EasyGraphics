@@ -161,7 +161,7 @@ Skybox::Skybox(const std::string& hdr_path, int resolution) : m_resolution(resol
 
   convert_shader->use();
   hdr_texture->bind(0);
-  m_env_fbo->bind();
+  m_env_fbo->bind_for_writing();
   for (int i = 0; i < 6; i++) {
     convert_shader->set_uniform("uProjView", CaptureProj * CaptureViews[i]);
     m_env_fbo->attach_layer_texture(i, "base_color");
@@ -186,10 +186,10 @@ void Skybox::calc_prefilter_diffuse() {
 
   auto& prefilter_diffuse_shader = m_shader_cache.at("prefilter_diffuse");
   prefilter_diffuse_shader->use();
-  m_env_fbo->bind(false);
+  m_env_fbo->bind_for_writing(false);
   m_env_fbo->add_attachment(prefilter_diffuse);
   m_env_fbo->resize_depth_renderbuffer(DIFFUSE_RESOLUTION, DIFFUSE_RESOLUTION);
-  m_env_fbo->bind_texture("base_color", 0);
+  m_env_fbo->bind_for_reading("base_color", 0);
   glViewport(0, 0, DIFFUSE_RESOLUTION, DIFFUSE_RESOLUTION);
   for (int i = 0; i < 6; i++) {
     prefilter_diffuse_shader->set_uniform("uProjView", CaptureProj * CaptureViews[i]);
@@ -213,9 +213,9 @@ void Skybox::calc_prefilter_specular() {
 
   auto& shader = m_shader_cache.at("prefilter_specular");
   shader->use();
-  m_env_fbo->bind(false);
+  m_env_fbo->bind_for_writing(false);
   m_env_fbo->add_attachment(prefilter_specular);
-  m_env_fbo->bind_texture("base_color", 0);
+  m_env_fbo->bind_for_reading("base_color", 0);
   for (int mip = 0; mip < MaxMipLevels; ++mip) {
     // reisze framebuffer according to mip-level size.
     auto mipWidth  = static_cast<int>((SPECULAR_RESOLUTION)*std::pow(0.5, mip));
@@ -250,7 +250,7 @@ void Skybox::calc_brdf_integration() {
   m_screen_fbo = Framebuffer::Create(screen_fbo_ci);
   auto& shader = m_shader_cache.at("brdf_integration");
 
-  m_screen_fbo->bind();
+  m_screen_fbo->bind_for_writing();
   m_screen_fbo->clear();
   shader->use();
   draw_quad();
@@ -258,9 +258,9 @@ void Skybox::calc_brdf_integration() {
 }
 
 void Skybox::bind_prefilter_data() {
-  m_env_fbo->bind_texture("prefilter_diffuse", 3);
-  m_env_fbo->bind_texture("prefilter_specular", 4);
-  m_screen_fbo->bind_texture("brdf_integration", 5);
+  m_env_fbo->bind_for_reading("prefilter_diffuse", 3);
+  m_env_fbo->bind_for_reading("prefilter_specular", 4);
+  m_screen_fbo->bind_for_reading("brdf_integration", 5);
 }
 
 void Skybox::unbind_prefilter_data() {
@@ -275,8 +275,8 @@ void Skybox::draw(const Ref<system::Camera>& camera, bool blur) {
   if (m_type == SkyboxType::Cubemap) {
     m_cube_texture->bind(0);
   } else {
-    blur ? m_env_fbo->bind_texture("prefilter_diffuse", 0)
-         : m_env_fbo->bind_texture("base_color", 0);
+    blur ? m_env_fbo->bind_for_reading("prefilter_diffuse", 0)
+         : m_env_fbo->bind_for_reading("base_color", 0);
   }
   auto view = glm::mat4(glm::mat3(camera->get_view_matrix()));
   skybox_shader->set_uniform("uProjView", camera->get_projection_matrix() * view);

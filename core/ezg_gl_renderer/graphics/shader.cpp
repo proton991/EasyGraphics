@@ -117,8 +117,9 @@ ShaderProgram::ShaderProgram(ShaderProgram&& other) noexcept {
   other.m_id = 0;
 }
 
-void ShaderProgram::use() const {
+ShaderProgram& ShaderProgram::use() {
   glUseProgram(m_id);
+  return *this;
 }
 
 ShaderProgram& ShaderProgram::set_uniform(const std::string& name, int value) {

@@ -42,7 +42,7 @@ public:
 
   ShaderProgram(ShaderProgram&& other) noexcept;
 
-  void use() const;
+  ShaderProgram& use();
 
   ShaderProgram& set_uniform(const std::string& name, int value);
   ShaderProgram& set_uniform(const std::string& name, float value);

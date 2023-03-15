@@ -21,7 +21,7 @@ AttachmentInfo AttachmentInfo::Depth(int w, int h) {
   info.height          = h;
   info.min_filter      = GL_NEAREST;
   info.mag_filter      = GL_NEAREST;
-  info.wrap            = GL_REPEAT;
+  info.wrap            = GL_CLAMP_TO_BORDER;
   info.internal_format = GL_DEPTH_COMPONENT32F;
   return info;
 }
@@ -106,9 +106,9 @@ void Framebuffer::setup_attachments() {
     m_attachments.try_emplace(attachment->get_name(), attachment);
   }
   if (buffers.empty()) {
-    glDrawBuffer(GL_NONE);
+    glNamedFramebufferDrawBuffer(m_id, GL_NONE);
   } else {
-    glDrawBuffers(buffers.size(), buffers.data());
+    glNamedFramebufferDrawBuffers(m_id, buffers.size(), buffers.data());
   }
 }
 
@@ -128,6 +128,7 @@ void Framebuffer::invalidate() {
   if (status != GL_FRAMEBUFFER_COMPLETE) {
     spdlog::error("Framebuffer is not complete, status {}", status);
   }
+  unbind();
 }
 
 void Framebuffer::attach_layer_texture(int layer, const std::string& name, int level) {
@@ -172,20 +173,24 @@ void Framebuffer::unbind() const {
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Framebuffer::bind(bool set_view_port) const {
+void Framebuffer::bind_for_writing(bool set_view_port) const {
   glBindFramebuffer(GL_FRAMEBUFFER, m_id);
   if (set_view_port) {
     glViewport(0, 0, m_width, m_height);
   }
 }
 
-void Framebuffer::bind_texture(const std::string& name, int slot) const {
+void Framebuffer::bind_for_reading(const std::string& name, int slot) const {
   const auto& attachment = m_attachments.at(name);
   glBindTextureUnit(slot, attachment->get_id());
 }
 
 void Framebuffer::clear() {
   glClearNamedFramebufferfv(m_id, GL_COLOR, 0, ClearColor);
+  glClearNamedFramebufferfv(m_id, GL_DEPTH, 0, &ClearDepth);
+}
+
+void Framebuffer::clear_depth() {
   glClearNamedFramebufferfv(m_id, GL_DEPTH, 0, &ClearDepth);
 }
 }  // namespace ezg::gl

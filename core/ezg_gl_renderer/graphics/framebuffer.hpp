@@ -68,10 +68,10 @@ public:
   static Ref<Framebuffer> Create(const FramebufferCreatInfo& info);
   Framebuffer(const FramebufferCreatInfo& info);
   ~Framebuffer();
-  void bind(bool set_view_port = true) const;
+  void bind_for_writing(bool set_view_port = true) const;
   void unbind() const;
 
-  void bind_texture(const std::string& name, int slot) const;
+  void bind_for_reading(const std::string& name, int slot) const;
   void attach_layer_texture(int layer, const std::string& name, int level = 0);
   void add_attachment(const AttachmentInfo& attachment_info);
 
@@ -79,6 +79,7 @@ public:
   void resize_depth_renderbuffer(int width, int height);
 
   void clear();
+  void clear_depth();
 
   const auto get_texture_id(const std::string& name) const {
     return m_attachments.at(name)->get_id();

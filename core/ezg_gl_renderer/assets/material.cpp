@@ -2,6 +2,7 @@
 
 namespace ezg::gl {
 void PBRMaterial::upload_textures(Ref<ShaderProgram>& shader, PBRSamplerData& data) const {
+  shader->use();
   shader->set_uniform("uBaseColorFactor", base_color_factor);
   shader->set_uniform("uMetallicFactor", (float)metallic_factor);
   shader->set_uniform("uRoughnessFactor", (float)roughness_factor);
