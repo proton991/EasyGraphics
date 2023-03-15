@@ -9,7 +9,7 @@ __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
 
 int main() {
   Engine engine;
-  engine.initialize();
+  engine.initialize("ShadowScene");
   engine.run();
   return 0;
 }

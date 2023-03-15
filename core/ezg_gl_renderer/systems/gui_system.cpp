@@ -2,7 +2,9 @@
 #include "log.hpp"
 
 namespace ezg::system {
-const char* glsl_version = "#version 450";
+static const char* glsl_version = "#version 450";
+static const char* LightTypes[] = {"Point", "Directional"};
+static int CurrentLightType     = 0;  // 0 Point; 1 Directional
 Ref<GUISystem> GUISystem::Create(GLFWwindow* glfw_window) {
   return CreateRef<GUISystem>(glfw_window);
 }
@@ -53,6 +55,11 @@ void GUISystem::draw(Ref<gl::RenderOptions> options) {
     if (ImGui::CollapsingHeader("Scene Settings")) {
       ImGui::Checkbox("Display Floor", &options->show_floor);
       ImGui::Checkbox("Display Light Model", &options->show_light_model);
+      ImGui::Text("Light Type:");
+      ImGui::RadioButton("Point", reinterpret_cast<int*>(&options->light_type), 0);
+      ImGui::SameLine();
+      ImGui::RadioButton("Directional", reinterpret_cast<int*>(&options->light_type), 1);
+      ImGui::SameLine();
     }
     ImGui::End();
   }

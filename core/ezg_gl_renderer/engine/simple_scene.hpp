@@ -1,8 +1,7 @@
-#ifndef CUSTOM_SCENE_HPP
-#define CUSTOM_SCENE_HPP
+#ifndef EASYGRAPHICS_SIMPLE_SCENE_HPP
+#define EASYGRAPHICS_SIMPLE_SCENE_HPP
 
 #include "scene.hpp"
-using namespace ezg::gl;
 
 namespace ezg::gl {
 class SimpleScene : public BaseScene {
@@ -31,4 +30,4 @@ private:
 };
 }  // namespace ezg::gl
 
-#endif  //CUSTOM_SCENE_HPP
+#endif  //EASYGRAPHICS_SIMPLE_SCENE_HPP

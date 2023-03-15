@@ -1,8 +1,8 @@
 #ifndef SCENE_HPP
 #define SCENE_HPP
 #include "assets/model.hpp"
-#include "ezg_gl_renderer/assets/skybox.hpp"
 #include "base.hpp"
+#include "ezg_gl_renderer/assets/skybox.hpp"
 
 namespace ezg::gl {
 class BaseScene;
@@ -22,9 +22,9 @@ public:
   BaseScene& operator=(const BaseScene&) = delete;
   BaseScene(const BaseScene&)            = delete;
 
-  virtual void init() {};
-  virtual void load_floor() {};
-  virtual void load_light_model() {};
+  virtual void init(){};
+  virtual void load_floor(){};
+  virtual void load_light_model(){};
   void add_model(const std::string& model_name);
   void add_model(const Ref<Model>& model);
   virtual void load_new_model(uint32_t index) = 0;
@@ -37,9 +37,10 @@ public:
   const auto& get_light_dir() const { return m_light_dir; }
   const auto& get_light_intensity() const { return m_light_intensity; }
   void switch_light();
-  auto has_skybox() const { return m_skybox != nullptr;}
+  auto has_skybox() const { return m_skybox != nullptr; }
+  const auto& get_name() const { return m_name; }
 
-  virtual int get_num_models() = 0;
+  virtual int get_num_models()          = 0;
   virtual const char** get_model_data() = 0;
 
 protected:
@@ -48,7 +49,7 @@ protected:
   Ref<Model> m_floor;
   Ref<Model> m_light_model;
   Ref<Skybox> m_skybox;
-  glm::vec3 m_light_dir{0.0f, 0.0f, -1.0f};
+  glm::vec3 m_light_dir{-1.0f, -1.0f, -1.0f};
   glm::vec3 m_light_intensity{1.0f};
   bool m_light_on{true};
 };

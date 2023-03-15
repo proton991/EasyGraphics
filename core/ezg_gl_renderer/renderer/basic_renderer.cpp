@@ -121,14 +121,14 @@ void BasicRenderer::update_ubo(const FrameInfo& info) {
   m_camera_data.view       = info.camera->get_view_matrix();
   m_camera_data.projection = info.camera->get_projection_matrix();
   m_camera_data.proj_view  = m_camera_data.projection * m_camera_data.view;
-
   m_camera_ubo->set_data(&m_camera_data, sizeof(CameraData));
-  // forward pass
+  // scene ubo
   auto& shader = m_shader_cache.at("pbr");
   shader->use();
   shader->set_uniform("uLightIntensity", info.scene->get_light_intensity());
   shader->set_uniform("uLightPos", info.scene->get_light_pos());
   shader->set_uniform("uLightDir", info.scene->get_light_dir());
+  shader->set_uniform("uLightType", static_cast<int>(info.options->light_type));
   shader->set_uniform("uCameraPos", info.camera->get_pos());
 }
 

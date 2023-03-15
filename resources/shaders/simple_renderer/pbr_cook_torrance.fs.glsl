@@ -10,10 +10,14 @@ in vec3 vWorldSpacePos;
 in vec3 vWorldSpaceNormal;
 in vec2 vTexCoords;
 
+// scene data
 uniform vec3 uLightPos;
 uniform vec3 uLightDir;
 uniform vec3 uLightIntensity;
+uniform int uLightType;
+uniform vec3 uCameraPos;
 
+// pbr textures
 uniform int uAlphaMode;
 uniform float uAlphaCutoff;
 
@@ -29,7 +33,6 @@ uniform float uRoughnessFactor;
 uniform vec3 uEmissiveFactor;
 uniform float uOcclusionStrength;
 
-uniform vec3 uCameraPos;
 
 // --------- bindless texture ---------------
 layout (binding = 2) uniform PBRSamplers {
@@ -50,6 +53,9 @@ layout (binding = 5) uniform sampler2D uBrdfLutSampler;
 #define ALPHAMODE_OPAQUE 0
 #define ALPHAMODE_BLEND 1
 #define ALPHAMODE_MASK 2
+
+#define POINT_LIGHT 0
+#define DIRECTIONAL_LIGHT 1
 
 #define RECIPROCAL_PI 0.3183098861837907
 #define PI 3.1415926535897932384626433832795
@@ -180,8 +186,14 @@ void main() {
     if (uHasNormalMap) {
         N = applyNormalMap(N, V, vTexCoords);
     }
-    vec3 L = normalize(uLightPos - vWorldSpacePos); // point light
-//    vec3 L = normalize(-uLightDir);
+    vec3 L;
+    if (uLightType == POINT_LIGHT) {
+        L = normalize(uLightPos - vWorldSpacePos); // point light
+    } else {
+        L = normalize(-uLightDir);  // directional light
+    }
+
+    //    vec3 L = normalize(-uLightDir);
 
     vec3 H = normalize(L + V);
 
@@ -214,7 +226,7 @@ void main() {
         vec3 brdf = brdfMicrofacet(L, V, N, metallic, roughness, baseColor.rgb, reflectance);
         // irradiance contribution from directional light
         float distance = length(normalize(uLightPos) - normalize(vWorldSpacePos));
-        float attenuation = 1.0 / (distance * distance);
+        float attenuation = uLightType == POINT_LIGHT ? 1.0 / (distance * distance) : 1.0f;
         radiance += brdf * irradiance * uLightIntensity * attenuation;
     }
 

@@ -1,6 +1,7 @@
 #include "engine.hpp"
-#include "managers/resource_manager.hpp"
+#include "log.hpp"
 #include "renderer/basic_renderer.hpp"
+#include "shadow_scene.hpp"
 #include "simple_scene.hpp"
 #include "systems/gui_system.hpp"
 #include "systems/input_system.hpp"
@@ -10,7 +11,7 @@
 using namespace ezg::system;
 
 namespace ezg::gl {
-void Engine::initialize() {
+void Engine::initialize(const std::string& active_scene) {
   // setup window
   WindowConfig config{};
   config.width         = 900;
@@ -33,9 +34,17 @@ void Engine::initialize() {
   };
   m_renderer = CreateRef<BasicRenderer>(render_config);
 
-  // setup scene with default model
-  m_scene = CreateRef<SimpleScene>("SimpleScene");
-  m_scene->init();
+  // setup scenes
+  auto simple_scene = CreateRef<SimpleScene>("SimpleScene");
+  simple_scene->init();
+
+  auto shadow_scene = CreateRef<ShadowScene>("ShadowScene");
+  shadow_scene->init();
+
+  m_scene_cache.try_emplace(simple_scene->get_name(), std::move(simple_scene));
+  m_scene_cache.try_emplace(shadow_scene->get_name(), std::move(shadow_scene));
+  spd::info("Activate scene: {}", active_scene);
+  m_scene = m_scene_cache.at(active_scene);
   if (!m_scene->has_skybox()) {
     m_options->has_env_map = false;
   }

@@ -5,7 +5,7 @@
 
 namespace ezg::gl {
 BaseScene::BaseScene(std::string_view name) : m_name(name) {
-  spdlog::info("Setting up scene: {}", m_name);
+  spdlog::info("Loading scene: {}", m_name);
 }
 
 void BaseScene::add_model(const Ref<Model>& model) {
