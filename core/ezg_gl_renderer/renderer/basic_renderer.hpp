@@ -57,6 +57,8 @@ private:
 
   Ref<Line> m_axis_line;
   Ref<Line> m_aabb_line;
+
+  Ref<ShadowMap> m_shadow_map;
 };
 }  // namespace ezg::gl
 #endif  //EASYGRAPHICS_BASIC_RENDERER_HPP

@@ -78,11 +78,7 @@ void Engine::run() {
     }
     float delta_time = m_stop_watch->time_step();
 
-    if (m_options->rotate_model) {
-      m_scene->update(delta_time);
-    } else {
-      m_scene->update();
-    }
+    m_scene->update(m_options, delta_time);
 
     m_camera->update(delta_time, m_options->rotate_camera);
 

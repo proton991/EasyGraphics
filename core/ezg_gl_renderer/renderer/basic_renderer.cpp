@@ -5,6 +5,7 @@
 #include "graphics/framebuffer.hpp"
 #include "graphics/shader.hpp"
 #include "render_api.hpp"
+#include "shadow_map.hpp"
 
 namespace ezg::gl {
 BasicRenderer::BasicRenderer(const RendererConfig& config)
@@ -34,6 +35,7 @@ BasicRenderer::BasicRenderer(const RendererConfig& config)
   setup_framebuffers(m_width, m_height);
   setup_coordinate_axis();
   m_aabb_line = CreateRef<Line>();
+  m_shadow_map = CreateRef<ShadowMap>(1024, 1024);
 }
 
 void BasicRenderer::compile_shaders(
@@ -130,6 +132,7 @@ void BasicRenderer::update_ubo(const FrameInfo& info) {
   shader->set_uniform("uLightDir", info.scene->get_light_dir());
   shader->set_uniform("uLightType", static_cast<int>(info.options->light_type));
   shader->set_uniform("uCameraPos", info.camera->get_pos());
+  shader->set_uniform("uLightSpaceMat", m_shadow_map->get_light_space_mat());
 }
 
 void BasicRenderer::render_meshes(const std::vector<Mesh>& meshes) {
@@ -147,6 +150,7 @@ void BasicRenderer::render_meshes(const std::vector<Mesh>& meshes) {
 }
 
 void BasicRenderer::render_scene(const FrameInfo& info) {
+  m_shadow_map->bind_for_read(6);
   if (info.scene->has_skybox()) {
     // bind Prefiltered IBL texture
     if (info.options->enable_env_map) {
@@ -180,6 +184,7 @@ void BasicRenderer::render_scene(const FrameInfo& info) {
 }
 
 void BasicRenderer::render_frame(const FrameInfo& info) {
+  m_shadow_map->run_depth_pass(info.scene);
   set_default_state();
   m_pbuffer->bind_for_writing();
   m_pbuffer->clear();

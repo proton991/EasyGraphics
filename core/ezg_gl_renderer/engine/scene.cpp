@@ -16,16 +16,20 @@ void BaseScene::add_model(const std::string& model_path) {
   m_models.push_back(ResourceManager::GetInstance().load_gltf_model(model_path));
 }
 
-void BaseScene::update(float time) {
+void BaseScene::update(const Ref<RenderOptions>& options, float time) {
   // turn on/off light
   if (system::KeyboardMouseInput::GetInstance().was_key_pressed_once(GLFW_KEY_L)) {
     switch_light();
   }
-  if (time != 0.0f) {
-    float rotation_angle = time * 0.5f;
+  float rotation_angle = time * 0.5f;
+  if (options->rotate_model) {
     for (auto& model : m_models) {
       model->rotate(rotation_angle);
     }
+  }
+  if (options->rotate_light) {
+    const auto point = glm::vec3(0.0, m_light_model->get_aabb().get_center().y, 0.0f);
+    m_light_model->rotate(rotation_angle, point);
   }
 }
 
@@ -44,7 +48,7 @@ void BaseScene::switch_light() {
     m_light_intensity = glm::vec3(0.0f);
     spdlog::info("light off");
   } else {
-    m_light_intensity = glm::vec3(5.0f);
+    m_light_intensity = glm::vec3(1.0f);
     spdlog::info("light on");
   }
 }

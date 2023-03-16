@@ -3,6 +3,7 @@
 #include "assets/model.hpp"
 #include "base.hpp"
 #include "ezg_gl_renderer/assets/skybox.hpp"
+#include "render_option.hpp"
 
 namespace ezg::gl {
 class BaseScene;
@@ -17,6 +18,7 @@ public:
 class BaseScene {
 public:
   friend class BasicRenderer;
+  friend class ShadowMap;
   explicit BaseScene(std::string_view name);
   // disable copying
   BaseScene& operator=(const BaseScene&) = delete;
@@ -29,7 +31,7 @@ public:
   void add_model(const Ref<Model>& model);
   virtual void load_new_model(uint32_t index) = 0;
 
-  void update(float time = 0.0f);
+  void update(const Ref<RenderOptions>& options, float time = 0.0f);
 
   [[nodiscard]] AABB get_aabb() const;
 

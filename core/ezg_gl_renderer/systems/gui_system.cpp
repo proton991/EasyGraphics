@@ -60,6 +60,9 @@ void GUISystem::draw(Ref<gl::RenderOptions> options) {
       ImGui::SameLine();
       ImGui::RadioButton("Directional", reinterpret_cast<int*>(&options->light_type), 1);
       ImGui::SameLine();
+      if (options->light_type == LightType::Point) {
+        ImGui::Checkbox("Rotate Light", &options->rotate_light);
+      }
     }
     ImGui::End();
   }

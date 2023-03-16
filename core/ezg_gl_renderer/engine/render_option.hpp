@@ -8,6 +8,7 @@ struct RenderOptions {
   uint32_t num_models{0};
   int selected_model{0};
   bool rotate_model{false};
+  bool rotate_light{false};
   bool rotate_camera{false};
   bool has_env_map{true};
   bool enable_env_map{true};

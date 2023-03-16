@@ -17,10 +17,11 @@ public:
 private:
   const char* FloorPath{"../resources/models/wood_floor/scene.gltf"};
   const char* LightModelPath{"../resources/models/sun/scene.gltf"};
-  std::vector<const char*> ModelNames{"Box"};
+  std::vector<const char*> ModelNames{"Box", "DamagedHelmet"};
 
   std::vector<const char*> ModelPaths{
-      "../../glTF-Sample-Models/2.0/Box/glTF/Box.gltf"
+      "../../glTF-Sample-Models/2.0/Box/glTF/Box.gltf",
+      "../../glTF-Sample-Models/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf"
   };
 };
 }  // namespace ezg::gl

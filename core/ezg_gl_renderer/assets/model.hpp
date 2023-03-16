@@ -33,6 +33,7 @@ public:
 
   void translate(const glm::vec3& target_pos);
   void rotate(float angle);
+  void rotate(float angle, const glm::vec3& point);
   void scale(float factor);
 
   auto get_mesh_size() const { return m_meshes.size(); }

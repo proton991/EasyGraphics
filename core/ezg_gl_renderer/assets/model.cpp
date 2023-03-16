@@ -32,6 +32,18 @@ void Model::rotate(float angle) {
   }
 }
 
+void Model::rotate(float angle, const glm::vec3& point) {
+  auto t1 = glm::translate(glm::mat4(1), -point);
+  auto r  = glm::rotate(glm::mat4(1), angle, glm::vec3(0.0f, 1.0f, 0.0f));
+  auto t2 = glm::translate(glm::mat4(1), point);
+  auto T  = t2 * r * t1;
+  for (auto& mesh : m_meshes) {
+    mesh.model_matrix = T * mesh.model_matrix;
+  }
+  m_aabb.bbx_min = T * glm::vec4(m_aabb.bbx_min, 0.0f);
+  m_aabb.bbx_max = T * glm::vec4(m_aabb.bbx_max, 0.0f);
+}
+
 void Model::scale(float factor) {
   for (auto& mesh : m_meshes) {
     const auto scale  = glm::scale(glm::mat4(1.0f), glm::vec3(factor));
