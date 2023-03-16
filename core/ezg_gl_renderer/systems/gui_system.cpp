@@ -39,6 +39,7 @@ void GUISystem::draw(Ref<gl::RenderOptions> options) {
     ImGui::Checkbox("Show Axis", &options->show_axis);
     ImGui::SameLine();
     ImGui::Checkbox("Show AABB", &options->show_aabb);
+    ImGui::Checkbox("Show Depth Debug", &options->show_depth_debug);
 
     options->scene_changed = ImGui::Combo("Select Model", &options->selected_model,
                                           options->model_list, options->num_models);
@@ -52,15 +53,18 @@ void GUISystem::draw(Ref<gl::RenderOptions> options) {
       ImGui::SameLine();
       ImGui::Checkbox("Blur", &options->blur);
     }
+    if (options->light_type == LightType::Directional) {
+      options->show_light_model = false;
+    } else {
+      options->show_light_model = true;
+    }
     if (ImGui::CollapsingHeader("Scene Settings")) {
-      ImGui::Checkbox("Display Floor", &options->show_floor);
-      ImGui::Checkbox("Display Light Model", &options->show_light_model);
+      ImGui::Checkbox("Show Floor", &options->show_floor);
       ImGui::Text("Light Type:");
-      ImGui::RadioButton("Point", reinterpret_cast<int*>(&options->light_type), 0);
-      ImGui::SameLine();
       ImGui::RadioButton("Directional", reinterpret_cast<int*>(&options->light_type), 1);
-      ImGui::SameLine();
-      if (options->light_type == LightType::Point) {
+      ImGui::RadioButton("Spot", reinterpret_cast<int*>(&options->light_type), 0);
+      if (options->light_type == LightType::Spot) {
+        ImGui::SameLine();
         ImGui::Checkbox("Rotate Light", &options->rotate_light);
       }
     }

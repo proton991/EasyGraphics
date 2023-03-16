@@ -23,20 +23,29 @@ ShadowMap::ShadowMap(uint32_t width, uint32_t height) : m_width(width), m_height
   setup_framebuffer();
 }
 
-void ShadowMap::run_depth_pass(const Ref<BaseScene>& scene) {
+void ShadowMap::run_depth_pass(const Ref<BaseScene>& scene, const LightType& type) {
   const auto& aabb = scene->get_aabb();
-  auto aabb_len         = glm::length(aabb.diag);
+  auto aabb_len    = glm::length(aabb.diag);
   // set near far plane
-  m_near = 0.01f * aabb_len;
-  m_far  = 10.0f * aabb_len;
+  m_near             = 0.01f * aabb_len;
+  m_far              = 10.0f * aabb_len;
   const auto box_len = aabb_len * 2;
-  //  len = 10.0f;
-  //  m_near = 0.1f;
-  //  m_far  = 20.0f;
-  const auto light_proj = glm::ortho(-box_len, box_len, -box_len, box_len, m_near, m_far);
-  const auto light_view =
-      glm::lookAt(scene->get_light_pos(), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+  glm::mat4 light_view{1.0f};
+  glm::mat4 light_proj{1.0f};
+  if (type == LightType::Directional) {
+    light_proj = glm::ortho(-box_len, box_len, -box_len, box_len, m_near, m_far);
+    // for directional light, fix the light position
+    light_view =
+        glm::lookAt(scene->get_aabb().bbx_max * 5.0f, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+  } else {
+    // TODO: implement Light-space perspective Shadow Maps
+    light_proj = glm::perspective(glm::radians(45.0f), 1.0f, m_near, m_far);
+//    light_proj = glm::ortho(-box_len, box_len, -box_len, box_len, m_near, m_far);
+    light_view = glm::lookAt(scene->get_light_pos(), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+  }
   m_light_space_mat = light_proj * light_view;
+
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
   glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);

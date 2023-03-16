@@ -1,7 +1,7 @@
 #ifndef RENDER_OPTION_HPP
 #define RENDER_OPTION_HPP
 namespace ezg::gl {
-enum class LightType : decltype(0) { Point = 0, Directional = 1 };
+enum class LightType : decltype(0) { Spot = 0, Directional = 1 };
 struct RenderOptions {
   RenderOptions() = default;
   const char** model_list{nullptr};
@@ -19,6 +19,7 @@ struct RenderOptions {
   bool show_light_model{true};
   bool blur{false};
   bool scene_changed{false};
+  bool show_depth_debug{false};
   LightType light_type{LightType::Directional};
 };
 }  // namespace ezg::gl

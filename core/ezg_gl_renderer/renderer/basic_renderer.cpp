@@ -34,7 +34,7 @@ BasicRenderer::BasicRenderer(const RendererConfig& config)
   setup_screen_quad();
   setup_framebuffers(m_width, m_height);
   setup_coordinate_axis();
-  m_aabb_line = CreateRef<Line>();
+  m_aabb_line  = CreateRef<Line>();
   m_shadow_map = CreateRef<ShadowMap>(1024, 1024);
 }
 
@@ -184,7 +184,7 @@ void BasicRenderer::render_scene(const FrameInfo& info) {
 }
 
 void BasicRenderer::render_frame(const FrameInfo& info) {
-  m_shadow_map->run_depth_pass(info.scene);
+  m_shadow_map->run_depth_pass(info.scene, info.options->light_type);
   set_default_state();
   m_pbuffer->bind_for_writing();
   m_pbuffer->clear();
@@ -200,7 +200,12 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
 
   auto& screen_shader = m_shader_cache.at("screen");
   screen_shader->use();
-  m_pbuffer->bind_for_reading("color", 0);
+  if (info.options->show_depth_debug) {
+    m_shadow_map->bind_debug_texture();
+  } else {
+    m_pbuffer->bind_for_reading("color", 0);
+  }
+
   RenderAPI::draw_vertices(m_quad_vao, 6);
 }
 

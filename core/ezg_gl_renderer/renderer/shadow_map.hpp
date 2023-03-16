@@ -1,6 +1,7 @@
 #ifndef EASYGRAPHICS_SHADOW_MAP_FBO_HPP
 #define EASYGRAPHICS_SHADOW_MAP_FBO_HPP
 #include "base.hpp"
+#include "engine/render_option.hpp"
 #include <glm/mat4x4.hpp>
 
 namespace ezg::gl {
@@ -11,7 +12,7 @@ class ShaderProgram;
 class ShadowMap {
 public:
   ShadowMap(uint32_t width, uint32_t height);
-  void run_depth_pass(const Ref<BaseScene>& scene);
+  void run_depth_pass(const Ref<BaseScene>& scene, const LightType& type);
   void bind_for_read(int slot);
   void bind_debug_texture();
   auto get_light_space_mat() const { return m_light_space_mat; }

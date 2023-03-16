@@ -56,7 +56,7 @@ layout (binding = 6) uniform sampler2D uShadowMap;
 #define ALPHAMODE_BLEND 1
 #define ALPHAMODE_MASK 2
 
-#define POINT_LIGHT 0
+#define SPOT_LIGHT 0
 #define DIRECTIONAL_LIGHT 1
 
 #define RECIPROCAL_PI 0.3183098861837907
@@ -96,8 +96,9 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
     shadow /= 9.0;
 
     // keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
-    if(projCoords.z > 1.0)
-    shadow = 0.0;
+    if(projCoords.z > 1.0) {
+        shadow = 0.0;
+    }
 
     return shadow;
 }
@@ -223,7 +224,7 @@ void main() {
         N = applyNormalMap(N, V, vTexCoords);
     }
     vec3 L;
-    if (uLightType == POINT_LIGHT) {
+    if (uLightType == SPOT_LIGHT) {
         L = normalize(uLightPos - vWorldSpacePos); // point light
     } else {
         L = normalize(-uLightDir);  // directional light
@@ -262,7 +263,7 @@ void main() {
         vec3 brdf = brdfMicrofacet(L, V, N, metallic, roughness, baseColor.rgb, reflectance);
         // irradiance contribution from directional light
         float distance = length(normalize(uLightPos) - normalize(vWorldSpacePos));
-        float attenuation = uLightType == POINT_LIGHT ? min(1.0 / (distance * distance), 1.0f) : 1.0f;
+        float attenuation = uLightType == SPOT_LIGHT ? min(1.0 / (distance * distance), 1.0f) : 1.0f;
         radiance += brdf * irradiance * uLightIntensity * attenuation;
         radiance *= (1.0 - ShadowCalculation(vLightSpacePos, N, L));
     }
