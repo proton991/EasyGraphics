@@ -68,6 +68,18 @@ const float reflectance = 0.5;
 
 const int mipLevelCount = 5;
 
+vec3 calcSpotLightIntensity(vec3 lightDir) {
+    float distance = length(normalize(uLightPos) - normalize(vWorldSpacePos));
+    float attenuation = min(1.0 / (distance * distance), 1.0f);
+    vec3 spotDir = vec3(0.0f, -1.0f, 0.0f);
+    float theta = dot(-lightDir, spotDir);
+    float outerCone = 0.95f;  // the angle between the direction of the spotlight and the edge of the cone of light where the intensity is zero.
+    float innnerCone = 0.90f; // angle is the angle between the direction of the spotlight and the edge of the cone of light where the intensity starts to decrease.
+    float epsilon = (outerCone - innnerCone);
+    float intensity = clamp((theta - innnerCone) / epsilon, 0.0f, 1.0f) * attenuation;
+    return vec3(intensity);
+}
+
 float DirLightShadow(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir) {
     // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
@@ -259,7 +271,7 @@ void main() {
     vec3 L;
     if (uLightType == SPOT_LIGHT) {
         L = normalize(uLightPos - vWorldSpacePos); // point light
-    } else {
+    } else if (uLightType == DIRECTIONAL_LIGHT) {
         L = normalize(-uLightDir);  // directional light
     }
 
@@ -301,8 +313,10 @@ void main() {
         float shadow = 0.0f;
         if (uLightType == SPOT_LIGHT) {
             shadow = SpotLightShadow(vLightSpacePos, N, L);
+            radiance += brdf * irradiance * calcSpotLightIntensity(L);
         } else if (uLightType == DIRECTIONAL_LIGHT) {
             shadow = DirLightShadow(vLightSpacePos, N, L);
+            radiance += brdf * irradiance * uLightIntensity;
         }
         radiance *= (1.0 - shadow);
     }

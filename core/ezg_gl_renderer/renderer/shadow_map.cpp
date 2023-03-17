@@ -6,8 +6,6 @@
 
 namespace ezg::gl {
 ShadowMap::ShadowMap(uint32_t width, uint32_t height) : m_width(width), m_height(height) {
-  //  AttachmentInfo depth_info{AttachmentInfo::Depth(width, height)};
-  //  m_fbo    = Framebuffer::Create({width, height, {depth_info}});
   m_depth_shader = ShaderProgramFactory::create_shader_program(
       {"shadow_map_depth",
        {
@@ -57,10 +55,6 @@ void ShadowMap::run_depth_pass(const Ref<BaseScene>& scene, const LightType& typ
       m_depth_shader->set_uniform("uModelMat", mesh.model_matrix);
       RenderAPI::draw_mesh(mesh);
     }
-  }
-  for (const auto& mesh : scene->m_floor->get_meshes()) {
-    m_depth_shader->set_uniform("uModelMat", mesh.model_matrix);
-    RenderAPI::draw_mesh(mesh);
   }
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
