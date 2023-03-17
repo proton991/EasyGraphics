@@ -6,7 +6,7 @@ in vec2 vTexCoords;
 layout (binding = 0) uniform sampler2D uDepthMap;
 uniform float uNear;
 uniform float uFar;
-
+uniform int uLightType;
 // required when using a perspective projection matrix
 float LinearizeDepth(float depth)
 {
@@ -17,6 +17,9 @@ float LinearizeDepth(float depth)
 void main()
 {
     float depthValue = texture(uDepthMap, vTexCoords).r;
-//     FragColor = vec4(vec3(LinearizeDepth(depthValue) / uFar), 1.0); // perspective
-    FragColor = vec4(vec3(depthValue), 1.0); // orthographic
+    if (uLightType == 1) {
+        FragColor = vec4(vec3(depthValue), 1.0); // orthographic
+    } else {
+        FragColor = vec4(vec3(LinearizeDepth(depthValue) / uFar), 1.0); // perspective
+    }
 }

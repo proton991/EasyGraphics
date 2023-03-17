@@ -39,9 +39,7 @@ void ShadowMap::run_depth_pass(const Ref<BaseScene>& scene, const LightType& typ
     light_view =
         glm::lookAt(scene->get_aabb().bbx_max * 5.0f, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
   } else {
-    // TODO: implement Light-space perspective Shadow Maps
     light_proj = glm::perspective(glm::radians(45.0f), 1.0f, m_near, m_far);
-//    light_proj = glm::ortho(-box_len, box_len, -box_len, box_len, m_near, m_far);
     light_view = glm::lookAt(scene->get_light_pos(), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
   }
   m_light_space_mat = light_proj * light_view;
@@ -92,10 +90,11 @@ void ShadowMap::bind_for_read(int slot) {
   //  m_fbo->bind_for_reading("depth", slot);
 }
 
-void ShadowMap::bind_debug_texture() {
+void ShadowMap::bind_debug_texture(const LightType& type) {
   m_debug_shader->use();
   m_debug_shader->set_uniform("uNear", m_near);
   m_debug_shader->set_uniform("uFar", m_far);
+  m_debug_shader->set_uniform("uLightType", static_cast<int>(type));
   glBindTextureUnit(0, m_depth_texture);
 }
 }  // namespace ezg::gl

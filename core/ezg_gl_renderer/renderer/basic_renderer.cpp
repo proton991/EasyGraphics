@@ -201,7 +201,7 @@ void BasicRenderer::render_frame(const FrameInfo& info) {
   auto& screen_shader = m_shader_cache.at("screen");
   screen_shader->use();
   if (info.options->show_depth_debug) {
-    m_shadow_map->bind_debug_texture();
+    m_shadow_map->bind_debug_texture(info.options->light_type);
   } else {
     m_pbuffer->bind_for_reading("color", 0);
   }

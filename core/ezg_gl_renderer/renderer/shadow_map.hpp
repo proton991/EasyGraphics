@@ -14,7 +14,7 @@ public:
   ShadowMap(uint32_t width, uint32_t height);
   void run_depth_pass(const Ref<BaseScene>& scene, const LightType& type);
   void bind_for_read(int slot);
-  void bind_debug_texture();
+  void bind_debug_texture(const LightType& type);
   auto get_light_space_mat() const { return m_light_space_mat; }
 private:
   void setup_framebuffer();
