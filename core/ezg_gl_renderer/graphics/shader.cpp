@@ -1,6 +1,6 @@
 #include "shader.hpp"
-#include "log.hpp"
 #include <utility>
+#include "log.hpp"
 #include "managers/resource_manager.hpp"
 
 namespace ezg::gl {
@@ -167,6 +167,9 @@ ShaderProgram& ShaderProgram::set_uniform(const std::string& name, const glm::ma
 ShaderProgram& ShaderProgram::set_uniform(const std::string& name, const glm::mat4x4& value) {
   if (m_uniforms.contains(name)) {
     glUniformMatrix4fv(m_uniforms.at(name), 1, GL_FALSE, value_ptr(value));
+  } else {
+    int location = glGetUniformLocation(m_id, name.data());
+    glUniformMatrix4fv(location, 1, GL_FALSE, value_ptr(value));
   }
   return *this;
 }

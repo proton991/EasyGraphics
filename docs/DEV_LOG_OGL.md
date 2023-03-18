@@ -1,14 +1,12 @@
 # Dev Log (ezg_gl_renderer)
 
-#### Future plans (Phase0 - Phase9):
+#### Future plans (Phase0 - Phase5):
 1. Phase 0: OpenGL set up
 2. Phase 1: A render system
 3. Phase 2: PBR
 4. Phase 3: Image Based Lighting
 5. Phase 4: Integrating ImGUI.
 6. Phase 5: Shadows
-7. Phase 6: Raytracing tracing
-8. Phase 7: Support gltf features and extensions
 
 #### Long-term goals
 1. **read SIGGRAPH papers and try to implement them.**
@@ -66,4 +64,10 @@ My solution is: read using linear RGBA textures, and apply sRGBToLinear on my ow
 #### Next stage plan:
 
 1. Implement shadow mapping.
-2. Implement cascade shadow mapping.
+
+## 2023.3.13
+
+#### Current Progress (Phase5 completed)
+
+#### Next stage plan:
+1. Enough for OpenGL, let's start learning VULKAN!!!

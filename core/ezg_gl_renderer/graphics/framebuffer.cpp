@@ -154,17 +154,8 @@ void Framebuffer::resize_depth_renderbuffer(int width, int height) {
 
 void Framebuffer::add_attachment(const AttachmentInfo& attachment_info) {
   auto attachment = Attachment::Create(attachment_info);
-  if (attachment->get_type() == AttachmentType::TEXTURE_CUBEMAP) {
-    for (int i = 0; i < 6; i++) {
-      glNamedFramebufferTextureLayer(m_id, static_cast<int>(attachment->get_binding()),
-                                     attachment->get_id(), 0, i);
-      glClearNamedFramebufferfv(m_id, GL_COLOR, 0, ClearColor);
-      glClearNamedFramebufferfv(m_id, GL_DEPTH, 0, &ClearDepth);
-    }
-  } else {
-    glNamedFramebufferTexture(m_id, static_cast<int>(attachment->get_binding()),
-                              attachment->get_id(), 0);
-  }
+  glNamedFramebufferTexture(m_id, static_cast<int>(attachment->get_binding()), attachment->get_id(),
+                            0);
   m_attachment_ids.push_back(attachment->get_id());
   m_attachments.try_emplace(attachment->get_name(), attachment);
 }
