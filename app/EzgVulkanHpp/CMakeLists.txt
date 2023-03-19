@@ -1,0 +1,2 @@
+add_executable(01_create_instance 01_create_instance.cpp)
+target_link_libraries(01_create_instance ezg_vk_hpp)

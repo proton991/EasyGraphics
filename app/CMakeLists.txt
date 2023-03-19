@@ -20,6 +20,7 @@ set(APPS
   FirstTriangle
 )
 add_subdirectory(EzgVulkan)
+add_subdirectory(EzgVulkanHpp)
 
 ############################################################
 #                    Build Apps                            #

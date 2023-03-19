@@ -1,5 +1,3 @@
-find_package(Vulkan REQUIRED)
-
 #both vma and glm and header only libs so we only need the include path
 ###########################
 #       vma               #
