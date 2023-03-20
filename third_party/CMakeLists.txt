@@ -2,7 +2,12 @@
 ###########################
 #       vma               #
 ###########################
-add_library(vma INTERFACE)
+add_library(vma STATIC)
+target_sources(vma PRIVATE
+    vma/vk_mem_alloc.h
+    vma/vk_mem_alloc.cpp
+    )
+target_include_directories(vma PRIVATE ${VULKAN_INCLUDE_DIR})
 target_include_directories(vma INTERFACE vma)
 
 ###########################
