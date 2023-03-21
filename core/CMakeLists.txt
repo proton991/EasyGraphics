@@ -4,7 +4,7 @@ message(STATUS "Vulkan Static Lib: ${Vulkan_LIBRARY}")
 file(GLOB vulkan_helper_src vulkan_helper/*.cpp vulkan_helper/*.hpp)
 file(GLOB ezg_engine_src ezg_engine/*.cpp ezg_engine/*.hpp)
 file(GLOB ezg_vk_src ezg_vk/*.cpp ezg_vk/*.hpp)
-file(GLOB ezg_vk_hpp_src ezg_vk_hpp/*.cpp ezg_vk_hpp/*.hpp)
+file(GLOB ezg_vk_hpp_src ezg_vk_hpp/*.cpp ezg_vk_hpp/*.hpp ezg_util/*.hpp ezg_util/*.cpp)
 file(GLOB ezg_asset_src ezg_asset/*.cpp ezg_asset/*.hpp)
 file(GLOB_RECURSE ezg_gl_renderer_src ezg_gl_renderer/*.cpp ezg_gl_renderer/*.hpp)
 
