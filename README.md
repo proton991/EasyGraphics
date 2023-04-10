@@ -36,3 +36,8 @@ There's still a lot of rendering algorithms that I have not implemented, but I d
 3. Build a simple forward renderer(like the OpenGL renderer).
 4. Implement Raytracing.
 5. Other advanced rendering algorithms...
+
+## References
+1. Hazel: https://github.com/TheCherno/Hazel
+2. Shader Monthly: https://www.youtube.com/playlist?list=PL8vNj3osX2PzZ-cNSqhA8G6C1-Li5-Ck8
+3. Learn OpenGL: https://github.com/JoeyDeVries/LearnOpenGL

@@ -24,7 +24,7 @@ void EGEngine::RenderScene() {
   int frameIndex = m_frameNumber % FRAME_OVERLAP;
 
   uint32_t uniformOffset = PadUniformBufferSize(sizeof(GPUSceneData)) * frameIndex;
-  sceneData += PadUniformBufferSize(sizeof(GPUSceneData)) * frameIndex;
+  sceneData += uniformOffset;
   memcpy(sceneData, &m_sceneParameters, sizeof(GPUSceneData));
   vmaUnmapMemory(m_allocator, m_sceneParameterBuffer.m_allocation);
 
